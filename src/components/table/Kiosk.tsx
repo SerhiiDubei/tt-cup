@@ -7,6 +7,7 @@ import HeroArt from '@/components/HeroArt';
 import PlayerPicker from '@/components/table/PlayerPicker';
 import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
+import Leaderboard from '@/components/table/Leaderboard';
 import { BRAND } from '@/config';
 
 type Overlay =
@@ -295,12 +296,7 @@ export default function Kiosk() {
           <p>ЗАВАНТАЖУЮ СТІЛ…</p>
         </div>
       ) : tab === 'board' ? (
-        <div className="k-stub">
-          <div className="card tilt-l">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 28 }}>ЛІДЕРБОРД</h2>
-            <p style={{ marginTop: 10, color: 'var(--ink-soft)' }}>Уже скоро на цьому екрані.</p>
-          </div>
-        </div>
+        <Leaderboard rows={state.leaderboard} players={playersMap} recent={state.recent} />
       ) : game ? (
         /* ================= ГРА ЙДЕ ================= */
         <div className="k-stage">
