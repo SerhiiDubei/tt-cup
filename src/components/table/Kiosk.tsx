@@ -1,13 +1,20 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TableState } from '@/lib/table/state';
-import type { Player } from '@/lib/tournament/types';
-import { getTableState, startGame, joinQueue, cancelGame, leaveQueue } from '@/lib/table/api';
+import type { Player, SetScore } from '@/lib/tournament/types';
+import { getTableState, startGame, finishGame, joinQueue, cancelGame, leaveQueue } from '@/lib/table/api';
 import HeroArt from '@/components/HeroArt';
 import PlayerPicker from '@/components/table/PlayerPicker';
+import ScoreEntry from '@/components/table/ScoreEntry';
+import WhoNext from '@/components/table/WhoNext';
 import { BRAND } from '@/config';
 
-type Overlay = 'none' | 'pick-start' | 'pick-queue';
+type Overlay =
+  | { k: 'none' }
+  | { k: 'pick-start' }
+  | { k: 'pick-queue' }
+  | { k: 'score'; gameId: string; aId: string; bId: string }
+  | { k: 'next'; winnerId: string; loserId: string; sets: SetScore[] };
 
 /* ---------- дрібні хелпери ---------- */
 
@@ -47,6 +54,18 @@ export function useArmed(ms = ARM_MS) {
   return [armed, fire] as const;
 }
 
+/** Нік з мʼякими точками переносу після «_» (+ опційне зменшення за довжиною). */
+export function NickFit({ nick, shrink = true }: { nick: string; shrink?: boolean }) {
+  const size = !shrink || nick.length <= 8 ? 1 : nick.length <= 12 ? 0.82 : 0.68;
+  return (
+    <span style={size !== 1 ? { fontSize: `${Math.round(size * 100)}%` } : undefined}>
+      {nick.split('_').map((part, i, arr) => (
+        <span key={i}>{part}{i < arr.length - 1 ? <>_<wbr /></> : null}</span>
+      ))}
+    </span>
+  );
+}
+
 const FALLBACK_PLAYER = (id: string): Player => ({
   id, name: '?', nickname: '· · ·', seed: 0,
   hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: 'allrounder' },
@@ -80,7 +99,7 @@ function QueueRow({ p, i, busy, onLeave }: { p: Player; i: number; busy: boolean
       <span className="k-qpos" style={{ background: POS_COLORS[i % POS_COLORS.length] }}>{i + 1}</span>
       <span className="k-qname">
         {i === 0 && <span className="k-qnext">наступний</span>}
-        {p.nickname || p.name}
+        <NickFit nick={p.nickname || p.name} shrink={false} />
       </span>
       <button className={'k-qx' + (armed ? ' armed' : '')} disabled={busy}
         aria-label={`Прибрати ${p.nickname} з черги`}
@@ -135,10 +154,13 @@ export default function Kiosk() {
   const [toast, setToast] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
+  const stateRef = useRef<TableState | null>(null);
+
   /* --- полінг стану --- */
   const refetch = useCallback(async () => {
     try {
       const s = await getTableState();
+      stateRef.current = s;
       setState(s);
       setFails(0);
     } catch {
@@ -228,7 +250,8 @@ export default function Kiosk() {
 
   const offline = fails >= 2;
   const game = state?.game ?? null;
-  const [overlay, setOverlay] = useState<Overlay>('none');
+  const [overlay, setOverlay] = useState<Overlay>({ k: 'none' });
+  const closeOverlay = useCallback(() => setOverlay({ k: 'none' }), []);
 
   const onLeave = useCallback((id: string) => { void run(() => leaveQueue(id)); }, [run]);
 
@@ -255,14 +278,14 @@ export default function Kiosk() {
       <span className="k-deco ring" style={{ width: 64, height: 64, bottom: 44, left: '46%', background: 'var(--cyan)' }} />
       <span className="k-deco dotgrid" style={{ width: 180, height: 120, bottom: -14, left: -20, transform: 'rotate(-8deg)' }} />
 
-      <header className="k-top">
+      <div className="k-top">
         <span className="k-brand"><i className="ttball sm" />{BRAND} · СТІЛ</span>
         {offline && <span className="k-offline"><i />офлайн</span>}
         <nav className="k-tabs" aria-label="Розділи">
           <button className={'k-tab' + (tab === 'table' ? ' on' : '')} onClick={() => setTab('table')}>СТІЛ</button>
           <button className={'k-tab' + (tab === 'board' ? ' on' : '')} onClick={() => setTab('board')}>ЛІДЕРБОРД</button>
         </nav>
-      </header>
+      </div>
 
       {toast && <div className="k-toast" role="status">{toast}</div>}
 
@@ -280,7 +303,7 @@ export default function Kiosk() {
         </div>
       ) : game ? (
         /* ================= ГРА ЙДЕ ================= */
-        <section className="k-stage">
+        <div className="k-stage">
           <div className="k-col">
             <div className="k-live">
               <div className="k-live-top">
@@ -296,7 +319,7 @@ export default function Kiosk() {
                         <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
                           initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={170} radius={24} />
                       </div>
-                      <div className="nick">{p.nickname || p.name}</div>
+                      <div className="nick"><NickFit nick={p.nickname || p.name} /></div>
                       <div className="who">{p.name}</div>
                     </div>
                   );
@@ -308,18 +331,19 @@ export default function Kiosk() {
               </div>
               <div className="k-live-actions">
                 <div className="row">
-                  <button className="kbtn xl pink" disabled={busy}>ГРА ЗАКІНЧИЛАСЬ</button>
-                  <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay('pick-queue')}>ЗАПИСАТИСЬ<br />У ЧЕРГУ</button>
+                  <button className="kbtn xl pink" disabled={busy}
+                    onClick={() => setOverlay({ k: 'score', gameId: game.id, aId: game.a, bId: game.b })}>ГРА ЗАКІНЧИЛАСЬ</button>
+                  <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay({ k: 'pick-queue' })}>ЗАПИСАТИСЬ<br />У ЧЕРГУ</button>
                 </div>
                 <CancelGameButton busy={busy} onCancel={() => { void run(() => cancelGame(game.id)); }} />
               </div>
             </div>
           </div>
           <QueuePanel queue={queuePlayers} busy={busy} onLeave={onLeave} />
-        </section>
+        </div>
       ) : (
         /* ================= СТІЛ ВІЛЬНИЙ ================= */
-        <section className="k-stage">
+        <div className="k-stage">
           <div className="k-col">
             <div className="k-free">
               <span className="k-kicker"><span className="dot" />живе табло клубу</span>
@@ -328,8 +352,8 @@ export default function Kiosk() {
                 <Squiggle />
               </h1>
               <div className="k-actions">
-                <button className="kbtn xl pink" disabled={busy} onClick={() => setOverlay('pick-start')}>СТАТИ ДО СТОЛУ</button>
-                <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay('pick-queue')}>ЗАПИСАТИСЬ У ЧЕРГУ</button>
+                <button className="kbtn xl pink" disabled={busy} onClick={() => setOverlay({ k: 'pick-start' })}>СТАТИ ДО СТОЛУ</button>
+                <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay({ k: 'pick-queue' })}>ЗАПИСАТИСЬ У ЧЕРГУ</button>
               </div>
               {state.lastWinner && (
                 <span className="k-lastwin">
@@ -339,11 +363,11 @@ export default function Kiosk() {
             </div>
           </div>
           <QueuePanel queue={queuePlayers} busy={busy} onLeave={onLeave} />
-        </section>
+        </div>
       )}
 
       {/* ---------- оверлеї ---------- */}
-      {overlay === 'pick-start' && state && (
+      {overlay.k === 'pick-start' && state && (
         <PlayerPicker
           players={state.players}
           allowedIds={startAllowed}
@@ -351,24 +375,59 @@ export default function Kiosk() {
           preselected={queueIds.slice(0, 2)}
           title="ХТО ГРАЄ?"
           confirmLabel="РОЗПОЧАТИ ГРУ"
-          onClose={() => setOverlay('none')}
+          onClose={closeOverlay}
           onConfirm={async (ids) => {
             const ok = await run(() => startGame(ids[0], ids[1]));
-            if (ok) setOverlay('none');
+            if (ok) closeOverlay();
           }}
         />
       )}
-      {overlay === 'pick-queue' && state && (
+      {overlay.k === 'pick-queue' && state && (
         <PlayerPicker
           players={joinPool}
           count={1}
           title="ХТО В ЧЕРГУ?"
           confirmLabel="Я В ЧЕРЗІ"
           quickAdd
-          onClose={() => setOverlay('none')}
+          onClose={closeOverlay}
           onConfirm={async (ids) => {
             const ok = await run(() => joinQueue(ids[0]));
-            if (ok) setOverlay('none');
+            if (ok) closeOverlay();
+          }}
+        />
+      )}
+      {overlay.k === 'score' && (
+        <ScoreEntry
+          a={P(overlay.aId)}
+          b={P(overlay.bId)}
+          onCancel={closeOverlay}
+          onSubmit={async (sets) => {
+            const { gameId, aId, bId } = overlay;
+            let winnerId = '';
+            const ok = await run(async () => {
+              const r = await finishGame(gameId, sets);
+              winnerId = r.winner;
+            });
+            if (!ok) { closeOverlay(); return; }
+            const freshQueue = stateRef.current?.queue ?? [];
+            if (freshQueue.length > 0 && winnerId) {
+              setOverlay({ k: 'next', winnerId, loserId: winnerId === aId ? bId : aId, sets });
+            } else {
+              closeOverlay();
+            }
+          }}
+        />
+      )}
+      {overlay.k === 'next' && (
+        <WhoNext
+          winner={P(overlay.winnerId)}
+          loser={P(overlay.loserId)}
+          sets={overlay.sets}
+          queue={queuePlayers}
+          onLater={closeOverlay}
+          onStart={async (a, b) => {
+            const ok = await run(() => startGame(a, b));
+            if (ok) closeOverlay();
           }}
         />
       )}

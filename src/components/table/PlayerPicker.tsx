@@ -51,11 +51,11 @@ export default function PlayerPicker({
   return (
     <div className="k-scrim" role="dialog" aria-modal="true" aria-label={title}>
       <div className="k-sheet">
-        <header className="k-sheet-head">
+        <div className="k-sheet-head">
           <h2>{title}</h2>
           {count === 2 && <span className="k-sheet-hint">обери двох</span>}
           <button className="k-close" onClick={onClose} aria-label="Закрити">✕</button>
-        </header>
+        </div>
 
         <div className="k-pick-grid">
           {pool.map((p) => {
