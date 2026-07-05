@@ -602,7 +602,7 @@ export function isValidArtUrl(art: unknown): art is string {
 ```
 
 У `register/route.ts` замінити локальні `ART_MAX`/`STORAGE_PREFIX`/рядок 24 на `isValidArtUrl`:
-`const art = isValidArtUrl(h.art) ? h.art : '';` (імпорт з `@/lib/art-url`). Запустити `npm test` + `npx tsc --noEmit`.
+`const art = isValidArtUrl(h.art) ? h.art : '';` (імпорт з `@/lib/art-url`); локальні консти `ART_MAX` і `STORAGE_PREFIX` **видалити** (інакше лінт лаятиметься на unused). Запустити `npm test` + `npx tsc --noEmit`.
 
 - [ ] **Step 2: player (quick-add)**
 
@@ -709,6 +709,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 - [ ] **Step 3: Лінк у Nav**
 
 У `Nav.tsx` до базових лінків додати: `['/table', 'Стіл']` (після `'🏆 Кубок'`).
+(Лінк тимчасово вестиме на 404, поки Task 13 не створить сторінку — це ок при послідовному виконанні.)
 
 - [ ] **Step 4: Перевірка** — `npm run build` → Expected: build OK, у списку роутів усі старі шляхи (`/`, `/how`, `/players`…) без зміни URL. Відкрити dev: головна виглядає як раніше (нав/футер/прелоадер на місці).
 - [ ] **Step 5: Commit** — `refactor: move site chrome into (site) route group`
@@ -807,7 +808,7 @@ export const metadata = { title: 'Стіл — черга' };
 export default function TablePage() { return <Kiosk />; }
 ```
 
-- [ ] **Step 1:** Kiosk.tsx + page.tsx + table.css — головний екран обох станів (без оверлеїв), полінг + wake lock. Перевірка: dev, два вікна браузера — join з одного видно в іншому ≤3с.
+- [ ] **Step 1:** Kiosk.tsx + page.tsx + table.css — головний екран обох станів (без оверлеїв), полінг + wake lock. Перевірка: dev, два вікна браузера — зміна стану видна в другому ≤3с (join робити через `curl /api/table/queue/join`, бо UI-кнопка з'явиться у Step 2).
 - [ ] **Step 2:** PlayerPicker (без quick-add) + інтеграція «СТАТИ ДО СТОЛУ»/«ЗАПИСАТИСЬ У ЧЕРГУ»/✕. Перевірка: старт гри з пікера, черга оновлюється, ✕ з подвійним тапом.
 - [ ] **Step 3:** ScoreEntry + WhoNext. Перевірка повного циклу: гра → рахунок → «Переможець лишається» → нова гра; «Обидва йдуть»; «Пізніше».
 - [ ] **Step 4:** Quick-add у PlayerPicker (ім'я → селфі → стиль → миттєве створення, фонова генерація). Перевірка: гравець з'являється одразу із заглушкою; (якщо є OPENROUTER ключ у dev) арт підтягується полінгом за ~хвилину.
