@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
     s.from('tt_casual_games').select('winner').eq('status', 'done')
       .order('ended_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
+  // збій читання ≠ порожня черга: інакше правило черги тихо вимикається
+  if (queue.error || last.error)
+    return NextResponse.json({ error: (queue.error ?? last.error)!.message }, { status: 500 });
   const queueIds = (queue.data ?? []).map((q) => q.player_id as string);
   const err = startError(a, b, queueIds, (last.data?.winner as string) ?? null);
   if (err) return NextResponse.json({ error: err }, { status: 409 });
@@ -28,6 +31,9 @@ export async function POST(req: NextRequest) {
     if (error.code === '23503') return NextResponse.json({ error: 'no_such_player' }, { status: 404 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  await s.from('tt_table_queue').delete().in('player_id', [a, b]);
+  // best-effort: якщо delete впав, гравці лишаться видимі в черзі (приберуть ✕),
+  // на коректність гри це не впливає
+  const drain = await s.from('tt_table_queue').delete().in('player_id', [a, b]);
+  if (drain.error) console.warn('queue drain failed:', drain.error.message);
   return NextResponse.json({ id: data!.id });
 }
