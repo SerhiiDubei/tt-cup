@@ -1,6 +1,7 @@
 import type { SetScore } from '@/lib/tournament/types';
 import type { TableState } from './state';
 
+// дубль приватного jpost з lib/api.ts — консолідувати, якщо з'явиться третій копіювальник
 async function jpost(url: string, body: unknown, timeoutMs = 30000) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), timeoutMs);
