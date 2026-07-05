@@ -1,0 +1,32 @@
+import { describe, it, expect } from 'vitest';
+import { computeLeaderboard } from './leaderboard';
+import type { CasualGame } from './types';
+
+const g = (a: string, b: string, winner: string, endedAt: string): CasualGame => ({
+  id: endedAt, a, b, sets: [[11, 0]], winner, status: 'done', started_at: endedAt, ended_at: endedAt,
+});
+
+describe('computeLeaderboard', () => {
+  it('counts wins/losses and sorts by wins', () => {
+    const rows = computeLeaderboard([
+      g('A', 'B', 'A', '2026-07-01T10:00:00Z'),
+      g('A', 'C', 'A', '2026-07-01T11:00:00Z'),
+      g('B', 'C', 'C', '2026-07-01T12:00:00Z'),
+    ]);
+    expect(rows[0]).toMatchObject({ id: 'A', wins: 2, losses: 0 });
+    expect(rows.find((r) => r.id === 'B')).toMatchObject({ wins: 0, losses: 2 });
+  });
+  it('streak = consecutive wins in latest games, resets on loss', () => {
+    const rows = computeLeaderboard([
+      g('A', 'B', 'B', '2026-07-01T10:00:00Z'),
+      g('A', 'B', 'A', '2026-07-01T11:00:00Z'),
+      g('A', 'C', 'A', '2026-07-01T12:00:00Z'),
+    ]);
+    expect(rows.find((r) => r.id === 'A')!.streak).toBe(2);
+    expect(rows.find((r) => r.id === 'B')!.streak).toBe(0);
+  });
+  it('ignores cancelled/active games', () => {
+    const rows = computeLeaderboard([{ ...g('A', 'B', 'A', 'x'), status: 'cancelled' }]);
+    expect(rows).toEqual([]);
+  });
+});
