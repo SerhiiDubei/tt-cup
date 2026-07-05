@@ -74,6 +74,8 @@ export default function PlayerPicker({
         void stylizeSelfie(selfie, style).then((r) => setPlayerArt(id, r.url)).catch(() => {});
       }
       await onConfirm([id]); // одразу вибираємо новачка й закриваємось
+      // якщо батько проковтнув помилку і не закрив пікер — не лишаємось у «СТВОРЮЮ…»
+      setQa((q) => (q ? { ...q, busy: false } : q));
     } catch (e) {
       const code = (e as Error).message;
       const backToName = code === 'nick_taken' || code === 'name_too_long' || code === 'name_required';

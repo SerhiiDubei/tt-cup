@@ -404,7 +404,12 @@ export default function Kiosk() {
               const r = await finishGame(gameId, sets);
               winnerId = r.winner;
             });
-            if (!ok) { closeOverlay(); return; }
+            if (!ok) {
+              // тимчасовий збій → лишаємо введений рахунок для повтору;
+              // закриваємось тільки якщо гру вже закрили з іншого екрана
+              if (stateRef.current?.game?.id !== gameId) closeOverlay();
+              return;
+            }
             const freshQueue = stateRef.current?.queue ?? [];
             if (freshQueue.length > 0 && winnerId) {
               setOverlay({ k: 'next', winnerId, loserId: winnerId === aId ? bId : aId, sets });
