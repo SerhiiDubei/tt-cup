@@ -1,0 +1,176 @@
+/* ============================================================
+   KIOSK /table — «ТАБЛО»: Memphis scoreboard, finger-first.
+   Планшет ландшафт ~1180×820 (портрет теж живий). Без hover —
+   тільки :active-прес. Всі кольори з токенів globals.css.
+   ============================================================ */
+
+.kiosk{
+  position:relative;z-index:1;height:100dvh;
+  display:flex;flex-direction:column;
+  padding:clamp(12px,2vh,22px) clamp(14px,2.4vw,30px) clamp(14px,2.4vh,26px);
+  gap:clamp(10px,1.8vh,18px);overflow:hidden;
+  --sh-press:3px 3px 0 #16110D;
+}
+[data-theme="dark"] .kiosk{--sh-press:3px 3px 0 #000}
+.kiosk,.kiosk button{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.kiosk input{user-select:text;-webkit-user-select:text}
+
+/* ---------- декор (крафтові фігури, не емодзі) ---------- */
+.k-deco{position:absolute;z-index:0;pointer-events:none;opacity:.75}
+.k-deco.ring{border:3.5px solid var(--line);border-radius:50%}
+.k-deco.dotgrid{background-image:radial-gradient(var(--line) 2.6px,transparent 2.6px);background-size:20px 20px;opacity:.35}
+
+/* ---------- верхня панель ---------- */
+.k-top{position:relative;z-index:2;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.k-brand{display:inline-flex;align-items:center;gap:12px;font-family:var(--font-display);font-weight:900;
+  font-size:clamp(15px,1.8vw,21px);letter-spacing:-.01em;background:var(--paper);
+  border:3px solid var(--line);border-radius:16px;padding:12px 18px;box-shadow:var(--shadow);white-space:nowrap}
+.k-offline{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;
+  font-size:14px;background:var(--coral);color:#fff;border:3px solid var(--line);border-radius:30px;
+  padding:9px 16px;box-shadow:var(--shadow)}
+.k-offline i{width:11px;height:11px;border-radius:50%;background:#fff;animation:kBlink 1s steps(2) infinite}
+@keyframes kBlink{50%{opacity:.25}}
+.k-tabs{margin-left:auto;display:flex;gap:7px;background:var(--paper);border:3px solid var(--line);
+  border-radius:18px;padding:6px;box-shadow:var(--shadow)}
+.k-tab{min-height:64px;padding:0 clamp(16px,2.8vw,32px);border-radius:12px;font-family:var(--font-display);
+  font-weight:800;font-size:clamp(15px,1.7vw,19px);letter-spacing:.02em;transition:transform .1s var(--ease)}
+.k-tab.on{background:var(--ink);color:var(--bg)}
+.k-tab:active{transform:scale(.96)}
+
+/* ---------- тост ---------- */
+.k-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2600;max-width:92vw;
+  background:var(--ink);color:var(--bg);border:3px solid var(--line);border-radius:16px;
+  padding:16px 26px;font-family:var(--font-display);font-weight:700;font-size:clamp(15px,1.8vw,19px);
+  box-shadow:var(--shadow);animation:kDrop .35s var(--ease)}
+@keyframes kDrop{from{transform:translate(-50%,-140%)}to{transform:translate(-50%,0)}}
+
+/* ---------- сцена ---------- */
+.k-stage{position:relative;z-index:1;flex:1;min-height:0;display:grid;
+  grid-template-columns:1.55fr 1fr;gap:clamp(14px,2vw,26px);align-items:stretch}
+.k-col{position:relative;display:flex;flex-direction:column;min-height:0}
+
+/* ---------- кнопки ---------- */
+.kbtn{display:flex;align-items:center;justify-content:center;gap:14px;font-family:var(--font-display);
+  font-weight:800;letter-spacing:.01em;border:3.5px solid var(--line);border-radius:20px;
+  box-shadow:var(--shadow);background:var(--paper);color:var(--ink);touch-action:manipulation;
+  transition:transform .1s var(--ease),box-shadow .1s var(--ease),background .15s}
+.kbtn:active{transform:scale(.97) translate(2px,2px);box-shadow:var(--sh-press)}
+.kbtn:disabled{opacity:.5;pointer-events:none}
+.kbtn.xl{min-height:clamp(84px,12vh,116px);font-size:clamp(21px,2.6vw,31px);border-radius:26px;box-shadow:var(--shadow-lg)}
+.kbtn.lg{min-height:clamp(68px,9vh,84px);font-size:clamp(17px,2vw,22px)}
+.kbtn.pink{background:var(--pink);color:#fff}
+.kbtn.cyan{background:var(--cyan)}
+.kbtn.yellow{background:var(--yellow)}
+.kbtn.ghost-danger{background:transparent;border-style:dashed;border-width:3px;box-shadow:none;
+  font-weight:700;min-height:64px;font-size:clamp(15px,1.7vw,18px);color:var(--ink-soft)}
+.kbtn.ghost-danger:active{transform:scale(.97)}
+.kbtn.ghost-danger.armed{background:var(--coral);color:#fff;border-style:solid;box-shadow:var(--shadow)}
+
+/* ---------- СТІЛ ВІЛЬНИЙ ---------- */
+.k-free{flex:1;display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,3.4vh,32px);position:relative;z-index:1}
+.k-kicker{display:inline-flex;align-items:center;gap:11px;align-self:flex-start;font-family:var(--font-display);
+  font-weight:700;font-size:clamp(13px,1.5vw,16px);letter-spacing:.09em;text-transform:uppercase;
+  background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:30px}
+.k-kicker .dot{width:12px;height:12px;border-radius:50%;background:var(--lime);animation:kPulse 1.6s infinite}
+@keyframes kPulse{0%,100%{box-shadow:0 0 0 0 rgba(166,226,46,.45)}50%{box-shadow:0 0 0 10px rgba(166,226,46,0)}}
+.k-hl{font-family:var(--font-display);font-weight:900;line-height:.92;letter-spacing:-.04em;
+  font-size:clamp(52px,8.4vw,116px);position:relative}
+.k-hl .stroke{-webkit-text-stroke:3.5px var(--line);color:transparent}
+.k-hl .squig{display:block;width:clamp(150px,22vw,280px);margin-top:clamp(8px,1.6vh,16px)}
+.k-actions{display:flex;flex-direction:column;gap:14px;max-width:660px;width:100%}
+.k-lastwin{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;font-weight:700;
+  font-size:clamp(14px,1.6vw,17px);background:var(--paper);border:3px solid var(--line);border-radius:30px;
+  padding:10px 18px;box-shadow:var(--shadow)}
+.k-lastwin b{font-family:var(--font-display)}
+.k-lastwin .cup{width:22px;height:22px;flex:none}
+
+/* ---------- ГРА ЙДЕ ---------- */
+.k-live{flex:1;display:flex;flex-direction:column;gap:clamp(12px,2.4vh,24px);min-height:0;position:relative;z-index:1;justify-content:center}
+.k-live-top{display:flex;align-items:center;gap:14px}
+.k-versus{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(8px,1.8vw,24px)}
+.k-side{background:var(--paper);border:3.5px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);
+  padding:clamp(12px,2.4vh,24px) clamp(10px,1.6vw,20px);text-align:center;position:relative;min-width:0}
+.k-side.a{transform:rotate(-1.6deg)}
+.k-side.b{transform:rotate(1.4deg)}
+.k-side .corner{position:absolute;top:-14px;width:30px;height:30px;border:3px solid var(--line);border-radius:50%}
+.k-side.a .corner{left:-12px;background:var(--yellow)}
+.k-side.b .corner{right:-12px;background:var(--cyan)}
+.k-side .nick{font-family:var(--font-display);font-weight:900;font-size:clamp(19px,2.7vw,34px);
+  line-height:1.02;overflow-wrap:anywhere}
+.k-side .who{margin-top:8px;font-weight:600;font-size:clamp(12px,1.4vw,15px);color:var(--ink-soft)}
+.k-art > div{width:clamp(104px,16.5vw,190px) !important;height:auto !important;aspect-ratio:1/1;margin:0 auto clamp(8px,1.6vh,14px) !important}
+.k-vs-mid{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vh,18px)}
+.k-vs-burst{width:clamp(72px,8.6vw,106px);aspect-ratio:1;display:grid;place-items:center;background:var(--pink);
+  color:#fff;border:3.5px solid var(--line);box-shadow:var(--shadow);font-family:var(--font-display);
+  font-weight:900;font-size:clamp(24px,3.2vw,40px);border-radius:28px;transform:rotate(-8deg);
+  animation:kWiggle 5s ease-in-out infinite}
+@keyframes kWiggle{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-2deg) scale(1.04)}}
+.k-timer{font-family:var(--font-display);font-weight:800;font-variant-numeric:tabular-nums;
+  background:var(--ink);color:var(--yellow);border:3px solid var(--line);border-radius:16px;
+  padding:10px 20px;font-size:clamp(22px,2.8vw,34px);box-shadow:var(--shadow);letter-spacing:.04em}
+[data-theme="dark"] .k-timer{color:#FFC619}
+.k-live-actions{display:flex;flex-direction:column;gap:12px;max-width:760px;width:100%;margin:0 auto}
+.k-live-actions .row{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
+
+/* ---------- панель черги ---------- */
+.k-queue{background:var(--paper);border:3.5px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;transform:rotate(.5deg);position:relative;z-index:1}
+.k-queue-head{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--yellow);
+  border-bottom:3.5px solid var(--line)}
+[data-theme="dark"] .k-queue-head{color:#16110D}
+.k-queue-head h2{font-family:var(--font-display);font-weight:900;font-size:clamp(19px,2.2vw,26px);letter-spacing:.03em}
+.k-queue-count{margin-left:auto;min-width:46px;height:46px;padding:0 12px;display:grid;place-items:center;
+  background:var(--ink);color:var(--bg);border-radius:14px;font-family:var(--font-display);font-weight:900;font-size:22px}
+[data-theme="dark"] .k-queue-count{background:#16110D;color:#FBF1DD}
+.k-queue-list{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.k-qrow{display:flex;align-items:center;gap:12px;border:3px solid var(--line);border-radius:18px;
+  background:var(--bg);padding:8px 10px 8px 8px;min-height:76px;animation:kRowIn .25s var(--ease)}
+@keyframes kRowIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.k-qpos{width:52px;height:52px;flex:none;display:grid;place-items:center;border:3px solid var(--line);
+  border-radius:15px;font-family:var(--font-display);font-weight:900;font-size:23px;color:#16110D}
+.k-qname{flex:1;min-width:0;font-family:var(--font-display);font-weight:800;
+  font-size:clamp(28px,2.6vw,31px);line-height:1.04;overflow-wrap:anywhere}
+.k-qnext{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:3px;font-family:var(--font-body)}
+.k-qx{height:64px;min-width:64px;flex:none;border:3px solid var(--line);border-radius:16px;background:var(--paper);
+  display:grid;place-items:center;font-weight:900;font-size:22px;padding:0;
+  transition:transform .1s var(--ease),background .15s}
+.k-qx:active{transform:scale(.94)}
+.k-qx.armed{background:var(--coral);color:#fff;font-family:var(--font-display);font-size:16px;padding:0 14px}
+.k-queue-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  margin:14px;border:3px dashed var(--line);border-radius:20px;opacity:.75;text-align:center;padding:18px}
+.k-queue-empty p{font-family:var(--font-display);font-weight:700;font-size:clamp(15px,1.7vw,18px);max-width:240px}
+
+/* ---------- завантаження ---------- */
+.k-loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+.k-loading p{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.06em}
+
+/* ---------- заглушка табу ---------- */
+.k-stub{flex:1;display:grid;place-items:center}
+.k-stub .card{max-width:440px;text-align:center}
+
+/* ============ ПОРТРЕТ / ВУЗЬКІ ЕКРАНИ ============ */
+@media (orientation:portrait){
+  .k-stage{grid-template-columns:1fr;grid-template-rows:auto minmax(220px,1fr)}
+  .k-free{flex:0 1 auto;gap:clamp(14px,2.4vh,26px)}
+  .k-hl{font-size:clamp(52px,11vw,104px)}
+  .k-actions{max-width:none}
+  .k-art > div{width:clamp(92px,20vw,170px) !important}
+  .k-queue{transform:none}
+}
+@media (max-width:560px){
+  .k-top{gap:8px}
+  .k-brand{padding:9px 12px}
+  .k-tabs{margin-left:0;width:100%}
+  .k-tab{flex:1;min-height:56px}
+  .k-versus{gap:8px}
+  .k-vs-burst{width:56px;font-size:20px;border-radius:18px}
+  .k-timer{font-size:19px;padding:8px 14px}
+  .k-live-actions .row{grid-template-columns:1fr}
+  .k-qname{font-size:22px}
+  .k-side .nick{font-size:17px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .k-vs-burst,.k-offline i,.k-kicker .dot,.k-qrow{animation:none}
+}
