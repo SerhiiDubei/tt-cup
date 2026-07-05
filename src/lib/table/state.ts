@@ -15,6 +15,10 @@ export async function loadTableState() {
       .order('ended_at', { ascending: false }).limit(500),
     s.from('tt_table_queue').select('*').order('joined_at', { ascending: true }),
   ]);
+  // не маскуємо збій читання під «порожній стіл» — хай роут віддасть 500,
+  // а кіоск збереже останній добрий стан замість блимання пустим екраном
+  const err = players.error ?? active.error ?? done.error ?? queue.error;
+  if (err) throw new Error(err.message);
   const doneGames = (done.data as CasualGame[]) ?? [];
   return {
     game: (active.data as CasualGame | null) ?? null,
