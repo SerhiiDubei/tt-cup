@@ -35,6 +35,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ action: st
   try {
     if (action === 'start') {
       if (t.status !== 'registration') return NextResponse.json({ error: 'not_registration' }, { status: 409 });
+      // load-bearing for round 1: seed-order pairing bypasses computeStandings,
+      // so this is the ONLY casual-player filter on that path — do not remove as "redundant"
       const eligible = tournamentPlayers(players);
       if (eligible.length < 2) return NextResponse.json({ error: 'need_2_players' }, { status: 409 });
       await s.from('tt_matches').insert(toRows(generateSwissRound(eligible, [], 1) as Gen[]));
