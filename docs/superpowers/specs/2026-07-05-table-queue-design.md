@@ -93,10 +93,12 @@ alter table public.tt_players add column casual boolean not null default false;
 ```
 
 - **`tt_players.casual`**: кіоск створює гравців із `casual = true`. Турнірні
-  admin-дії (`start`, `next-round`, `to-playoff` у `/api/admin/[action]`) і
-  турнірна таблиця фільтрують `casual`-гравців (`players.filter(p => !p.casual)`) —
+  admin-дії (`start`, `next-round`, `to-playoff` у `/api/admin/[action]`;
+  `advance` гравців не читає) і турнірна таблиця фільтрують `casual`-гравців —
   інакше новий гравець з кіоска потрапив би в жеребкування наступного туру
-  швейцарки. Спільний пул (`/players`, picker кіоска) показує всіх.
+  швейцарки. Для таблиці фільтр найохайніше покласти всередину
+  `computeStandings` (нею користуються `StandingsTable` і `PlayerModal`).
+  Спільний пул (`/players`, picker кіоска) показує всіх.
 
 - Порядок черги = `joined_at asc`.
 - RLS увімкнено без політик (як у решті таблиць) — доступ тільки через server routes
@@ -115,8 +117,8 @@ alter table public.tt_players add column casual boolean not null default false;
 | `POST /queue/leave` `{playerId}` | вийти з черги | запис існує |
 | `POST /finish` `{gameId, sets}` | зберегти рахунок, `status='done'`, порахувати winner | гра активна; ≥1 сет; в кожному сеті числа 0–99 і не рівні; переможець матчу = більше виграних сетів; при рівності виграних сетів — 409 (догравайте вирішальний) |
 | `POST /cancel` `{gameId}` | `status='cancelled'` | гра активна |
-| `POST /player` `{name, style?}` | створити casual-гравця миттєво: `name` → і `name`, і `nickname`; hero-заглушка без `art`; `casual = true` | ім'я непорожнє, ≤ лімітів register; nickname зайнятий (23505) → 409 `nick_taken` |
-| `POST /player/avatar` `{playerId, art}` | записати згенерований `hero.art` гравцю | гравець існує; `art` — валідний data-URL/URL розумного розміру |
+| `POST /player` `{name, style?}` | створити casual-гравця миттєво: `name` → і `name`, і `nickname` (нормалізація як у register: пробіли → `_`); hero-заглушка без `art`; `casual = true` | ім'я непорожнє, ≤ лімітів register; nickname зайнятий (23505) → 409 `nick_taken` |
+| `POST /player/avatar` `{playerId, art}` | записати згенерований `hero.art` гравцю | гравець існує; `art` — та сама умова, що в `sanitizeHero` існуючого register: тільки URL з префіксом сторіджа `tt-avatars`, ≤ 300 символів (ендпоінт без auth — data-URL не приймаємо) |
 
 - **Чому не існуючий `/api/register`:** він жорстко відхиляє реєстрацію поза фазою
   `registration` турніру (`registration_closed` / `deadline_passed`) — а кіоск живе
