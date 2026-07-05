@@ -279,16 +279,16 @@
 .k-set-n{font-family:var(--font-display);font-weight:800;font-size:clamp(11px,1.3vw,14px);letter-spacing:.08em;
   background:var(--ink);color:var(--bg);border-radius:30px;padding:8px 12px;white-space:nowrap}
 .k-stepper{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:clamp(6px,1vw,12px)}
-.k-step{width:clamp(64px,8.6vh,76px);height:clamp(64px,8.6vh,76px);border:3px solid var(--line);border-radius:18px;
+.k-step{width:clamp(64px,6.4vw,76px);height:clamp(64px,6.4vw,76px);border:3px solid var(--line);border-radius:18px;
   background:var(--bg);font-family:var(--font-display);font-weight:900;font-size:30px;line-height:1;
   display:grid;place-items:center;box-shadow:4px 4px 0 var(--ink);touch-action:none;
   transition:transform .08s var(--ease),box-shadow .08s var(--ease)}
 [data-theme="dark"] .k-step{box-shadow:4px 4px 0 #000}
 .k-step.plus{background:var(--yellow);color:#16110D}
 .k-step:active{transform:scale(.94) translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
-.k-pts{font-family:var(--font-display);font-weight:900;font-size:clamp(38px,6.4vh,56px);text-align:center;
+.k-pts{font-family:var(--font-display);font-weight:900;font-size:clamp(30px,4.6vw,56px);text-align:center;
   font-variant-numeric:tabular-nums;min-width:2ch}
-.k-colon{font-family:var(--font-display);font-weight:900;font-size:clamp(28px,4.6vh,40px);color:var(--pink);text-align:center}
+.k-colon{font-family:var(--font-display);font-weight:900;font-size:clamp(24px,3.4vw,40px);color:var(--pink);text-align:center}
 .k-set-x{width:64px;height:64px;flex:none;border:3px dashed var(--line);border-radius:16px;background:transparent;
   font-size:20px;font-weight:900;color:var(--ink-soft);display:grid;place-items:center}
 .k-set-x:active{transform:scale(.92)}
@@ -336,6 +336,15 @@
   .k-next-score{align-items:center}
 }
 @media (max-width:560px){
+  /* телефон: даємо сторінці скролитись, панелі — природної висоти */
+  .kiosk{height:auto;min-height:100dvh;overflow:visible;padding-bottom:24px}
+  .k-stage{grid-template-rows:auto auto}
+  .k-queue{min-height:220px}
+  .k-queue-list{max-height:50dvh}
+  .k-board{grid-template-rows:auto auto}
+  .k-lb-list,.k-feed-list{max-height:60dvh}
+  .k-board-empty{min-height:140px}
+  .k-side .nick{font-size:15px}
   .k-scrim{padding:8px}
   .k-close{width:60px;height:60px}
   .k-sheet-foot{flex-direction:column;align-items:stretch;gap:10px}
@@ -350,7 +359,6 @@
   .k-timer{font-size:19px;padding:8px 14px}
   .k-live-actions .row{grid-template-columns:1fr}
   .k-qname{font-size:22px}
-  .k-side .nick{font-size:17px}
 }
 
 @media (prefers-reduced-motion:reduce){
