@@ -3,8 +3,8 @@ import type { CasualGame, LeaderRow } from './types';
 /** W-L і поточний вінстрік з done-ігор. Гравці без ігор не потрапляють у рядки. */
 export function computeLeaderboard(games: CasualGame[]): LeaderRow[] {
   const done = games
-    .filter((x) => x.status === 'done' && x.winner)
-    .sort((x, y) => (x.ended_at! < y.ended_at! ? -1 : 1)); // старі → нові
+    .filter((x) => x.status === 'done' && x.winner && x.ended_at)
+    .sort((x, y) => x.ended_at!.localeCompare(y.ended_at!)); // старі → нові (порядок з БД не гарантований)
   const rows = new Map<string, LeaderRow>();
   const row = (id: string) => {
     if (!rows.has(id)) rows.set(id, { id, wins: 0, losses: 0, streak: 0 });

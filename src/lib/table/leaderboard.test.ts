@@ -29,4 +29,14 @@ describe('computeLeaderboard', () => {
     const rows = computeLeaderboard([{ ...g('A', 'B', 'A', 'x'), status: 'cancelled' }]);
     expect(rows).toEqual([]);
   });
+  it('streaks do not depend on input order (sorts by ended_at internally)', () => {
+    // ті самі ігри, що в streak-тесті, але подані в перемішаному порядку
+    const rows = computeLeaderboard([
+      g('A', 'C', 'A', '2026-07-01T12:00:00Z'),
+      g('A', 'B', 'B', '2026-07-01T10:00:00Z'),
+      g('A', 'B', 'A', '2026-07-01T11:00:00Z'),
+    ]);
+    expect(rows.find((r) => r.id === 'A')!.streak).toBe(2);
+    expect(rows.find((r) => r.id === 'B')!.streak).toBe(0);
+  });
 });

@@ -2,8 +2,10 @@ import type { SetScore } from '@/lib/tournament/types';
 
 const MAX_POINTS = 99;
 
+export type SetsError = 'no_sets' | 'bad_points' | 'set_tied' | 'match_tied';
+
 /** null = ok, інакше snake_code помилки (той самий код летить у API 4xx). */
-export function validateSets(sets: SetScore[]): string | null {
+export function validateSets(sets: SetScore[]): SetsError | null {
   if (!Array.isArray(sets) || sets.length === 0) return 'no_sets';
   for (const s of sets) {
     if (!Array.isArray(s) || s.length !== 2) return 'bad_points';
