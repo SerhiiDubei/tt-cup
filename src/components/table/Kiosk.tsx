@@ -2,9 +2,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TableState } from '@/lib/table/state';
 import type { Player } from '@/lib/tournament/types';
-import { getTableState, cancelGame, leaveQueue } from '@/lib/table/api';
+import { getTableState, startGame, joinQueue, cancelGame, leaveQueue } from '@/lib/table/api';
 import HeroArt from '@/components/HeroArt';
+import PlayerPicker from '@/components/table/PlayerPicker';
 import { BRAND } from '@/config';
+
+type Overlay = 'none' | 'pick-start' | 'pick-queue';
 
 /* ---------- дрібні хелпери ---------- */
 
@@ -28,15 +31,18 @@ const POS_COLORS = ['var(--lime)', 'var(--cyan)', 'var(--yellow)', 'var(--pink)'
 /** Подвійний тап: перший «озброює» на 4с, другий виконує. */
 export function useArmed(ms = ARM_MS) {
   const [armed, setArmed] = useState(false);
+  const armedRef = useRef(false);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
   const fire = useCallback((fn: () => void) => {
     if (t.current) clearTimeout(t.current);
-    setArmed((a) => {
-      if (a) { fn(); return false; }
-      t.current = setTimeout(() => setArmed(false), ms);
-      return true;
-    });
+    if (armedRef.current) {
+      armedRef.current = false; setArmed(false);
+      fn();
+    } else {
+      armedRef.current = true; setArmed(true);
+      t.current = setTimeout(() => { armedRef.current = false; setArmed(false); }, ms);
+    }
   }, [ms]);
   return [armed, fire] as const;
 }
@@ -222,8 +228,24 @@ export default function Kiosk() {
 
   const offline = fails >= 2;
   const game = state?.game ?? null;
+  const [overlay, setOverlay] = useState<Overlay>('none');
 
   const onLeave = useCallback((id: string) => { void run(() => leaveQueue(id)); }, [run]);
+
+  /* --- пули для пікерів --- */
+  const queueIds = useMemo(() => (state?.queue ?? []).map((q) => q.player_id), [state?.queue]);
+  // старт: якщо черга непорожня — тільки черга (+ переможець минулої гри, як дозволяє сервер)
+  const startAllowed = useMemo(() => {
+    if (queueIds.length === 0) return undefined;
+    const ids = [...queueIds];
+    if (state?.lastWinner && !ids.includes(state.lastWinner) && playersMap.has(state.lastWinner)) ids.push(state.lastWinner);
+    return ids;
+  }, [queueIds, state?.lastWinner, playersMap]);
+  // у чергу: весь пул мінус ті, хто грає, і хто вже в черзі
+  const joinPool = useMemo(() => {
+    const busyIds = new Set([...queueIds, ...(game ? [game.a, game.b] : [])]);
+    return (state?.players ?? []).filter((p) => !busyIds.has(p.id));
+  }, [state?.players, queueIds, game]);
 
   /* ---------- рендер ---------- */
   return (
@@ -287,7 +309,7 @@ export default function Kiosk() {
               <div className="k-live-actions">
                 <div className="row">
                   <button className="kbtn xl pink" disabled={busy}>ГРА ЗАКІНЧИЛАСЬ</button>
-                  <button className="kbtn lg cyan" disabled={busy}>ЗАПИСАТИСЬ<br />У ЧЕРГУ</button>
+                  <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay('pick-queue')}>ЗАПИСАТИСЬ<br />У ЧЕРГУ</button>
                 </div>
                 <CancelGameButton busy={busy} onCancel={() => { void run(() => cancelGame(game.id)); }} />
               </div>
@@ -306,8 +328,8 @@ export default function Kiosk() {
                 <Squiggle />
               </h1>
               <div className="k-actions">
-                <button className="kbtn xl pink" disabled={busy}>СТАТИ ДО СТОЛУ</button>
-                <button className="kbtn lg cyan" disabled={busy}>ЗАПИСАТИСЬ У ЧЕРГУ</button>
+                <button className="kbtn xl pink" disabled={busy} onClick={() => setOverlay('pick-start')}>СТАТИ ДО СТОЛУ</button>
+                <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay('pick-queue')}>ЗАПИСАТИСЬ У ЧЕРГУ</button>
               </div>
               {state.lastWinner && (
                 <span className="k-lastwin">
@@ -318,6 +340,37 @@ export default function Kiosk() {
           </div>
           <QueuePanel queue={queuePlayers} busy={busy} onLeave={onLeave} />
         </section>
+      )}
+
+      {/* ---------- оверлеї ---------- */}
+      {overlay === 'pick-start' && state && (
+        <PlayerPicker
+          players={state.players}
+          allowedIds={startAllowed}
+          count={2}
+          preselected={queueIds.slice(0, 2)}
+          title="ХТО ГРАЄ?"
+          confirmLabel="РОЗПОЧАТИ ГРУ"
+          onClose={() => setOverlay('none')}
+          onConfirm={async (ids) => {
+            const ok = await run(() => startGame(ids[0], ids[1]));
+            if (ok) setOverlay('none');
+          }}
+        />
+      )}
+      {overlay === 'pick-queue' && state && (
+        <PlayerPicker
+          players={joinPool}
+          count={1}
+          title="ХТО В ЧЕРГУ?"
+          confirmLabel="Я В ЧЕРЗІ"
+          quickAdd
+          onClose={() => setOverlay('none')}
+          onConfirm={async (ids) => {
+            const ok = await run(() => joinQueue(ids[0]));
+            if (ok) setOverlay('none');
+          }}
+        />
       )}
     </div>
   );
