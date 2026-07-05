@@ -2,14 +2,29 @@
 import { useMemo, useState } from 'react';
 import type { Player } from '@/lib/tournament/types';
 import HeroArt from '@/components/HeroArt';
+import SelfieCapture from '@/components/SelfieCapture';
+import { quickAddPlayer, setPlayerArt } from '@/lib/table/api';
+import { stylizeSelfie } from '@/lib/api';
+import { SUPERPOWER_LABEL } from '@/lib/avatar';
+import { STYLES } from '@/config';
+
+const STYLE_LABEL: Record<string, string> = { attacker: 'Атакер', defender: 'Захисник', allrounder: 'Універсал', spinner: 'Спінер' };
+
+type QuickAdd = { step: 1 | 2 | 3; name: string; selfie: string | null; style: string; busy: boolean; err: string | null };
+
+const QA_ERR: Record<string, string> = {
+  nick_taken: 'Таке імʼя вже зайняте — підправ його трохи',
+  name_required: 'Введи імʼя',
+  name_too_long: 'Задовге імʼя — скороти',
+};
 
 /**
  * Повноекранний пікер гравців для кіоску. Тап = вибір; коли вибрано `count`,
- * зайвий тап заміняє найстарішого вибраного. quickAdd → картка «Я тут вперше +»
- * (потік швидкої реєстрації — див. step 4).
+ * зайвий тап заміняє найстарішого вибраного. quickAdd → картка «Я тут вперше +»:
+ * імʼя → селфі (можна пропустити) → стиль → миттєво в пул (арт домальовується фоном).
  */
 export default function PlayerPicker({
-  players, allowedIds, count, preselected = [], title, confirmLabel, onConfirm, onClose,
+  players, allowedIds, count, preselected = [], title, confirmLabel, onConfirm, onClose, quickAdd,
 }: {
   players: Player[];
   allowedIds?: string[];        // undefined = весь пул
@@ -31,6 +46,7 @@ export default function PlayerPicker({
   const [sel, setSel] = useState<string[]>(() =>
     preselected.filter((id) => pool.some((p) => p.id === id)).slice(0, count));
   const [pending, setPending] = useState(false);
+  const [qa, setQa] = useState<QuickAdd | null>(null);
 
   function toggle(id: string) {
     setSel((prev) => {
@@ -46,6 +62,25 @@ export default function PlayerPicker({
     try { await onConfirm(sel); } finally { setPending(false); }
   }
 
+  /** «Готово» швидкої реєстрації: створюємо гравця МИТТЄВО, арт — фоном. */
+  async function qaDone() {
+    if (!qa || qa.busy || !qa.name.trim()) return;
+    setQa({ ...qa, busy: true, err: null });
+    try {
+      const { id } = await quickAddPlayer(qa.name.trim(), qa.style);
+      if (qa.selfie) {
+        const { selfie, style } = qa;
+        // fire-and-forget: помилки мовчки ігноруємо — лишиться кольорова заглушка
+        void stylizeSelfie(selfie, style).then((r) => setPlayerArt(id, r.url)).catch(() => {});
+      }
+      await onConfirm([id]); // одразу вибираємо новачка й закриваємось
+    } catch (e) {
+      const code = (e as Error).message;
+      const backToName = code === 'nick_taken' || code === 'name_too_long' || code === 'name_required';
+      setQa({ ...qa, busy: false, err: QA_ERR[code] ?? 'Не вийшло — спробуй ще раз', step: backToName ? 1 : qa.step });
+    }
+  }
+
   const selNames = sel.map((id) => pool.find((p) => p.id === id)?.nickname ?? '?');
 
   return (
@@ -57,7 +92,69 @@ export default function PlayerPicker({
           <button className="k-close" onClick={onClose} aria-label="Закрити">✕</button>
         </div>
 
+        {qa !== null ? (
+          /* ---------- швидка реєстрація ---------- */
+          <div className="k-qa">
+            <span className="k-qa-step">крок {qa.step}/3 · {qa.step === 1 ? 'імʼя' : qa.step === 2 ? 'селфі' : 'стиль гри'}</span>
+
+            {qa.step === 1 && (
+              <>
+                <input
+                  className="k-qa-input" autoFocus maxLength={24} placeholder="Твоє імʼя або нік"
+                  value={qa.name} enterKeyHint="next"
+                  onChange={(e) => setQa({ ...qa, name: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && qa.name.trim()) setQa({ ...qa, step: 2, err: null }); }}
+                />
+                {qa.err && <p className="k-qa-err">{qa.err}</p>}
+                <div className="k-qa-nav">
+                  <button className="kbtn lg" onClick={() => setQa(null)}>← НАЗАД</button>
+                  <button className="kbtn xl pink" disabled={!qa.name.trim()} onClick={() => setQa({ ...qa, step: 2, err: null })}>ДАЛІ →</button>
+                </div>
+              </>
+            )}
+
+            {qa.step === 2 && (
+              <>
+                <SelfieCapture onCaptured={(d) => setQa((q) => (q ? { ...q, selfie: d } : q))} onUnavailable={() => {}} />
+                <div className="k-qa-nav">
+                  <button className="kbtn lg" onClick={() => setQa({ ...qa, step: 1 })}>← НАЗАД</button>
+                  {qa.selfie
+                    ? <button className="kbtn xl pink" onClick={() => setQa({ ...qa, step: 3 })}>ДАЛІ →</button>
+                    : <button className="kbtn lg yellow" onClick={() => setQa({ ...qa, selfie: null, step: 3 })}>ПРОПУСТИТИ</button>}
+                </div>
+                <p className="k-qa-hint">Фото піде лише на AI-стилізацію — картка-герой домалюється сама за ~хвилину.</p>
+              </>
+            )}
+
+            {qa.step === 3 && (
+              <>
+                <div className="k-styles">
+                  {STYLES.map((s) => (
+                    <button key={s} className={'k-style-btn' + (qa.style === s ? ' on' : '')} disabled={qa.busy}
+                      onClick={() => setQa({ ...qa, style: s })}>
+                      <b>{STYLE_LABEL[s]}</b><span>{SUPERPOWER_LABEL[s]}</span>
+                    </button>
+                  ))}
+                </div>
+                {qa.err && <p className="k-qa-err">{qa.err}</p>}
+                <div className="k-qa-nav">
+                  <button className="kbtn lg" disabled={qa.busy} onClick={() => setQa({ ...qa, step: 2 })}>← НАЗАД</button>
+                  <button className="kbtn xl pink" disabled={qa.busy} onClick={() => { void qaDone(); }}>{qa.busy ? 'СТВОРЮЮ…' : 'ГОТОВО'}</button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+        <>
         <div className="k-pick-grid">
+          {quickAdd && (
+            <button className="k-pick k-pick-add"
+              onClick={() => setQa({ step: 1, name: '', selfie: null, style: 'attacker', busy: false, err: null })}>
+              <span className="k-add-plus">+</span>
+              <span className="k-pick-nick">Я тут вперше</span>
+              <span className="k-pick-name">створи героя за 20 сек</span>
+            </button>
+          )}
           {pool.map((p) => {
             const idx = sel.indexOf(p.id);
             return (
@@ -72,7 +169,7 @@ export default function PlayerPicker({
               </button>
             );
           })}
-          {pool.length === 0 && (
+          {pool.length === 0 && !quickAdd && (
             <div className="k-pick-empty">
               <i className="ttball" />
               <p>Нема кого показати — всі вже за столом або в черзі</p>
@@ -92,6 +189,8 @@ export default function PlayerPicker({
             {pending ? 'СЕКУНДУ…' : confirmLabel}
           </button>
         </footer>
+        </>
+        )}
       </div>
     </div>
   );

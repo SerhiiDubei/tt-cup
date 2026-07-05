@@ -194,6 +194,35 @@
 .k-sel-line .vs{font-family:var(--font-display);font-weight:900;color:var(--pink);font-size:.85em}
 .k-confirm{flex:none;min-width:clamp(220px,32vw,380px)}
 
+/* ---------- швидка реєстрація («Я тут вперше») ---------- */
+.k-pick-add{border-style:dashed;background:var(--bg)}
+.k-add-plus{width:64px;height:64px;display:grid;place-items:center;border:3px dashed var(--line);border-radius:50%;
+  font-family:var(--font-display);font-weight:900;font-size:34px;margin:14px auto 12px;background:var(--yellow);color:#16110D}
+.k-qa{flex:1;min-height:0;overflow-y:auto;padding:clamp(16px,3vh,30px) clamp(16px,2.6vw,30px);
+  display:flex;flex-direction:column;gap:clamp(14px,2.6vh,24px);align-items:center;justify-content:center}
+.k-qa-step{font-family:var(--font-display);font-weight:700;font-size:clamp(13px,1.5vw,16px);letter-spacing:.09em;
+  text-transform:uppercase;background:var(--ink);color:var(--bg);padding:9px 18px;border-radius:30px}
+.k-qa-input{width:min(640px,100%);font-family:var(--font-display);font-weight:700;font-size:clamp(22px,3vw,32px);
+  padding:22px 26px;border:3.5px solid var(--line);border-radius:20px;background:var(--paper);color:var(--ink);
+  text-align:center;box-shadow:var(--shadow)}
+.k-qa-input:focus{outline:none;box-shadow:var(--shadow-lg)}
+.k-qa-input::placeholder{color:var(--ink-soft);opacity:.5;font-weight:500}
+.k-qa-err{font-weight:800;font-size:clamp(15px,1.8vw,19px);color:#fff;background:var(--coral);
+  border:3px solid var(--line);border-radius:14px;padding:12px 20px;box-shadow:var(--shadow)}
+.k-qa-nav{display:flex;gap:14px;width:min(640px,100%)}
+.k-qa-nav .kbtn.xl{flex:1}
+.k-qa-nav .kbtn.lg{min-width:170px}
+.k-qa-hint{font-size:clamp(12px,1.4vw,14px);color:var(--ink-soft);max-width:420px;text-align:center}
+.k-styles{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:min(680px,100%)}
+.k-style-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:clamp(88px,13vh,116px);
+  border:3.5px solid var(--line);border-radius:22px;background:var(--paper);box-shadow:var(--shadow);
+  transition:transform .1s var(--ease),background .15s}
+.k-style-btn b{font-family:var(--font-display);font-weight:800;font-size:clamp(18px,2.2vw,24px)}
+.k-style-btn span{font-size:clamp(13px,1.5vw,16px);color:var(--ink-soft)}
+.k-style-btn:active{transform:scale(.96)}
+.k-style-btn.on{background:var(--cyan);transform:rotate(-1deg);box-shadow:6px 6px 0 var(--pink)}
+.k-style-btn.on span{color:var(--ink)}
+
 /* ---------- ввід рахунку ---------- */
 .k-score-body{flex:1;min-height:0;overflow-y:auto;padding:clamp(14px,2.4vh,26px) clamp(16px,2.6vw,30px);
   display:flex;flex-direction:column;gap:clamp(12px,2vh,20px)}
