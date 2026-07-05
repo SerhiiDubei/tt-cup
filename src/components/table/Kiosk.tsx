@@ -8,6 +8,7 @@ import PlayerPicker from '@/components/table/PlayerPicker';
 import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
+import { useArmed, NickFit } from '@/components/table/bits';
 import { BRAND } from '@/config';
 
 type Overlay =
@@ -20,7 +21,6 @@ type Overlay =
 /* ---------- дрібні хелпери ---------- */
 
 const POLL_MS = 3000;
-const ARM_MS = 4000;
 
 const ERR_TEXT: Record<string, string> = {
   timeout: 'Немає звʼязку — спробуй ще раз',
@@ -35,37 +35,6 @@ function clockFrom(startedAt: string, now: number) {
 }
 
 const POS_COLORS = ['var(--lime)', 'var(--cyan)', 'var(--yellow)', 'var(--pink)', 'var(--purple)', 'var(--coral)', 'var(--blue)'];
-
-/** Подвійний тап: перший «озброює» на 4с, другий виконує. */
-export function useArmed(ms = ARM_MS) {
-  const [armed, setArmed] = useState(false);
-  const armedRef = useRef(false);
-  const t = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
-  const fire = useCallback((fn: () => void) => {
-    if (t.current) clearTimeout(t.current);
-    if (armedRef.current) {
-      armedRef.current = false; setArmed(false);
-      fn();
-    } else {
-      armedRef.current = true; setArmed(true);
-      t.current = setTimeout(() => { armedRef.current = false; setArmed(false); }, ms);
-    }
-  }, [ms]);
-  return [armed, fire] as const;
-}
-
-/** Нік з мʼякими точками переносу після «_» (+ опційне зменшення за довжиною). */
-export function NickFit({ nick, shrink = true }: { nick: string; shrink?: boolean }) {
-  const size = !shrink || nick.length <= 8 ? 1 : nick.length <= 12 ? 0.82 : 0.68;
-  return (
-    <span style={size !== 1 ? { fontSize: `${Math.round(size * 100)}%` } : undefined}>
-      {nick.split('_').map((part, i, arr) => (
-        <span key={i}>{part}{i < arr.length - 1 ? <>_<wbr /></> : null}</span>
-      ))}
-    </span>
-  );
-}
 
 const FALLBACK_PLAYER = (id: string): Player => ({
   id, name: '?', nickname: '· · ·', seed: 0,

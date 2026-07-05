@@ -14,6 +14,7 @@ const HINT: Record<SetsError, string> = {
 };
 
 /** Кнопка степера з утриманням (hold-to-repeat). Тільки pointer-події. */
+// Навмисно без keyboard-активації (onClick/onKeyDown) — це тач-кіоск, клавіатури немає.
 function StepBtn({ label, onStep, disabled, className }: {
   label: string; onStep: () => void; disabled?: boolean; className?: string;
 }) {

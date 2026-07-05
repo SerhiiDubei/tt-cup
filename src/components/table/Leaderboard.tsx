@@ -2,7 +2,7 @@
 import type { Player } from '@/lib/tournament/types';
 import type { CasualGame, LeaderRow } from '@/lib/table/types';
 import HeroArt from '@/components/HeroArt';
-import { NickFit } from '@/components/table/Kiosk';
+import { NickFit, FlameIcon } from '@/components/table/bits';
 
 const RANK_BG = ['var(--yellow)', 'var(--cyan)', 'var(--coral)'];
 
@@ -40,7 +40,7 @@ export default function Leaderboard({ rows, players, recent }: {
               const p = players.get(r.id);
               return (
                 <div className={'k-lb-row' + (i === 0 ? ' first' : '')} key={r.id}>
-                  <span className="k-lb-rank" style={{ background: RANK_BG[i] ?? 'var(--paper)' }}>{i + 1}</span>
+                  <span className={'k-lb-rank' + (RANK_BG[i] ? '' : ' plain')} style={{ background: RANK_BG[i] ?? 'var(--paper)' }}>{i + 1}</span>
                   <span className="k-lb-art">
                     <HeroArt src={p?.hero?.art} alt={nickOf(r.id)} color={p?.hero?.color || 'var(--yellow)'}
                       initial={nickOf(r.id).charAt(0).toUpperCase()} size={56} radius={14} />
@@ -48,7 +48,7 @@ export default function Leaderboard({ rows, players, recent }: {
                   <span className="k-lb-nick"><NickFit nick={nickOf(r.id)} shrink={false} /></span>
                   <span className="k-lb-wl"><b>{r.wins}</b><i>–</i>{r.losses}</span>
                   {r.streak >= 3
-                    ? <span className="k-lb-streak hot">🔥 {r.streak}</span>
+                    ? <span className="k-lb-streak hot"><FlameIcon /> {r.streak}</span>
                     : <span className="k-lb-streak">{r.streak > 0 ? `+${r.streak}` : '·'}</span>}
                 </div>
               );

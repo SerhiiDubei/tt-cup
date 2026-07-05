@@ -12,6 +12,8 @@ async function jpost(url: string, body: unknown, timeoutMs = 30000) {
     return data;
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw new Error('timeout');
+    // fetch кидає мережевий TypeError (напр. "Failed to fetch") — теж показуємо як обрив звʼязку
+    if (e instanceof TypeError) throw new Error('timeout');
     throw e;
   } finally { clearTimeout(id); }
 }

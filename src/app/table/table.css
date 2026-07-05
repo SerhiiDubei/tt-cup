@@ -158,6 +158,7 @@
 .k-lb-row.first{background:rgba(166,226,46,.22)}
 .k-lb-rank{width:52px;height:52px;display:grid;place-items:center;border:3px solid var(--line);border-radius:15px;
   font-family:var(--font-display);font-weight:900;font-size:23px;color:#16110D}
+.k-lb-rank.plain{color:var(--ink)}
 .k-lb-art > div{margin:0 !important}
 .k-lb-nick{min-width:0;font-family:var(--font-display);font-weight:800;font-size:clamp(20px,2.2vw,27px);
   line-height:1.05;overflow-wrap:break-word}
@@ -166,6 +167,7 @@
 .k-lb-streak{font-family:var(--font-display);font-weight:800;font-size:15px;border:2.5px solid var(--line);
   border-radius:30px;padding:7px 12px;background:var(--paper);min-width:52px;text-align:center;white-space:nowrap}
 .k-lb-streak.hot{background:var(--coral);color:#fff}
+.k-lb-streak svg{vertical-align:-3px}
 .k-feed-list{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
 .k-feed-item{border:3px solid var(--line);border-radius:18px;background:var(--bg);padding:12px 16px}
 .k-feed-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -186,10 +188,6 @@
 /* ---------- завантаження ---------- */
 .k-loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
 .k-loading p{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.06em}
-
-/* ---------- заглушка табу ---------- */
-.k-stub{flex:1;display:grid;place-items:center}
-.k-stub .card{max-width:440px;text-align:center}
 
 /* ---------- повноекранні оверлеї (пікер / рахунок / хто далі) ---------- */
 .k-scrim{position:fixed;inset:0;z-index:2000;background:rgba(13,15,13,.55);backdrop-filter:blur(4px);
@@ -310,6 +308,7 @@
 .k-next-loser{font-weight:700;font-size:clamp(14px,1.7vw,18px);color:var(--ink-soft)}
 .k-next-sets{display:flex;gap:8px;flex-wrap:wrap}
 .k-next-sets .chip{font-size:15px;padding:8px 13px}
+.k-next-sets .chip.win{color:#16110D}
 .k-next-actions{display:flex;flex-direction:column;gap:14px}
 
 /* ============ ПОРТРЕТ / ВУЗЬКІ ЕКРАНИ ============ */
