@@ -184,7 +184,6 @@
 .k-lb-row{display:grid;grid-template-columns:48px 56px minmax(0,1fr) auto auto;align-items:center;
   gap:clamp(10px,1.6vw,20px);border:3px solid var(--line);border-radius:18px;background:var(--bg);
   padding:10px clamp(14px,1.8vw,22px) 10px 10px;min-height:80px}
-.k-lb-row.first{background:rgba(166,226,46,.22)}
 .k-lb-rank{width:48px;height:48px;display:grid;place-items:center;border:3px solid var(--line);border-radius:14px;
   font-family:var(--font-display);font-weight:900;font-size:22px;color:#16110D}
 .k-lb-rank.plain{color:var(--ink)}
@@ -207,7 +206,83 @@
 .k-lb-rate .num svg{flex:none}
 .k-lb-rate .lg{font-family:var(--font-body);font-weight:700;font-size:11px;letter-spacing:.15em;
   text-transform:uppercase;color:var(--ink-soft)}
-.k-lb-row.first .k-lb-rate .num{font-size:clamp(27px,2.9vw,38px)}
+.k-podstack.p1 .k-lb-rate .num{font-size:clamp(30px,3.2vw,42px)}
+/* ---------- пігулки періоду всередині «ТОП СТОЛУ» ---------- */
+.k-lb-bar{display:flex;align-items:center;gap:12px;padding:clamp(10px,1.4vh,14px) clamp(14px,1.8vw,22px) 0;flex:none}
+.k-period{display:flex;gap:5px;background:var(--bg);border:3px solid var(--line);border-radius:30px;padding:5px}
+.k-pill{min-height:48px;padding:0 clamp(16px,2.2vw,26px);border-radius:30px;font-family:var(--font-display);
+  font-weight:800;font-size:clamp(13px,1.5vw,16px);letter-spacing:.02em;white-space:nowrap;color:var(--ink);
+  transition:transform .1s var(--ease),background .15s}
+.k-pill:active{transform:scale(.95)}
+.k-pill.on{background:var(--ink);color:var(--bg)}
+
+/* ---------- подіум топ-3 (п'єдестал: №1 центр-вище, №2 зліва, №3 справа) ---------- */
+.k-podium{display:grid;grid-template-columns:1fr 1.22fr 1fr;gap:clamp(10px,1.6vw,18px);
+  align-items:end;padding-top:26px;margin-bottom:clamp(4px,.8vh,10px)}
+.k-podstack{display:flex;flex-direction:column;min-width:0}
+.k-pod{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--bg);border:3px solid var(--line);border-radius:22px 22px 0 0;border-bottom:none;
+  padding:clamp(12px,1.8vh,18px) 12px clamp(10px,1.4vh,14px);text-align:center;min-width:0}
+.k-podstack.p1 .k-pod{background:var(--paper);border-width:3.5px;padding-top:clamp(16px,2.4vh,24px)}
+.k-pod-crown{position:absolute;top:-26px;left:50%;transform:translateX(-50%) rotate(-7deg);width:58px;z-index:2;
+  pointer-events:none;filter:drop-shadow(3px 3px 0 var(--line))}
+.k-pod-art > div{margin:0 auto !important}
+.k-pod-nick{width:100%;min-width:0;font-family:var(--font-display);font-weight:900;
+  font-size:clamp(15px,1.8vw,21px);line-height:1.15}
+.k-podstack.p1 .k-pod-nick{font-size:clamp(18px,2.2vw,26px)}
+.k-pod-hero .k-lb-rate{align-items:center;min-width:0}
+.k-pod-meta{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.k-pod-meta .k-lb-wl{font-size:clamp(14px,1.6vw,18px)}
+.k-pod-titles{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;max-width:100%}
+.k-pedestal{position:relative;display:grid;place-items:center;border:3.5px solid var(--line);border-radius:0 0 14px 14px;
+  height:56px;background-image:repeating-linear-gradient(-45deg,rgba(22,17,13,.14) 0 9px,transparent 9px 20px)}
+.k-pedestal b{font-family:var(--font-display);font-weight:900;font-size:26px;color:#16110D;
+  background:var(--paper);border:3px solid var(--line);border-radius:12px;min-width:42px;height:42px;
+  display:grid;place-items:center;transform:rotate(-4deg)}
+[data-theme="dark"] .k-pedestal b{color:var(--ink);background:var(--bg)}
+.k-podstack.p1 .k-pedestal{height:82px}
+.k-podstack.p1 .k-pedestal b{min-width:52px;height:52px;font-size:34px;transform:rotate(3deg)}
+.k-podstack.p3 .k-pedestal{height:40px}
+
+/* ---------- стрілки руху за добу ---------- */
+.k-move{display:inline-flex;align-items:center;gap:3px;flex:none;font-family:var(--font-display);
+  font-weight:800;font-size:12.5px;font-variant-numeric:tabular-nums;border:2px solid var(--line);
+  border-radius:20px;padding:2px 8px;line-height:1.4;white-space:nowrap}
+.k-move svg{width:11px;height:11px;flex:none}
+.k-move.up{background:var(--lime);color:#16110D}
+.k-move.up svg{color:#16110D}
+.k-move.down{background:var(--coral);color:#fff}
+.k-move.down svg{color:#fff;transform:rotate(180deg)}
+.k-move.zero{width:10px;height:10px;padding:0;border-radius:50%;background:var(--ink-soft);opacity:.45;border-width:0}
+
+/* ---------- форма: 5 квадратних крапок, W — лайм, L — контур ---------- */
+.k-form{display:inline-flex;align-items:center;gap:4px;flex:none}
+.k-form i{width:11px;height:11px;border:2px solid var(--line);border-radius:3.5px;background:transparent}
+.k-form i.w{background:var(--lime)}
+.k-form i.l{opacity:.55}
+
+/* ---------- титули: SVG-іконка + коротка назва (лейбл зникає на телефоні) ---------- */
+.k-title{display:inline-flex;align-items:center;gap:5px;flex:none;border:2px solid var(--line);
+  border-radius:20px;padding:2px 9px 2px 5px;background:var(--paper);white-space:nowrap}
+.k-title svg{flex:none}
+.k-title em{font-style:normal;font-family:var(--font-body);font-weight:800;font-size:10px;
+  letter-spacing:.08em;color:var(--ink)}
+
+/* ---------- набрані очки тижня (герой тижневого режиму) ---------- */
+.k-gain{display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-display);
+  font-weight:900;font-size:clamp(18px,2vw,24px);line-height:1;font-variant-numeric:tabular-nums;
+  border:3px solid var(--line);border-radius:14px;padding:7px 13px;white-space:nowrap}
+.k-gain.plus{background:var(--lime);color:#16110D}
+.k-gain.minus{background:transparent;border-style:dashed;color:var(--coral);opacity:.9}
+.k-gain.zero{background:var(--paper);color:var(--ink-soft)}
+.k-gain.big{font-size:clamp(24px,2.8vw,34px);padding:9px 17px;border-radius:16px}
+.k-lb-rate.week{gap:5px}
+
+/* нік-блок ряду: верхній рядок нік+стрілка, нижній — форма+титули */
+.k-lb-main{min-width:0;display:flex;flex-direction:column;gap:5px}
+.k-lb-nickline{display:flex;align-items:center;gap:9px;min-width:0}
+.k-lb-subline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
 .k-feed-list{flex:1;min-height:0;overflow-y:auto;padding:clamp(14px,1.8vh,20px) clamp(14px,1.8vw,22px) 28px;
   display:flex;flex-direction:column;gap:clamp(10px,1.4vh,14px)}
 .k-feed-item{border:3px solid var(--line);border-radius:18px;background:var(--bg);
@@ -453,21 +528,46 @@
   .k-hl .stroke{-webkit-text-stroke-width:2.5px}
   /* лідерборд: рейтинг лишається героєм, W-L і серія — другий підрядок */
   .k-lb-row{grid-template-columns:32px 40px minmax(0,1fr) auto;
-    grid-template-areas:"rank art nick rate" "rank art stats rate";
+    grid-template-areas:"rank art main rate" "rank art stats rate";
     column-gap:8px;row-gap:4px;min-height:62px;padding:7px 9px 7px 7px}
   .k-lb-rank{grid-area:rank;width:32px;height:32px;font-size:14px;border-radius:9px;border-width:2.5px}
   .k-lb-art{grid-area:art}
   .k-lb-art > div{width:40px !important;height:40px !important;border-radius:10px !important}
-  .k-lb-nick{grid-area:nick;font-size:15.5px;align-self:end}
+  .k-lb-main{grid-area:main;gap:3px}
+  .k-lb-nick{font-size:15.5px}
+  .k-lb-nickline{gap:6px}
+  .k-lb-subline{gap:6px}
   .k-lb-stats{grid-area:stats;align-self:start;gap:7px}
   .k-lb-wl{font-size:13.5px}
   .k-lb-streak{font-size:11.5px;padding:2px 7px;min-width:38px;border-width:2px}
   .k-lb-streak svg{width:12px;height:12px}
   .k-lb-rate{grid-area:rate;min-width:0;gap:2px}
   .k-lb-rate .num{font-size:18px;gap:4px}
-  .k-lb-row.first .k-lb-rate .num{font-size:20px}
   .k-lb-rate .num svg{width:16px;height:16px}
   .k-lb-rate .lg{font-size:8.5px;letter-spacing:.1em}
+  /* шоу-пакет: компактні чипи, титули — тільки іконки */
+  .k-move{font-size:10.5px;padding:1px 6px}
+  .k-move svg{width:9px;height:9px}
+  .k-form i{width:9px;height:9px;border-radius:3px}
+  .k-title{padding:2px 5px}
+  .k-title em{display:none}
+  .k-gain{font-size:16px;padding:5px 9px;border-width:2.5px}
+  .k-gain.big{font-size:20px;padding:6px 12px}
+  /* подіум: №1 на всю ширину, №2 і №3 поруч під ним */
+  .k-podium{grid-template-columns:1fr 1fr;gap:10px;padding-top:24px}
+  .k-podstack.p1{grid-column:1/-1;grid-row:1}
+  .k-podstack.p2{grid-row:2}
+  .k-podstack.p3{grid-row:2}
+  .k-pedestal{height:34px}
+  .k-podstack.p1 .k-pedestal{height:44px}
+  .k-podstack.p3 .k-pedestal{height:34px}
+  .k-pedestal b{min-width:32px;height:32px;font-size:17px;border-width:2.5px;border-radius:9px}
+  .k-podstack.p1 .k-pedestal b{min-width:38px;height:38px;font-size:21px}
+  .k-pod-crown{width:44px;top:-20px}
+  .k-pill{min-height:44px;padding:0 14px}
+  .k-lb-bar{padding-top:10px}
+  .k-period{flex:1}
+  .k-pill{flex:1}
   .k-side-rate .k-rate-chip{font-size:12px;padding:3px 9px}
   .k-scrim{padding:8px}
   .k-close{width:52px;height:52px}

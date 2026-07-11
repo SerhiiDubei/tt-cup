@@ -267,7 +267,7 @@ export default function Kiosk() {
           <p>ЗАВАНТАЖУЮ СТІЛ…</p>
         </div>
       ) : tab === 'board' ? (
-        <Leaderboard rows={state.leaderboard} players={playersMap} recent={state.recent} />
+        <Leaderboard rows={state.leaderboard} weekly={state.weekly} players={playersMap} recent={state.recent} />
       ) : game ? (
         /* ================= ГРА ЙДЕ ================= */
         <div className="k-stage">

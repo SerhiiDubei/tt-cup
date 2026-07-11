@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { leagueOf } from '@/lib/table/elo';
+import type { Title } from '@/lib/table/types';
 
 const ARM_MS = 4000;
 
@@ -109,6 +110,114 @@ export function RatingChip({ rating, className }: { rating: number; className?: 
       <LeagueMedal rating={rating} size={15} />
       <b>{rating}</b>
     </span>
+  );
+}
+
+/**
+ * Стрілка руху в топі за добу: ↑N лайм / ↓N корал / нейтральна крапка при 0 /
+ * нічого при null (гравця ще не було в топі добу тому). Крафтова SVG-стрілка.
+ */
+export function MoveChip({ move }: { move: number | null }) {
+  if (move == null) return null;
+  if (move === 0) return <span className="k-move zero" aria-label="позиція без змін" />;
+  const up = move > 0;
+  return (
+    <span className={'k-move ' + (up ? 'up' : 'down')}
+      aria-label={up ? `піднявся на ${move}` : `опустився на ${-move}`}>
+      <svg viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M6 1.2 11 7.4 H8.2 V10.8 H3.8 V7.4 H1 Z" fill="currentColor"
+          stroke="currentColor" strokeWidth=".8" strokeLinejoin="round" />
+      </svg>
+      {Math.abs(move)}
+    </span>
+  );
+}
+
+/** Форма: до 5 останніх ігор, найновіша ПЕРША. W — заливка лаймом, L — контур. */
+export function FormDots({ form }: { form: string }) {
+  if (!form) return null;
+  return (
+    <span className="k-form" aria-label={`форма (нові зліва): ${form}`}>
+      {form.slice(0, 5).split('').map((c, i) => (
+        <i key={i} className={c === 'W' ? 'w' : 'l'} />
+      ))}
+    </span>
+  );
+}
+
+export const TITLE_LABEL: Record<Title, string> = {
+  giant: 'ГІГАНТ-ВБИВЦЯ',
+  comeback: 'КАМБЕК',
+  marathon: 'МАРАФОНЕЦЬ',
+  lightning: 'БЛИСКАВКА',
+};
+
+/**
+ * Крафтові SVG-іконки титулів (жодних емодзі), різні силуети:
+ * giant — сокира (коралове лезо + руків'я), comeback — петля-стрілка вгору,
+ * marathon — крилатий кросівок, lightning — блискавка в жовтому колі.
+ */
+export function TitleIcon({ title, size = 18 }: { title: Title; size?: number }) {
+  const common = {
+    width: size, height: size, viewBox: '0 0 24 24',
+    fill: 'none', 'aria-hidden': true as const,
+  };
+  switch (title) {
+    case 'giant':
+      return (
+        <svg {...common}>
+          <path d="M11.6 7.4 4.6 21" stroke="var(--line)" strokeWidth="2.8" strokeLinecap="round" />
+          <path d="M9.2 3.1c3.8-1.6 8.3-.8 11.3 2.2-1.6 4.2-5.1 7-9.5 7.5C9.6 9.8 8.8 6.5 9.2 3.1Z"
+            fill="var(--coral)" stroke="var(--line)" strokeWidth="1.9" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'comeback':
+      return (
+        <svg {...common}>
+          <path d="M3.8 5.6c-1 6.4 2.1 13.6 8.2 13.6 4.6 0 7.5-3.4 8-8.8"
+            stroke="var(--purple)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M20 2.6 16.4 8.8h7.2Z" fill="var(--purple)" stroke="var(--line)"
+            strokeWidth="1.6" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'marathon':
+      return (
+        <svg {...common}>
+          <path d="M12.6 9.4c2.2-3.4 5.6-5 9-4.8-1.8 2.6-4.6 4.4-7.8 4.9Z"
+            fill="var(--cyan)" stroke="var(--line)" strokeWidth="1.7" strokeLinejoin="round" />
+          <path d="M3.2 16.8c3.6-.8 5.8-3 7-6l3.4 2.6c3.2.2 6 1.2 7.2 3.2l-.4 2.4H3.4Z"
+            fill="var(--yellow)" stroke="var(--line)" strokeWidth="1.9" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'lightning':
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="10" fill="var(--yellow)" stroke="var(--line)" strokeWidth="1.9" />
+          <path d="M13.6 4.6 7.2 13.2h3.4L9.4 19.6l6.4-8.8h-3.4Z"
+            fill="var(--pink)" stroke="var(--line)" strokeWidth="1.6" strokeLinejoin="round" />
+        </svg>
+      );
+  }
+}
+
+/** Титул як чип: іконка + коротка назва (лейбл ховається на телефоні через CSS). */
+export function TitleChip({ title, size = 18 }: { title: Title; size?: number }) {
+  return (
+    <span className={'k-title t-' + title} title={TITLE_LABEL[title]}>
+      <TitleIcon title={title} size={size} />
+      <em>{TITLE_LABEL[title]}</em>
+    </span>
+  );
+}
+
+/** Корона №1 подіуму — жовта, з рожевим самоцвітом (крафт, не емодзі). */
+export function PodiumCrown({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 84 56" fill="none" aria-hidden="true">
+      <path d="M6 46 3 12l21 15L42 5l18 22 21-15-3 34Z"
+        fill="var(--yellow)" stroke="var(--line)" strokeWidth="5" strokeLinejoin="round" />
+      <circle cx="42" cy="34" r="5.5" fill="var(--pink)" stroke="var(--line)" strokeWidth="3" />
+    </svg>
   );
 }
 
