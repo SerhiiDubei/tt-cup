@@ -261,27 +261,75 @@
   display:grid;place-items:center;transition:transform .1s var(--ease),box-shadow .1s var(--ease)}
 .k-close:active{transform:scale(.94) translate(2px,2px);box-shadow:var(--sh-press)}
 
-/* пікер гравців */
-.k-pick-grid{flex:1;min-height:0;overflow-y:auto;padding:clamp(14px,2.2vh,24px) clamp(16px,2.4vw,28px);
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(140px,15vw,180px),1fr));gap:14px;align-content:start}
-.k-pick{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;
-  background:var(--paper);border:3px solid var(--line);border-radius:22px;box-shadow:var(--shadow);
-  padding:14px 10px 16px;min-height:64px;transition:transform .1s var(--ease),box-shadow .1s var(--ease)}
+/* ---------- пікер гравців ----------
+   Геометрію картки диктує ТІЛЬКИ CSS (--pick-art), а не інлайн-розмір HeroArt:
+   арт фіксований, нік/імʼя — рівно один рядок (shrink→«…»), чип притиснутий
+   до низу. Тому кожна картка в сітці ідентична й ніколи не ріжеться. */
+.k-pick-tools{display:flex;align-items:stretch;gap:14px;
+  padding:clamp(12px,1.8vh,18px) clamp(16px,2.4vw,28px) 4px}
+.k-search{position:relative;flex:1 1 300px;min-width:0;display:flex}
+.k-search-ico{position:absolute;left:22px;top:50%;transform:translateY(-50%);width:24px;height:24px;
+  color:var(--ink-soft);pointer-events:none}
+.k-search-input{width:100%;min-height:72px;border:3px solid var(--line);border-radius:40px;
+  background:var(--paper);color:var(--ink);box-shadow:var(--shadow);appearance:none;
+  font-family:var(--font-body);font-weight:700;font-size:clamp(16px,1.9vw,20px);
+  padding:0 78px 0 58px}
+.k-search-input::placeholder{color:var(--ink-soft);opacity:.55;font-weight:500}
+.k-search-input:focus{outline:none;box-shadow:var(--shadow-lg)}
+.k-search-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:56px;height:56px;
+  border:3px solid var(--line);border-radius:50%;background:var(--yellow);color:#16110D;
+  font-size:20px;font-weight:900;display:grid;place-items:center;
+  transition:transform .1s var(--ease)}
+.k-search-x:active{transform:translateY(-50%) scale(.9)}
+.k-newbie{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:72px;
+  flex:none;padding:0 clamp(18px,2.4vw,32px);border:3px solid var(--line);border-radius:40px;
+  background:var(--yellow);color:#16110D;box-shadow:var(--shadow);white-space:nowrap;
+  font-family:var(--font-display);font-weight:800;font-size:clamp(15px,1.8vw,19px);letter-spacing:.02em;
+  transition:transform .1s var(--ease),box-shadow .1s var(--ease)}
+.k-newbie:active{transform:scale(.96) translate(2px,2px);box-shadow:var(--sh-press)}
+.k-newbie i{width:34px;height:34px;flex:none;display:grid;place-items:center;font-style:normal;
+  border:3px solid var(--line);border-radius:50%;background:var(--paper);color:var(--ink);
+  font-size:21px;font-weight:900;line-height:1}
+.k-pick-grid{--pick-art:clamp(128px,15vw,190px);
+  flex:1;min-height:0;overflow-y:auto;padding:clamp(14px,2.2vh,24px) clamp(16px,2.4vw,28px);
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(200px,22vw,264px),1fr));
+  gap:clamp(12px,1.6vw,18px);align-content:start}
+/* УВАГА: жодних height/min-height на .k-pick! <button> не росте за вміст
+   повз задану висоту — рядок сітки замерзає, а flex-діти всередині
+   стискаються і текст «зникає» (саме так картки різались раніше).
+   Однаковість гарантують фіксовані блоки рядків нижче. */
+.k-pick{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:var(--paper);border:3px solid var(--line);border-radius:24px;box-shadow:var(--shadow);
+  padding:clamp(14px,2vh,20px) 14px clamp(14px,2vh,18px);
+  transition:transform .1s var(--ease),box-shadow .1s var(--ease)}
 .k-pick:active{transform:scale(.96)}
 .k-pick.on{background:var(--ink);color:var(--bg);box-shadow:6px 6px 0 var(--pink);transform:rotate(-1.2deg)}
 .k-pick.on .k-pick-name{color:var(--bg);opacity:.7}
-.k-pick-slot{position:absolute;top:-12px;right:-10px;width:44px;height:44px;display:grid;place-items:center;
+.k-pick-slot{position:absolute;top:-14px;right:-12px;width:50px;height:50px;display:grid;place-items:center;
   background:var(--pink);color:#fff;border:3px solid var(--line);border-radius:50%;
-  font-family:var(--font-display);font-weight:900;font-size:19px;z-index:2}
-.k-pick-art > div{margin:0 auto 8px !important}
-.k-pick-nick{font-family:var(--font-display);font-weight:800;font-size:clamp(16px,1.8vw,20px);
-  line-height:1.05;text-align:center;overflow-wrap:anywhere}
-.k-pick-name{font-size:12.5px;font-weight:600;color:var(--ink-soft);text-align:center;overflow-wrap:anywhere}
-.k-pick-rate{margin-top:7px;font-size:12.5px;padding:3px 9px;gap:5px}
+  font-family:var(--font-display);font-weight:900;font-size:21px;z-index:2}
+.k-pick-art{width:100%;flex:none}
+.k-pick-art > div{width:var(--pick-art) !important;height:var(--pick-art) !important;
+  margin:0 auto clamp(8px,1.4vh,14px) !important}
+/* нік і імʼя — рядки ФІКСОВАНОЇ висоти (NickFit лише зменшує кегль усередині),
+   тому кожна картка має ідентичну висоту і ряди сітки завжди рівні */
+.k-pick-nick{width:100%;min-width:0;height:30px;flex:none;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-display);font-weight:800;
+  font-size:clamp(17px,2vw,22px);line-height:1.2;text-align:center}
+.k-pick-name{width:100%;min-width:0;height:20px;flex:none;line-height:20px;
+  font-size:clamp(12.5px,1.4vw,14.5px);font-weight:600;color:var(--ink-soft);text-align:center}
+.k-pick-rate{margin-top:5px;flex:none;font-size:14px;gap:6px;padding:5px 12px}
 .k-pick.on .k-pick-rate{--line:var(--bg);border-color:var(--bg);color:var(--bg);background:transparent}
-.k-pick-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:14px;
-  border:3px dashed var(--line);border-radius:22px;padding:38px 20px;opacity:.8;text-align:center}
+.k-pick-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:16px;
+  border:3px dashed var(--line);border-radius:22px;padding:38px 20px;opacity:.85;text-align:center}
 .k-pick-empty p{font-family:var(--font-display);font-weight:700;max-width:340px}
+/* пошук нічого не знайшов */
+.k-pick-none{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:14px;
+  border:3px dashed var(--line);border-radius:24px;background:var(--paper);
+  padding:clamp(28px,5vh,46px) 20px;text-align:center}
+.k-pick-none b{font-family:var(--font-display);font-weight:900;font-size:clamp(20px,2.6vw,28px)}
+.k-pick-none p{font-weight:600;color:var(--ink-soft);max-width:440px}
+.k-pick-none .kbtn,.k-pick-empty .kbtn{min-width:min(320px,100%)}
 
 .k-sheet-foot{display:flex;align-items:center;gap:18px;padding:clamp(12px,2vh,20px) clamp(16px,2.4vw,28px);
   background:var(--paper);border-top:3.5px solid var(--line)}
@@ -291,10 +339,7 @@
 .k-sel-line .vs{font-family:var(--font-display);font-weight:900;color:var(--pink);font-size:.85em}
 .k-confirm{flex:none;min-width:clamp(220px,32vw,380px)}
 
-/* ---------- швидка реєстрація («Я тут вперше») ---------- */
-.k-pick-add{border-style:dashed;background:var(--bg)}
-.k-add-plus{width:64px;height:64px;display:grid;place-items:center;border:3px dashed var(--line);border-radius:50%;
-  font-family:var(--font-display);font-weight:900;font-size:34px;margin:14px auto 12px;background:var(--yellow);color:#16110D}
+/* ---------- швидка реєстрація («Я ТУТ НОВИЙ») ---------- */
 .k-qa{flex:1;min-height:0;overflow-y:auto;padding:clamp(16px,3vh,30px) clamp(16px,2.6vw,30px);
   display:flex;flex-direction:column;gap:clamp(14px,2.6vh,24px);align-items:center;justify-content:center}
 .k-qa-step{font-family:var(--font-display);font-weight:700;font-size:clamp(13px,1.5vw,16px);letter-spacing:.09em;
@@ -427,7 +472,20 @@
   .k-close{width:60px;height:60px}
   .k-sheet-foot{flex-direction:column;align-items:stretch;gap:10px}
   .k-confirm{min-width:0}
-  .k-pick-grid{grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px}
+  .k-pick-tools{flex-direction:column;gap:10px;padding-bottom:2px}
+  .k-search{flex-basis:auto}
+  .k-search-ico{left:18px;width:20px;height:20px}
+  .k-search-input{min-height:60px;padding:0 64px 0 48px}
+  .k-search-x{width:46px;height:46px;right:7px;font-size:17px}
+  .k-newbie{min-height:60px}
+  .k-newbie i{width:28px;height:28px;font-size:17px}
+  .k-pick-grid{--pick-art:clamp(88px,25vw,120px);
+    grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px}
+  .k-pick{border-radius:20px;padding:12px 10px 12px;gap:3px}
+  .k-pick-slot{width:40px;height:40px;top:-10px;right:-8px;font-size:16px}
+  .k-pick-nick{font-size:15px;height:22px}
+  .k-pick-name{font-size:11.5px;height:17px;line-height:17px}
+  .k-pick-rate{font-size:12px;padding:3px 9px;gap:5px}
   .k-top{gap:8px}
   .k-brand{padding:9px 12px}
   .k-tabs{margin-left:0;width:100%}

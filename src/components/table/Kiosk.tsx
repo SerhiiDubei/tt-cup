@@ -343,6 +343,7 @@ export default function Kiosk() {
           preselected={queueIds.slice(0, 2)}
           title="ХТО ГРАЄ?"
           confirmLabel="РОЗПОЧАТИ ГРУ"
+          quickAdd
           onClose={closeOverlay}
           onConfirm={async (ids) => {
             const ok = await run(() => startGame(ids[0], ids[1]));

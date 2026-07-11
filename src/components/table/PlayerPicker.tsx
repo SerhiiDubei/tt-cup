@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import type { Player } from '@/lib/tournament/types';
 import HeroArt from '@/components/HeroArt';
 import SelfieCapture from '@/components/SelfieCapture';
-import { RatingChip } from '@/components/table/bits';
+import { NickFit, RatingChip } from '@/components/table/bits';
 import { quickAddPlayer, setPlayerArt } from '@/lib/table/api';
 import { stylizeSelfie } from '@/lib/api';
 import { SUPERPOWER_LABEL } from '@/lib/avatar';
@@ -21,8 +21,10 @@ const QA_ERR: Record<string, string> = {
 
 /**
  * Повноекранний пікер гравців для кіоску. Тап = вибір; коли вибрано `count`,
- * зайвий тап заміняє найстарішого вибраного. quickAdd → картка «Я тут вперше +»:
+ * зайвий тап заміняє найстарішого вибраного. quickAdd (діє лише коли пул не
+ * обмежений чергою) → велика кнопка «Я ТУТ НОВИЙ» у шапці:
  * імʼя → селфі (можна пропустити) → стиль → миттєво в пул (арт домальовується фоном).
+ * Пул >6 гравців → пошук по ніку/імені, як каса самообслуговування.
  */
 export default function PlayerPicker({
   players, allowedIds, count, preselected = [], title, confirmLabel, onConfirm, onClose, quickAdd,
@@ -37,17 +39,41 @@ export default function PlayerPicker({
   onClose: () => void;
   quickAdd?: boolean;
 }) {
+  // локальні «тіні» щойно створених гравців — картка зʼявляється миттєво,
+  // ще до того, як полінг батька підтягне свіжий пул
+  const [extras, setExtras] = useState<Player[]>([]);
+
   const pool = useMemo(() => {
-    if (!allowedIds) return players;
+    if (!allowedIds) {
+      const seen = new Set(players.map((p) => p.id));
+      return [...players, ...extras.filter((e) => !seen.has(e.id))];
+    }
     const byId = new Map(players.map((p) => [p.id, p] as const));
     // порядок allowedIds (порядок черги) важливіший за порядок пулу
     return allowedIds.map((id) => byId.get(id)).filter((p): p is Player => !!p);
-  }, [players, allowedIds]);
+  }, [players, allowedIds, extras]);
+
+  // швидка реєстрація доступна тільки коли пул НЕ обмежений чергою
+  const canQuickAdd = !!quickAdd && !allowedIds;
+  const showSearch = pool.length > 6;
 
   const [sel, setSel] = useState<string[]>(() =>
     preselected.filter((id) => pool.some((p) => p.id === id)).slice(0, count));
   const [pending, setPending] = useState(false);
   const [qa, setQa] = useState<QuickAdd | null>(null);
+  const [q, setQ] = useState('');
+
+  // живий фільтр: нік АБО імʼя, без регістру (українські літери теж)
+  const shown = useMemo(() => {
+    const needle = q.trim().toLocaleLowerCase('uk');
+    if (!needle) return pool;
+    return pool.filter((p) =>
+      (p.nickname ?? '').toLocaleLowerCase('uk').includes(needle) ||
+      (p.name ?? '').toLocaleLowerCase('uk').includes(needle));
+  }, [pool, q]);
+
+  const openQa = (name = '') =>
+    setQa({ step: 1, name, selfie: null, style: 'attacker', busy: false, err: null });
 
   function toggle(id: string) {
     setSel((prev) => {
@@ -68,15 +94,28 @@ export default function PlayerPicker({
     if (!qa || qa.busy || !qa.name.trim()) return;
     setQa({ ...qa, busy: true, err: null });
     try {
-      const { id } = await quickAddPlayer(qa.name.trim(), qa.style);
+      const nick = qa.name.trim();
+      const { id } = await quickAddPlayer(nick, qa.style);
       if (qa.selfie) {
         const { selfie, style } = qa;
         // fire-and-forget: помилки мовчки ігноруємо — лишиться кольорова заглушка
         void stylizeSelfie(selfie, style).then((r) => setPlayerArt(id, r.url)).catch(() => {});
       }
-      await onConfirm([id]); // одразу вибираємо новачка й закриваємось
-      // якщо батько проковтнув помилку і не закрив пікер — не лишаємось у «СТВОРЮЮ…»
-      setQa((q) => (q ? { ...q, busy: false } : q));
+      if (count === 1) {
+        await onConfirm([id]); // одразу вибираємо новачка й закриваємось
+        // якщо батько проковтнув помилку і не закрив пікер — не лишаємось у «СТВОРЮЮ…»
+        setQa((prev) => (prev ? { ...prev, busy: false } : prev));
+      } else {
+        // пікер на двох: новачок одразу в сітці й у виборі — лишилось тапнути суперника
+        setExtras((prev) => [...prev, {
+          id, name: nick, nickname: nick, seed: 0,
+          hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: qa.style },
+        }]);
+        setSel((prev) => (prev.includes(id) ? prev
+          : prev.length < count ? [...prev, id] : [...prev.slice(1), id]));
+        setQ('');
+        setQa(null);
+      }
     } catch (e) {
       const code = (e as Error).message;
       const backToName = code === 'nick_taken' || code === 'name_too_long' || code === 'name_required';
@@ -149,34 +188,64 @@ export default function PlayerPicker({
           </div>
         ) : (
         <>
+        {(showSearch || canQuickAdd) && (
+          <div className="k-pick-tools">
+            {showSearch && (
+              <div className="k-search">
+                <svg className="k-search-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="10.5" cy="10.5" r="6.3" stroke="currentColor" strokeWidth="3" />
+                  <path d="m15.6 15.6 5.2 5.2" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
+                </svg>
+                {/* без autoFocus: клавіатура планшета не має вискакувати сама */}
+                <input className="k-search-input" type="text" enterKeyHint="search" autoComplete="off"
+                  placeholder="Знайди себе: нік або імʼя" aria-label="Пошук гравця"
+                  value={q} onChange={(e) => setQ(e.target.value)} />
+                {q !== '' && (
+                  <button className="k-search-x" onClick={() => setQ('')} aria-label="Очистити пошук">✕</button>
+                )}
+              </div>
+            )}
+            {canQuickAdd && (
+              <button className="k-newbie" onClick={() => openQa()}>
+                <i aria-hidden="true">+</i>Я ТУТ НОВИЙ
+              </button>
+            )}
+          </div>
+        )}
         <div className="k-pick-grid">
-          {quickAdd && (
-            <button className="k-pick k-pick-add"
-              onClick={() => setQa({ step: 1, name: '', selfie: null, style: 'attacker', busy: false, err: null })}>
-              <span className="k-add-plus">+</span>
-              <span className="k-pick-nick">Я тут вперше</span>
-              <span className="k-pick-name">створи героя за 20 сек</span>
-            </button>
-          )}
-          {pool.map((p) => {
+          {shown.map((p) => {
             const idx = sel.indexOf(p.id);
             return (
               <button key={p.id} className={'k-pick' + (idx >= 0 ? ' on' : '')} onClick={() => toggle(p.id)}>
                 {idx >= 0 && <span className="k-pick-slot">{count === 2 ? idx + 1 : '✓'}</span>}
                 <div className="k-pick-art">
                   <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
-                    initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={110} radius={18} />
+                    initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={150} radius={20} />
                 </div>
-                <span className="k-pick-nick">{p.nickname || p.name}</span>
-                <span className="k-pick-name">{p.name}</span>
+                <span className="k-pick-nick"><NickFit nick={p.nickname || p.name} oneLine /></span>
+                <span className="k-pick-name k-oneline">{p.name}</span>
                 {p.rating != null && <RatingChip rating={p.rating} className="k-pick-rate" />}
               </button>
             );
           })}
-          {pool.length === 0 && !quickAdd && (
+          {pool.length === 0 && (
             <div className="k-pick-empty">
               <i className="ttball" />
-              <p>Нема кого показати — всі вже за столом або в черзі</p>
+              <p>{canQuickAdd
+                ? 'Поки нікого — будь тут перш(-а/-ий)!'
+                : 'Нема кого показати — всі вже за столом або в черзі'}</p>
+              {canQuickAdd && (
+                <button className="kbtn lg yellow" onClick={() => openQa()}>Я ТУТ НОВИЙ</button>
+              )}
+            </div>
+          )}
+          {pool.length > 0 && shown.length === 0 && (
+            <div className="k-pick-none">
+              <b>Нікого не знайшли</b>
+              <p>«{q.trim()}» нема серед гравців{canQuickAdd ? ' — створи нового героя' : ''}</p>
+              {canQuickAdd && (
+                <button className="kbtn lg pink" onClick={() => openQa(q.trim())}>СТВОРИТИ НОВОГО</button>
+              )}
             </div>
           )}
         </div>
