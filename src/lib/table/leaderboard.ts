@@ -1,13 +1,19 @@
 import type { CasualGame, LeaderRow } from './types';
 
-/** W-L і поточний вінстрік з done-ігор. Гравці без ігор не потрапляють у рядки. */
-export function computeLeaderboard(games: CasualGame[]): LeaderRow[] {
+/**
+ * W-L і поточний вінстрік з done-ігор + рейтинг з `ratings` (Elo живе в tt_players).
+ * Сорт: рейтинг ↓, потім перемоги ↓, поразки ↑. Гравці без ігор не потрапляють у рядки.
+ */
+export function computeLeaderboard(
+  games: CasualGame[],
+  ratings: Map<string, number> = new Map()
+): LeaderRow[] {
   const done = games
     .filter((x) => x.status === 'done' && x.winner && x.ended_at)
     .sort((x, y) => x.ended_at!.localeCompare(y.ended_at!)); // старі → нові (порядок з БД не гарантований)
   const rows = new Map<string, LeaderRow>();
   const row = (id: string) => {
-    if (!rows.has(id)) rows.set(id, { id, wins: 0, losses: 0, streak: 0 });
+    if (!rows.has(id)) rows.set(id, { id, rating: ratings.get(id) ?? 1000, wins: 0, losses: 0, streak: 0 });
     return rows.get(id)!;
   };
   for (const gm of done) {
@@ -15,5 +21,7 @@ export function computeLeaderboard(games: CasualGame[]): LeaderRow[] {
     w.wins++; w.streak++;
     l.losses++; l.streak = 0;
   }
-  return [...rows.values()].sort((x, y) => y.wins - x.wins || x.losses - y.losses);
+  return [...rows.values()].sort(
+    (x, y) => y.rating - x.rating || y.wins - x.wins || x.losses - y.losses
+  );
 }

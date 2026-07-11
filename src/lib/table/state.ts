@@ -20,11 +20,13 @@ export async function loadTableState() {
   const err = players.error ?? active.error ?? done.error ?? queue.error;
   if (err) throw new Error(err.message);
   const doneGames = (done.data as CasualGame[]) ?? [];
+  const allPlayers = (players.data as (Player & { token?: string; rating?: number })[]) ?? [];
+  const ratings = new Map(allPlayers.map((p) => [p.id, p.rating ?? 1000]));
   return {
     game: (active.data as CasualGame | null) ?? null,
     queue: (queue.data as QueueEntry[]) ?? [],
-    players: publicPlayers((players.data as (Player & { token?: string })[]) ?? []),
-    leaderboard: computeLeaderboard(doneGames),
+    players: publicPlayers(allPlayers),
+    leaderboard: computeLeaderboard(doneGames, ratings),
     recent: doneGames.slice(0, RECENT_LIMIT),
     lastWinner: doneGames[0]?.winner ?? null,
   };

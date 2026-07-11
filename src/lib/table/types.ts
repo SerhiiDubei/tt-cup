@@ -5,6 +5,8 @@ export type CasualGame = {
   sets: SetScore[]; winner: string | null;
   status: 'active' | 'done' | 'cancelled';
   started_at: string; ended_at: string | null;
+  /** Elo-дельти цієї гри (+d переможцю, −d лузеру); NULL у ігор до запуску рейтингу */
+  delta_a?: number | null; delta_b?: number | null;
 };
 export type QueueEntry = { id: string; player_id: string; joined_at: string };
-export type LeaderRow = { id: string; wins: number; losses: number; streak: number };
+export type LeaderRow = { id: string; rating: number; wins: number; losses: number; streak: number };

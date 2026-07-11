@@ -29,6 +29,17 @@ describe('computeLeaderboard', () => {
     const rows = computeLeaderboard([{ ...g('A', 'B', 'A', 'x'), status: 'cancelled' }]);
     expect(rows).toEqual([]);
   });
+  it('sorts by rating first when ratings differ', () => {
+    const rows = computeLeaderboard(
+      [
+        g('A', 'B', 'A', '2026-07-01T10:00:00Z'),
+        g('A', 'B', 'A', '2026-07-01T11:00:00Z'), // A 2-0, B 0-2
+      ],
+      new Map([['A', 1010], ['B', 1120]]) // але рейтинг B вищий
+    );
+    expect(rows.map((r) => r.id)).toEqual(['B', 'A']);
+    expect(rows[0].rating).toBe(1120);
+  });
   it('streaks do not depend on input order (sorts by ended_at internally)', () => {
     // ті самі ігри, що в streak-тесті, але подані в перемішаному порядку
     const rows = computeLeaderboard([
