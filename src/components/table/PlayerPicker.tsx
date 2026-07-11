@@ -128,9 +128,31 @@ export default function PlayerPicker({
   return (
     <div className="k-scrim" role="dialog" aria-modal="true" aria-label={title}>
       <div className="k-sheet">
+        {/* компактна шапка: заголовок + пошук + «Я ТУТ НОВИЙ» в одному рядку —
+            бари не з'їдають місце під картки */}
         <div className="k-sheet-head">
           <h2>{title}</h2>
-          {count === 2 && <span className="k-sheet-hint">обери двох</span>}
+          {qa === null && count === 2 && <span className="k-sheet-hint">обери двох</span>}
+          {qa === null && showSearch && (
+            <div className="k-search">
+              <svg className="k-search-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="10.5" cy="10.5" r="6.3" stroke="currentColor" strokeWidth="3" />
+                <path d="m15.6 15.6 5.2 5.2" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
+              </svg>
+              {/* без autoFocus: клавіатура планшета не має вискакувати сама */}
+              <input className="k-search-input" type="text" enterKeyHint="search" autoComplete="off"
+                placeholder="Знайди себе: нік або імʼя" aria-label="Пошук гравця"
+                value={q} onChange={(e) => setQ(e.target.value)} />
+              {q !== '' && (
+                <button className="k-search-x" onClick={() => setQ('')} aria-label="Очистити пошук">✕</button>
+              )}
+            </div>
+          )}
+          {qa === null && canQuickAdd && (
+            <button className="k-newbie" onClick={() => openQa()}>
+              <i aria-hidden="true">+</i>Я ТУТ НОВИЙ
+            </button>
+          )}
           <button className="k-close" onClick={onClose} aria-label="Закрити">✕</button>
         </div>
 
@@ -188,30 +210,6 @@ export default function PlayerPicker({
           </div>
         ) : (
         <>
-        {(showSearch || canQuickAdd) && (
-          <div className="k-pick-tools">
-            {showSearch && (
-              <div className="k-search">
-                <svg className="k-search-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="10.5" cy="10.5" r="6.3" stroke="currentColor" strokeWidth="3" />
-                  <path d="m15.6 15.6 5.2 5.2" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
-                </svg>
-                {/* без autoFocus: клавіатура планшета не має вискакувати сама */}
-                <input className="k-search-input" type="text" enterKeyHint="search" autoComplete="off"
-                  placeholder="Знайди себе: нік або імʼя" aria-label="Пошук гравця"
-                  value={q} onChange={(e) => setQ(e.target.value)} />
-                {q !== '' && (
-                  <button className="k-search-x" onClick={() => setQ('')} aria-label="Очистити пошук">✕</button>
-                )}
-              </div>
-            )}
-            {canQuickAdd && (
-              <button className="k-newbie" onClick={() => openQa()}>
-                <i aria-hidden="true">+</i>Я ТУТ НОВИЙ
-              </button>
-            )}
-          </div>
-        )}
         <div className="k-pick-grid">
           {shown.map((p) => {
             const idx = sel.indexOf(p.id);
@@ -258,7 +256,7 @@ export default function PlayerPicker({
                 : <i>тапни двох гравців…</i>)
               : (sel.length === 1 ? <b>{selNames[0]}</b> : <i>тапни себе у списку…</i>)}
           </div>
-          <button className="kbtn xl pink k-confirm" disabled={pending || sel.length !== count} onClick={() => { void confirm(); }}>
+          <button className="kbtn lg pink k-confirm" disabled={pending || sel.length !== count} onClick={() => { void confirm(); }}>
             {pending ? 'СЕКУНДУ…' : confirmLabel}
           </button>
         </footer>
