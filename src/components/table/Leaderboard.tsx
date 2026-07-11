@@ -45,10 +45,10 @@ export default function Leaderboard({ rows, players, recent }: {
                     <HeroArt src={p?.hero?.art} alt={nickOf(r.id)} color={p?.hero?.color || 'var(--yellow)'}
                       initial={nickOf(r.id).charAt(0).toUpperCase()} size={56} radius={14} />
                   </span>
-                  <span className="k-lb-nick"><NickFit nick={nickOf(r.id)} shrink={false} /></span>
+                  <span className="k-lb-nick"><NickFit nick={nickOf(r.id)} oneLine /></span>
                   <span className="k-lb-wl"><b>{r.wins}</b><i>–</i>{r.losses}</span>
                   {r.streak >= 3
-                    ? <span className="k-lb-streak hot"><FlameIcon /> {r.streak}</span>
+                    ? <span className="k-lb-streak hot"><FlameIcon />{r.streak}</span>
                     : <span className="k-lb-streak">{r.streak > 0 ? `+${r.streak}` : '·'}</span>}
                 </div>
               );
@@ -68,8 +68,9 @@ export default function Leaderboard({ rows, players, recent }: {
               return (
                 <div className="k-feed-item" key={g.id}>
                   <div className="k-feed-line">
-                    <span className={'k-feed-nick' + (winnerA ? ' won' : '')}><NickFit nick={nickOf(g.a)} shrink={false} /></span>
-                    <span className={'k-feed-nick second' + (!winnerA ? ' won' : '')}><NickFit nick={nickOf(g.b)} shrink={false} /></span>
+                    <span className={'k-feed-nick' + (winnerA ? ' won' : '')}><NickFit nick={nickOf(g.a)} oneLine shrink={false} /></span>
+                    <span className="k-feed-dash">–</span>
+                    <span className={'k-feed-nick' + (!winnerA ? ' won' : '')}><NickFit nick={nickOf(g.b)} oneLine shrink={false} /></span>
                   </div>
                   <div className="k-feed-meta">
                     <span className="k-feed-sets">

@@ -22,11 +22,19 @@ export function useArmed(ms = ARM_MS) {
   return [armed, fire] as const;
 }
 
-/** Нік з мʼякими точками переносу після «_» (+ опційне зменшення за довжиною). */
-export function NickFit({ nick, shrink = true }: { nick: string; shrink?: boolean }) {
-  const size = !shrink || nick.length <= 8 ? 1 : nick.length <= 12 ? 0.82 : 0.68;
+/**
+ * Нік з мʼякими точками переносу після «_» (+ опційне зменшення за довжиною).
+ * `oneLine` — жорстко один рядок: спершу зменшення шрифту, далі «…» (жодних
+ * переносів посеред слова — лікує колапс колонки в лідерборді на телефоні).
+ */
+export function NickFit({ nick, shrink = true, oneLine = false }: {
+  nick: string; shrink?: boolean; oneLine?: boolean;
+}) {
+  const size = !shrink || nick.length <= 7 ? 1 : nick.length <= 11 ? 0.84 : 0.68;
+  const style = size !== 1 ? { fontSize: `${Math.round(size * 100)}%` } : undefined;
+  if (oneLine) return <span className="k-oneline" style={style}>{nick}</span>;
   return (
-    <span style={size !== 1 ? { fontSize: `${Math.round(size * 100)}%` } : undefined}>
+    <span style={style}>
       {nick.split('_').map((part, i, arr) => (
         <span key={i}>{part}{i < arr.length - 1 ? <>_<wbr /></> : null}</span>
       ))}

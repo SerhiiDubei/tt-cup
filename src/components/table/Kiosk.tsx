@@ -69,7 +69,7 @@ function QueueRow({ p, i, busy, onLeave }: { p: Player; i: number; busy: boolean
       <span className="k-qpos" style={{ background: POS_COLORS[i % POS_COLORS.length] }}>{i + 1}</span>
       <span className="k-qname">
         {i === 0 && <span className="k-qnext">наступний</span>}
-        <NickFit nick={p.nickname || p.name} shrink={false} />
+        <NickFit nick={p.nickname || p.name} oneLine />
       </span>
       <button className={'k-qx' + (armed ? ' armed' : '')} disabled={busy}
         aria-label={`Прибрати ${p.nickname} з черги`}
@@ -245,7 +245,9 @@ export default function Kiosk() {
     <div className="kiosk">
       {/* декор */}
       <span className="k-deco ring" style={{ width: 190, height: 190, top: -70, right: '30%', background: 'var(--yellow)', opacity: .55 }} />
-      <span className="k-deco ring" style={{ width: 64, height: 64, bottom: 44, left: '46%', background: 'var(--cyan)' }} />
+      {/* бірюзове кільце живе вгорі, у зазорі між колонками — щоб ніколи
+          не лягало на інтерактивні кнопки внизу сцени */}
+      <span className="k-deco ring" style={{ width: 64, height: 64, top: 118, left: '57%', background: 'var(--cyan)' }} />
       <span className="k-deco dotgrid" style={{ width: 180, height: 120, bottom: -14, left: -20, transform: 'rotate(-8deg)' }} />
 
       <div className="k-top">

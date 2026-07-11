@@ -11,6 +11,12 @@
   gap:clamp(10px,1.8vh,18px);overflow:hidden;
   --sh-press:3px 3px 0 #16110D;
 }
+/* великі екрани: кіоск — зібране табло по центру, а не розмазане в кут */
+@media (min-width:1400px){
+  .kiosk{max-width:1360px;width:100%;margin-inline:auto}
+}
+/* службовий один рядок для ніків: спершу shrink, далі «…», ніколи — перенос */
+.k-oneline{display:block;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 [data-theme="dark"] .kiosk{--sh-press:3px 3px 0 #000}
 .kiosk,.kiosk button{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .kiosk input{user-select:text;-webkit-user-select:text}
@@ -61,7 +67,7 @@
 .kbtn.pink{background:var(--pink);color:#fff}
 .kbtn.cyan{background:var(--cyan)}
 .kbtn.yellow{background:var(--yellow)}
-.kbtn.ghost-danger{background:transparent;border-style:dashed;border-width:3px;box-shadow:none;
+.kbtn.ghost-danger{background:var(--bg);border-style:dashed;border-width:3px;box-shadow:none;
   font-weight:700;min-height:64px;font-size:clamp(15px,1.7vw,18px);color:var(--ink-soft)}
 .kbtn.ghost-danger:active{transform:scale(.97)}
 .kbtn.ghost-danger.armed{background:var(--coral);color:#fff;border-style:solid;box-shadow:var(--shadow)}
@@ -122,14 +128,16 @@
 .k-queue-count{margin-left:auto;min-width:46px;height:46px;padding:0 12px;display:grid;place-items:center;
   background:var(--ink);color:var(--bg);border-radius:14px;font-family:var(--font-display);font-weight:900;font-size:22px}
 [data-theme="dark"] .k-queue-count{background:#16110D;color:#FBF1DD}
-.k-queue-list{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.k-queue-list{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 26px;display:flex;flex-direction:column;gap:10px}
+.k-queue::after{content:"";position:absolute;left:4px;right:4px;bottom:0;height:26px;pointer-events:none;
+  background:linear-gradient(to bottom,transparent,var(--paper))}
 .k-qrow{display:flex;align-items:center;gap:12px;border:3px solid var(--line);border-radius:18px;
   background:var(--bg);padding:8px 10px 8px 8px;min-height:76px;animation:kRowIn .25s var(--ease)}
 @keyframes kRowIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .k-qpos{width:52px;height:52px;flex:none;display:grid;place-items:center;border:3px solid var(--line);
   border-radius:15px;font-family:var(--font-display);font-weight:900;font-size:23px;color:#16110D}
 .k-qname{flex:1;min-width:0;font-family:var(--font-display);font-weight:800;
-  font-size:clamp(28px,2.6vw,31px);line-height:1.04;overflow-wrap:anywhere}
+  font-size:clamp(28px,2.6vw,31px);line-height:1.04}
 .k-qnext{display:block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   color:var(--ink-soft);margin-bottom:3px;font-family:var(--font-body)}
 .k-qx{height:64px;min-width:64px;flex:none;border:3px solid var(--line);border-radius:16px;background:var(--paper);
@@ -144,37 +152,46 @@
 /* ---------- лідерборд ---------- */
 .k-board{position:relative;z-index:1;flex:1;min-height:0;display:grid;grid-template-columns:1.5fr 1fr;
   gap:clamp(14px,2vw,26px)}
-.k-lb,.k-feed{background:var(--paper);border:3.5px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);
+/* padding:0 гасить глобальний landing-стиль section{padding:clamp(70px,…)} —
+   саме він давав «мертву смугу» знизу і зрізаний рядок посередині панелі */
+.k-lb,.k-feed{position:relative;padding:0;background:var(--paper);border:3.5px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);
   display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.k-lb{transform:rotate(-.4deg)} .k-feed{transform:rotate(.5deg)}
+.k-lb{transform:rotate(-.3deg)} .k-feed{transform:rotate(.3deg)}
+/* мʼякий фейд знизу: зрізаний рядок читається як «є ще — гортай», а не як баг */
+.k-lb::after,.k-feed::after{content:"";position:absolute;left:4px;right:4px;bottom:0;height:26px;
+  pointer-events:none;background:linear-gradient(to bottom,transparent,var(--paper))}
 .k-panel-head{display:flex;align-items:baseline;gap:14px;padding:14px 22px;border-bottom:3.5px solid var(--line)}
 .k-panel-head.yellow{background:var(--yellow);color:#16110D}
 .k-panel-head.cyan{background:var(--cyan);color:#16110D}
 .k-panel-head h2{font-family:var(--font-display);font-weight:900;font-size:clamp(19px,2.2vw,26px);letter-spacing:.03em}
 .k-panel-sub{font-weight:600;font-size:clamp(11px,1.3vw,14px);opacity:.75}
-.k-lb-list{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-.k-lb-row{display:grid;grid-template-columns:52px 62px 1fr auto auto;align-items:center;gap:14px;
-  border:3px solid var(--line);border-radius:18px;background:var(--bg);padding:8px 14px 8px 8px;min-height:76px}
+.k-lb-list{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 26px;display:flex;flex-direction:column;gap:10px}
+.k-lb-row{display:grid;grid-template-columns:48px 56px minmax(0,1fr) auto auto;align-items:center;
+  gap:clamp(9px,1.2vw,14px);border:3px solid var(--line);border-radius:18px;background:var(--bg);
+  padding:8px 14px 8px 8px;min-height:76px}
 .k-lb-row.first{background:rgba(166,226,46,.22)}
-.k-lb-rank{width:52px;height:52px;display:grid;place-items:center;border:3px solid var(--line);border-radius:15px;
-  font-family:var(--font-display);font-weight:900;font-size:23px;color:#16110D}
+.k-lb-rank{width:48px;height:48px;display:grid;place-items:center;border:3px solid var(--line);border-radius:14px;
+  font-family:var(--font-display);font-weight:900;font-size:22px;color:#16110D}
 .k-lb-rank.plain{color:var(--ink)}
 .k-lb-art > div{margin:0 !important}
-.k-lb-nick{min-width:0;font-family:var(--font-display);font-weight:800;font-size:clamp(20px,2.2vw,27px);
-  line-height:1.05;overflow-wrap:break-word}
-.k-lb-wl{font-family:var(--font-display);font-weight:800;font-size:clamp(19px,2.1vw,25px);font-variant-numeric:tabular-nums;white-space:nowrap}
+.k-lb-nick{min-width:0;font-family:var(--font-display);font-weight:800;font-size:clamp(18px,2.1vw,26px);
+  line-height:1.1}
+.k-lb-wl{font-family:var(--font-display);font-weight:800;font-size:clamp(17px,1.8vw,22px);font-variant-numeric:tabular-nums;white-space:nowrap}
 .k-lb-wl b{color:var(--pink)} .k-lb-wl i{font-style:normal;opacity:.4;padding:0 2px}
-.k-lb-streak{font-family:var(--font-display);font-weight:800;font-size:15px;border:2.5px solid var(--line);
-  border-radius:30px;padding:7px 12px;background:var(--paper);min-width:52px;text-align:center;white-space:nowrap}
+/* стрік — завжди горизонтальна пігулка: іконка й число поруч, без деформацій */
+.k-lb-streak{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:none;
+  font-family:var(--font-display);font-weight:800;font-size:15px;border:2.5px solid var(--line);
+  border-radius:30px;padding:7px 12px;background:var(--paper);min-width:52px;white-space:nowrap}
 .k-lb-streak.hot{background:var(--coral);color:#fff}
-.k-lb-streak svg{vertical-align:-3px}
-.k-feed-list{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.k-lb-streak svg{flex:none;width:16px;height:16px}
+.k-feed-list{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 26px;display:flex;flex-direction:column;gap:10px}
 .k-feed-item{border:3px solid var(--line);border-radius:18px;background:var(--bg);padding:12px 16px}
-.k-feed-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.k-feed-nick{font-family:var(--font-display);font-weight:700;font-size:clamp(15px,1.7vw,19px);min-width:0;overflow-wrap:break-word}
+.k-feed-line{display:flex;align-items:center;gap:9px;min-width:0}
+.k-feed-dash{opacity:.35;flex:none}
+.k-feed-nick{display:inline-flex;align-items:center;min-width:0;flex:0 1 auto;
+  font-family:var(--font-display);font-weight:700;font-size:clamp(15px,1.7vw,19px)}
 .k-feed-nick.won{color:var(--pink)}
-.k-feed-nick.won::after{content:"★";font-size:.75em;margin-left:5px;vertical-align:super}
-.k-feed-nick.second::before{content:"–";opacity:.35;margin-right:10px}
+.k-feed-nick.won::before{content:"★";font-size:.7em;margin-right:4px;flex:none;transform:translateY(-1px)}
 .k-feed-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
 .k-feed-sets{display:flex;gap:6px;flex-wrap:wrap}
 .k-feed-sets em{font-style:normal;font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;
@@ -337,6 +354,7 @@
 @media (max-width:560px){
   /* телефон: даємо сторінці скролитись, панелі — природної висоти */
   .kiosk{height:auto;min-height:100dvh;overflow:visible;padding-bottom:24px}
+  .k-deco{display:none}
   .k-stage{grid-template-rows:auto auto}
   .k-queue{min-height:220px}
   .k-queue-list{max-height:50dvh}
@@ -344,6 +362,18 @@
   .k-lb-list,.k-feed-list{max-height:60dvh}
   .k-board-empty{min-height:140px}
   .k-side .nick{font-size:15px}
+  /* обведений заголовок: тонша обводка + вільніший інтерліньяж, щоб рядки не злипались */
+  .k-hl{font-size:clamp(44px,12.5vw,58px);line-height:1.06;letter-spacing:0}
+  .k-hl .stroke{-webkit-text-stroke-width:2.5px}
+  /* лідерборд: компактні одно-рядкові ряди без переносу ніка */
+  .k-lb-row{grid-template-columns:32px 40px minmax(0,1fr) auto auto;
+    column-gap:8px;min-height:56px;padding:7px 9px 7px 7px}
+  .k-lb-rank{width:32px;height:32px;font-size:14px;border-radius:9px;border-width:2.5px}
+  .k-lb-art > div{width:40px !important;height:40px !important;border-radius:10px !important}
+  .k-lb-nick{font-size:15.5px}
+  .k-lb-wl{font-size:13.5px}
+  .k-lb-streak{font-size:11.5px;padding:2px 7px;min-width:38px;border-width:2px}
+  .k-lb-streak svg{width:12px;height:12px}
   .k-scrim{padding:8px}
   .k-close{width:60px;height:60px}
   .k-sheet-foot{flex-direction:column;align-items:stretch;gap:10px}
