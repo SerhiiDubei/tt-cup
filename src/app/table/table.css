@@ -125,6 +125,19 @@
 .k-live-actions{display:flex;flex-direction:column;gap:12px;max-width:760px;width:100%;margin:0 auto}
 .k-live-actions .row{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
 
+/* ---------- табло шансів по Elo (під VS-картками) ---------- */
+.k-odds{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:clamp(10px,1.4vw,16px);
+  max-width:760px;width:100%;margin:0 auto}
+.k-odds b{font-family:var(--font-display);font-weight:900;font-size:clamp(16px,1.9vw,22px);
+  font-variant-numeric:tabular-nums;border:3px solid var(--line);border-radius:14px;
+  padding:7px 12px;box-shadow:var(--shadow);white-space:nowrap}
+.k-odds b.pa{background:var(--pink);color:#fff}
+.k-odds b.pb{background:var(--cyan);color:#16110D}
+.k-odds-bar{position:relative;height:30px;border:3px solid var(--line);border-radius:30px;
+  background:var(--cyan);overflow:hidden;box-shadow:var(--shadow)}
+.k-odds-bar i{position:absolute;inset:0 auto 0 0;background:var(--pink);
+  border-right:3px solid var(--line);transition:width .6s var(--ease)}
+
 /* ---------- панель черги ---------- */
 .k-queue{background:var(--paper);border:3.5px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);
   display:flex;flex-direction:column;min-height:0;overflow:hidden;transform:rotate(.5deg);position:relative;z-index:1}
@@ -299,6 +312,12 @@
   font-variant-numeric:tabular-nums;border:2.5px solid var(--line);border-radius:20px;padding:4px 10px;white-space:nowrap}
 .k-feed-delta.win{background:var(--lime);color:#16110D}
 .k-feed-delta.lose{border-style:dashed;color:var(--ink-soft);font-weight:700;opacity:.85}
+/* «АПСЕТ» — рожевий зубчастий вибух: андердог виграв (дельта переможця > 16) */
+.k-upset{position:relative;flex:none;display:inline-grid;place-items:center;width:64px;height:26px;
+  transform:rotate(-4deg)}
+.k-upset svg{position:absolute;inset:-4px -2px;width:calc(100% + 4px);height:calc(100% + 8px)}
+.k-upset em{position:relative;z-index:1;font-style:normal;font-family:var(--font-display);
+  font-weight:900;font-size:10.5px;letter-spacing:.06em;color:#fff}
 /* планшет+: гра в один рядок — пара зліва, сети й час справа */
 @media (min-width:880px){
   .k-feed-item{display:flex;align-items:center;justify-content:space-between;gap:20px}
@@ -489,6 +508,51 @@
 .k-next-sets .chip.win{color:#16110D}
 .k-next-actions{display:flex;flex-direction:column;gap:14px}
 
+/* ---------- церемонія після гри (конфеті → «+Δ» → медаль нової ліги) ---------- */
+.k-cere{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;overflow:hidden;
+  background:rgba(13,15,13,.82);backdrop-filter:blur(6px);animation:kFade .25s;
+  touch-action:manipulation;cursor:pointer;user-select:none;-webkit-user-select:none}
+.k-cere-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+  gap:clamp(10px,2vh,20px);text-align:center;padding:24px;max-width:min(92vw,720px);
+  animation:kCerePop .5s var(--ease)}
+@keyframes kCerePop{from{transform:scale(.82);opacity:0}60%{transform:scale(1.04)}to{transform:none;opacity:1}}
+.k-cere-kicker{font-family:var(--font-display);font-weight:800;font-size:clamp(13px,1.6vw,17px);
+  letter-spacing:.22em;background:var(--yellow);color:#16110D;border:3px solid #16110D;
+  border-radius:30px;padding:9px 20px;transform:rotate(-2deg);box-shadow:5px 5px 0 #000}
+.k-cere-art > div{margin:0 auto !important;box-shadow:8px 8px 0 #000}
+.k-cere-nick{max-width:100%;font-family:var(--font-display);font-weight:900;color:#FBF1DD;
+  font-size:clamp(38px,7.2vw,84px);line-height:1;letter-spacing:-.02em}
+.k-cere-delta{font-family:var(--font-display);font-weight:900;line-height:1;
+  font-size:clamp(64px,12vh,120px);font-variant-numeric:tabular-nums;background:var(--lime);
+  color:#16110D;border:4px solid #16110D;border-radius:28px;padding:clamp(10px,2vh,20px) clamp(22px,4vw,44px);
+  box-shadow:10px 10px 0 #000;transform:rotate(-2.5deg);animation:kDeltaStamp .55s var(--ease) .15s backwards}
+@keyframes kDeltaStamp{from{transform:rotate(6deg) scale(1.7);opacity:0}to{transform:rotate(-2.5deg) scale(1);opacity:1}}
+.k-cere-pass{font-weight:700;font-size:clamp(16px,2.2vw,22px);color:#FBF1DD;background:rgba(255,255,255,.08);
+  border:2.5px dashed rgba(251,241,221,.6);border-radius:30px;padding:9px 20px}
+.k-cere-pass b{font-family:var(--font-display);color:var(--yellow)}
+.k-cere-hint{position:absolute;bottom:clamp(14px,3vh,30px);left:50%;transform:translateX(-50%);z-index:2;
+  font-weight:600;font-size:13px;letter-spacing:.08em;color:rgba(251,241,221,.55);white-space:nowrap}
+/* біт 2: нова ліга */
+.k-cere-rays{position:absolute;inset:auto;width:min(76vh,86vw);aspect-ratio:1;z-index:-1;
+  top:50%;left:50%;transform:translate(-50%,-54%)}
+.k-cere-rays svg{width:100%;height:100%;animation:kRaysSpin 14s linear infinite}
+@keyframes kRaysSpin{to{transform:rotate(360deg)}}
+.k-cere-medal{filter:drop-shadow(10px 10px 0 rgba(0,0,0,.85));animation:kDeltaStamp .55s var(--ease) backwards}
+.k-cere-league{font-family:var(--font-display);font-weight:800;color:#FBF1DD;
+  font-size:clamp(18px,2.6vw,26px);letter-spacing:.14em;line-height:1.5}
+.k-cere-league b{display:block;font-weight:900;font-size:clamp(44px,8vw,92px);letter-spacing:-.01em;
+  color:var(--yellow);margin-top:6px}
+/* конфеті — крафтові CSS-фігури, жодних емодзі */
+.k-conf{position:absolute;inset:0;z-index:1;pointer-events:none}
+.k-conf i{position:absolute;top:-7vh;display:block;border:2px solid #16110D;
+  animation:kConfFall linear infinite}
+.k-conf i.dot{border-radius:50%}
+.k-conf i.strip{border-radius:20px}
+.k-conf i.tri{background:transparent !important;border:none;width:0 !important;height:0 !important;
+  border-left:7px solid transparent !important;border-right:7px solid transparent !important;
+  border-bottom-width:13px;border-bottom-style:solid}
+@keyframes kConfFall{to{transform:translate3d(var(--dx,0),118vh,0) rotate(var(--rot,420deg))}}
+
 /* ============ ПОРТРЕТ / ВУЗЬКІ ЕКРАНИ ============ */
 @media (orientation:portrait){
   .k-stage{grid-template-columns:1fr;grid-template-rows:auto minmax(220px,1fr)}
@@ -598,6 +662,16 @@
   .k-qname{font-size:22px}
 }
 
+@media (max-width:560px){
+  .k-odds b{font-size:13px;padding:5px 9px;border-width:2.5px}
+  .k-odds-bar{height:22px}
+  .k-upset{width:52px;height:22px}
+  .k-upset em{font-size:9px}
+}
+
 @media (prefers-reduced-motion:reduce){
   .k-vs-burst,.k-offline i,.k-kicker .dot,.k-qrow{animation:none}
+  .k-conf{display:none}
+  .k-cere-inner,.k-cere-delta,.k-cere-medal{animation:none}
+  .k-cere-rays svg{animation:none}
 }

@@ -6,7 +6,7 @@ import type { WeeklyRow } from '@/lib/table/stats';
 import { leagueOf } from '@/lib/table/elo';
 import HeroArt from '@/components/HeroArt';
 import {
-  NickFit, FlameIcon, LeagueMedal, MoveChip, FormDots, TitleChip, PodiumCrown,
+  NickFit, FlameIcon, LeagueMedal, MoveChip, FormDots, TitleChip, PodiumCrown, UpsetChip,
 } from '@/components/table/bits';
 
 const RANK_BG = ['var(--yellow)', 'var(--cyan)', 'var(--coral)'];
@@ -23,9 +23,20 @@ function ago(iso: string | null): string {
   return d === 1 ? 'вчора' : `${d} дн тому`;
 }
 
+/**
+ * АПСЕТ: дельта переможця > 16 означає, що очікування було проти нього
+ * (при K=32 рівні по рейтингу обмінюються рівно 16) — переміг андердог.
+ */
+const UPSET_OVER = 16;
+function isUpset(g: CasualGame): boolean {
+  if (!g.winner) return false;
+  const wd = (g.winner === g.a ? g.delta_a : g.delta_b) ?? null;
+  return wd != null && wd > UPSET_OVER;
+}
+
 /** Нік + Elo-дельта одного боку у стрічці ігор (чип тільки коли дельта не NULL). */
-function FeedSide({ nick, won, delta }: {
-  nick: string; won: boolean; delta: number | null | undefined;
+function FeedSide({ nick, won, delta, upset }: {
+  nick: string; won: boolean; delta: number | null | undefined; upset?: boolean;
 }) {
   return (
     <span className="k-feed-side">
@@ -35,6 +46,7 @@ function FeedSide({ nick, won, delta }: {
           ? <em className="k-feed-delta win">+{delta}</em>
           : <em className="k-feed-delta lose">−{Math.abs(delta)}</em>
       )}
+      {upset && <UpsetChip />}
     </span>
   );
 }
@@ -198,12 +210,13 @@ export default function Leaderboard({ rows, weekly, players, recent }: {
             <div className="k-feed-list">
               {recent.map((g) => {
                 const winnerA = g.winner === g.a;
+                const upset = isUpset(g);
                 return (
                   <div className="k-feed-item" key={g.id}>
                     <div className="k-feed-line">
-                      <FeedSide nick={nickOf(g.a)} won={winnerA} delta={g.delta_a} />
+                      <FeedSide nick={nickOf(g.a)} won={winnerA} delta={g.delta_a} upset={upset && winnerA} />
                       <span className="k-feed-dash">–</span>
-                      <FeedSide nick={nickOf(g.b)} won={!winnerA} delta={g.delta_b} />
+                      <FeedSide nick={nickOf(g.b)} won={!winnerA} delta={g.delta_b} upset={upset && !winnerA} />
                     </div>
                     <div className="k-feed-meta">
                       <span className="k-feed-sets">

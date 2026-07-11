@@ -3,11 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TableState } from '@/lib/table/state';
 import type { Player, SetScore } from '@/lib/tournament/types';
 import { getTableState, startGame, finishGame, joinQueue, cancelGame, leaveQueue } from '@/lib/table/api';
+import { winProb, leagueOf } from '@/lib/table/elo';
 import HeroArt from '@/components/HeroArt';
 import PlayerPicker from '@/components/table/PlayerPicker';
 import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
+import Ceremony, { type CeremonyData } from '@/components/table/Ceremony';
 import { useArmed, NickFit, RatingChip } from '@/components/table/bits';
 import { BRAND } from '@/config';
 
@@ -48,6 +50,21 @@ function Squiggle({ color = 'var(--pink)' }: { color?: string }) {
       <path d="M4 20 Q 22 4, 40 16 T 76 16 T 112 16 T 148 16 T 184 16 T 220 16 T 256 16 L 276 10"
         stroke={color} strokeWidth="7" strokeLinecap="round" />
     </svg>
+  );
+}
+
+/**
+ * Табло шансів по Elo: тонка Memphis-смужка між герой-картками, заповнення
+ * ділиться за winProb; оновлюється полінгом разом із рейтингами.
+ */
+function OddsBar({ ra, rb }: { ra: number; rb: number }) {
+  const pct = Math.round(winProb(ra, rb) * 100);
+  return (
+    <div className="k-odds" role="img" aria-label={`шанси на перемогу: ${pct}% проти ${100 - pct}%`}>
+      <b className="pa">{pct}%</b>
+      <div className="k-odds-bar"><i style={{ width: `${pct}%` }} /></div>
+      <b className="pb">{100 - pct}%</b>
+    </div>
   );
 }
 
@@ -223,6 +240,18 @@ export default function Kiosk() {
   const [overlay, setOverlay] = useState<Overlay>({ k: 'none' });
   const closeOverlay = useCallback(() => setOverlay({ k: 'none' }), []);
 
+  /* --- церемонія після finish (+ «Хто далі?», що чекає за нею) --- */
+  const [ceremony, setCeremony] = useState<
+    (CeremonyData & { next: { winnerId: string; loserId: string; sets: SetScore[] } | null }) | null
+  >(null);
+
+  /* демо-гілка для візуальної перевірки церемонії: /table?demo=ceremony
+     (навмисно лишається в коді — без URL-параметра її не увімкнути) */
+  const [demoCeremony, setDemoCeremony] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('demo') === 'ceremony') setDemoCeremony(true);
+  }, []);
+
   const onLeave = useCallback((id: string) => { void run(() => leaveQueue(id)); }, [run]);
 
   /* --- пули для пікерів --- */
@@ -297,6 +326,7 @@ export default function Kiosk() {
                   <div className="k-timer">{clockFrom(game.started_at, now)}</div>
                 </div>
               </div>
+              <OddsBar ra={P(game.a).rating ?? 1000} rb={P(game.b).rating ?? 1000} />
               <div className="k-live-actions">
                 <div className="row">
                   <button className="kbtn xl pink" disabled={busy}
@@ -372,10 +402,13 @@ export default function Kiosk() {
           onCancel={closeOverlay}
           onSubmit={async (sets) => {
             const { gameId, aId, bId } = overlay;
+            const pre = stateRef.current; // знімок ДО finish: рейтинги і топ для церемонії
             let winnerId = '';
+            let delta = 0;
             const ok = await run(async () => {
               const r = await finishGame(gameId, sets);
               winnerId = r.winner;
+              delta = r.delta;
             });
             if (!ok) {
               // тимчасовий збій → лишаємо введений рахунок для повтору;
@@ -383,12 +416,42 @@ export default function Kiosk() {
               if (stateRef.current?.game?.id !== gameId) closeOverlay();
               return;
             }
-            const freshQueue = stateRef.current?.queue ?? [];
-            if (freshQueue.length > 0 && winnerId) {
-              setOverlay({ k: 'next', winnerId, loserId: winnerId === aId ? bId : aId, sets });
-            } else {
+            const post = stateRef.current; // run уже зробив refetch
+            const freshQueue = post?.queue ?? [];
+            const next = freshQueue.length > 0 && winnerId
+              ? { winnerId, loserId: winnerId === aId ? bId : aId, sets }
+              : null;
+
+            if (!winnerId || delta <= 0) { // захисний шлях: без даних — старий флоу
               closeOverlay();
+              if (next) setOverlay({ k: 'next', ...next });
+              return;
             }
+
+            // ліга: рейтинг переможця до гри — з pre-знімка
+            const prevRating = pre?.players.find((p) => p.id === winnerId)?.rating ?? 1000;
+            const newRating = prevRating + delta;
+            const leagueUp = leagueOf(newRating).name !== leagueOf(prevRating).name;
+
+            // «обійшов»: позиція в топі «весь час» покращилась відносно pre-топу
+            let overtook: string | null = null;
+            if (pre && post) {
+              const preIdx = pre.leaderboard.findIndex((r) => r.id === winnerId);
+              const preRank = preIdx === -1 ? pre.leaderboard.length : preIdx;
+              const postIdx = post.leaderboard.findIndex((r) => r.id === winnerId);
+              if (postIdx !== -1 && postIdx < preRank) {
+                const passed = pre.leaderboard
+                  .slice(0, preRank)
+                  .filter((r) => post.leaderboard.findIndex((x) => x.id === r.id) > postIdx);
+                if (passed.length > 0) {
+                  const p = playersMap.get(passed[0].id);
+                  overtook = p?.nickname || p?.name || null;
+                }
+              }
+            }
+
+            closeOverlay();
+            setCeremony({ winner: P(winnerId), delta, newRating, leagueUp, overtook, next });
           }}
         />
       )}
@@ -403,6 +466,25 @@ export default function Kiosk() {
             const ok = await run(() => startGame(a, b));
             if (ok) closeOverlay();
           }}
+        />
+      )}
+      {ceremony && (
+        <Ceremony
+          data={ceremony}
+          onDone={() => {
+            const next = ceremony.next;
+            setCeremony(null);
+            if (next) setOverlay({ k: 'next', ...next }); // далі — незмінний флоу «Хто далі?»
+          }}
+        />
+      )}
+      {!ceremony && demoCeremony && (
+        <Ceremony
+          data={{
+            winner: { ...FALLBACK_PLAYER('demo'), nickname: 'DEMO_HERO', name: 'Демо' },
+            delta: 21, newRating: 1058, leagueUp: true, overtook: 'SPINZILLA',
+          }}
+          onDone={() => setDemoCeremony(false)}
         />
       )}
     </div>

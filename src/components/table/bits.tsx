@@ -221,6 +221,19 @@ export function PodiumCrown({ className }: { className?: string }) {
   );
 }
 
+/** Бейдж «АПСЕТ» — рожевий зубчастий вибух під текстом (перемога андердога). */
+export function UpsetChip() {
+  return (
+    <span className="k-upset" aria-label="апсет: переміг андердог">
+      <svg viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true">
+        <polygon points="60.0,2.0 72.7,10.0 90.8,5.2 94.0,13.8 111.8,13.7 104.5,20.2 116.4,24.8 100.9,27.2 103.1,35.1 84.3,32.5 76.1,41.2 60.0,34.5 43.9,41.2 35.7,32.5 16.9,35.1 19.1,27.2 3.6,24.8 15.5,20.2 8.2,13.7 26.0,13.8 29.2,5.2 47.3,10.0"
+          fill="var(--pink)" stroke="var(--line)" strokeWidth="2.5" strokeLinejoin="round" />
+      </svg>
+      <em>АПСЕТ</em>
+    </span>
+  );
+}
+
 /** Крафтовий вогник для стріку (заміна емодзі 🔥) — 2-шарова силует-іскра. */
 export function FlameIcon({ className }: { className?: string }) {
   return (

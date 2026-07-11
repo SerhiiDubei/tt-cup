@@ -24,7 +24,7 @@ export async function getTableState(): Promise<TableState> {
   return r.json();
 }
 export const startGame = (a: string, b: string) => jpost('/api/table/start', { a, b }) as Promise<{ id: string }>;
-export const finishGame = (gameId: string, sets: SetScore[]) => jpost('/api/table/finish', { gameId, sets }) as Promise<{ winner: string }>;
+export const finishGame = (gameId: string, sets: SetScore[]) => jpost('/api/table/finish', { gameId, sets }) as Promise<{ winner: string; delta: number }>;
 export const cancelGame = (gameId: string) => jpost('/api/table/cancel', { gameId });
 export const joinQueue = (playerId: string) => jpost('/api/table/queue/join', { playerId });
 export const leaveQueue = (playerId: string) => jpost('/api/table/queue/leave', { playerId });
