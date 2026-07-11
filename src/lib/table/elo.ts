@@ -4,6 +4,9 @@
  */
 const K = 32;
 
+/** Ймовірність перемоги гравця з рейтингом ra проти rb (0..1) — для табло шансів. */
+export const winProb = (ra: number, rb: number) => 1 / (1 + Math.pow(10, (rb - ra) / 400));
+
 export function eloDelta(winnerRating: number, loserRating: number): number {
   const expectedWin = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
   return Math.max(1, Math.round(K * (1 - expectedWin))); // перемога ніколи не дає 0

@@ -1,7 +1,8 @@
 import { supaServer } from '@/lib/supabase/server';
 import { publicPlayers } from '@/lib/state';
 import { computeLeaderboard } from './leaderboard';
-import type { CasualGame, QueueEntry } from './types';
+import { rankMoves, formOf, titlesOf, weeklyRows, kyivWeekStart } from './stats';
+import type { BoardRow, CasualGame, QueueEntry } from './types';
 import type { Player } from '@/lib/tournament/types';
 
 const RECENT_LIMIT = 20;
@@ -22,11 +23,24 @@ export async function loadTableState() {
   const doneGames = (done.data as CasualGame[]) ?? [];
   const allPlayers = (players.data as (Player & { token?: string; rating?: number })[]) ?? [];
   const ratings = new Map(allPlayers.map((p) => [p.id, p.rating ?? 1000]));
+
+  // «шоу-пакет» топу: рух за добу, форма, титули, тижнева гонка (все з дельт)
+  const nowTs = new Date().toISOString();
+  const moves = rankMoves(doneGames, nowTs);
+  const titles = titlesOf(doneGames, nowTs);
+  const leaderboard: BoardRow[] = computeLeaderboard(doneGames, ratings).map((r) => ({
+    ...r,
+    move: moves.get(r.id) ?? null,
+    form: formOf(doneGames, r.id).join(''),
+    titles: titles.get(r.id) ?? [],
+  }));
+
   return {
     game: (active.data as CasualGame | null) ?? null,
     queue: (queue.data as QueueEntry[]) ?? [],
     players: publicPlayers(allPlayers),
-    leaderboard: computeLeaderboard(doneGames, ratings),
+    leaderboard,
+    weekly: weeklyRows(doneGames, kyivWeekStart(nowTs)),
     recent: doneGames.slice(0, RECENT_LIMIT),
     lastWinner: doneGames[0]?.winner ?? null,
   };

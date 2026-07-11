@@ -10,3 +10,7 @@ export type CasualGame = {
 };
 export type QueueEntry = { id: string; player_id: string; joined_at: string };
 export type LeaderRow = { id: string; rating: number; wins: number; losses: number; streak: number };
+
+export type Title = 'giant' | 'comeback' | 'marathon' | 'lightning';
+/** Рядок топу з «шоу-пакетом»: рух за добу, форма (напр. 'WWLWW'), титули. */
+export type BoardRow = LeaderRow & { move: number | null; form: string; titles: Title[] };
