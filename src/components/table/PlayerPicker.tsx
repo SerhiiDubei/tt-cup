@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import type { Player } from '@/lib/tournament/types';
 import HeroArt from '@/components/HeroArt';
 import SelfieCapture from '@/components/SelfieCapture';
+import { RatingChip } from '@/components/table/bits';
 import { quickAddPlayer, setPlayerArt } from '@/lib/table/api';
 import { stylizeSelfie } from '@/lib/api';
 import { SUPERPOWER_LABEL } from '@/lib/avatar';
@@ -168,6 +169,7 @@ export default function PlayerPicker({
                 </div>
                 <span className="k-pick-nick">{p.nickname || p.name}</span>
                 <span className="k-pick-name">{p.name}</span>
+                {p.rating != null && <RatingChip rating={p.rating} className="k-pick-rate" />}
               </button>
             );
           })}

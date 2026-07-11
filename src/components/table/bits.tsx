@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { leagueOf } from '@/lib/table/elo';
 
 const ARM_MS = 4000;
 
@@ -38,6 +39,75 @@ export function NickFit({ nick, shrink = true, oneLine = false }: {
       {nick.split('_').map((part, i, arr) => (
         <span key={i}>{part}{i < arr.length - 1 ? <>_<wbr /></> : null}</span>
       ))}
+    </span>
+  );
+}
+
+/**
+ * Крафтові медалі ліг — 5 різних інлайн-SVG у Memphis-стилі (токени палітри,
+ * жодних емодзі). НОВАЧОК: лаймовий значок-кнопка з іскрою-трикутником;
+ * БОЄЦЬ: бірюзовий щит із шевроном; ПРОФІ: синій гекс-жетон із блискавкою;
+ * МАЙСТЕР: фіолетова корона з самоцвітом; ЛЕГЕНДА: жовта 8-промінна розетка
+ * з рожевим серцем.
+ */
+export function LeagueMedal({ rating, size = 20, className }: {
+  rating: number; size?: number; className?: string;
+}) {
+  const common = {
+    className, width: size, height: size,
+    viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': true as const,
+  };
+  switch (leagueOf(rating).name) {
+    case 'ЛЕГЕНДА':
+      return (
+        <svg {...common}>
+          <path d="M12 2 14.3 6.46 19.07 4.93 17.54 9.7 22 12 17.54 14.3 19.07 19.07 14.3 17.54 12 22 9.7 17.54 4.93 19.07 6.46 14.3 2 12 6.46 9.7 4.93 4.93 9.7 6.46Z"
+            fill="var(--yellow)" stroke="var(--line)" strokeWidth="1.8" strokeLinejoin="round" />
+          <circle cx="12" cy="12" r="3.4" fill="var(--pink)" stroke="var(--line)" strokeWidth="1.6" />
+        </svg>
+      );
+    case 'МАЙСТЕР':
+      return (
+        <svg {...common}>
+          <path d="M3.4 7.2 8.2 11.3 12 5.2l3.8 6.1 4.8-4.1-1.9 11.4H5.3Z"
+            fill="var(--purple)" stroke="var(--line)" strokeWidth="1.8" strokeLinejoin="round" />
+          <circle cx="12" cy="14.4" r="1.8" fill="var(--yellow)" stroke="var(--line)" strokeWidth="1.3" />
+        </svg>
+      );
+    case 'ПРОФІ':
+      return (
+        <svg {...common}>
+          <path d="M12 1.8 20.6 6.9v10.2L12 22.2 3.4 17.1V6.9Z"
+            fill="var(--blue)" stroke="var(--line)" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M13.6 5.6 8.2 13.1h3.1l-1 5.3 5.5-7.6h-3.2Z"
+            fill="var(--yellow)" stroke="var(--line)" strokeWidth="1.3" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'БОЄЦЬ':
+      return (
+        <svg {...common}>
+          <path d="M12 2.2 20 5.2v6.3c0 5-3.3 8.6-8 10.3-4.7-1.7-8-5.3-8-10.3V5.2Z"
+            fill="var(--cyan)" stroke="var(--line)" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="m7.8 10.4 4.2 4 4.2-4" stroke="var(--line)" strokeWidth="2.2"
+            strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    default: /* НОВАЧОК */
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9.4" fill="var(--lime)" stroke="var(--line)" strokeWidth="1.8" />
+          <path d="M12 7.2 16.4 15H7.6Z" fill="var(--bg)" stroke="var(--line)" strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
+      );
+  }
+}
+
+/** Компактний чип рейтингу: медаль ліги + число (VS-картки, пікер). */
+export function RatingChip({ rating, className }: { rating: number; className?: string }) {
+  return (
+    <span className={'k-rate-chip' + (className ? ' ' + className : '')}>
+      <LeagueMedal rating={rating} size={15} />
+      <b>{rating}</b>
     </span>
   );
 }

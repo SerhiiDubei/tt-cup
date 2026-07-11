@@ -8,7 +8,7 @@ import PlayerPicker from '@/components/table/PlayerPicker';
 import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
-import { useArmed, NickFit } from '@/components/table/bits';
+import { useArmed, NickFit, RatingChip } from '@/components/table/bits';
 import { BRAND } from '@/config';
 
 type Overlay =
@@ -287,6 +287,7 @@ export default function Kiosk() {
                           initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={170} radius={24} />
                       </div>
                       <div className="nick"><NickFit nick={p.nickname || p.name} /></div>
+                      {p.rating != null && <div className="k-side-rate"><RatingChip rating={p.rating} /></div>}
                       <div className="who">{p.name}</div>
                     </div>
                   );

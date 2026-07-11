@@ -104,6 +104,13 @@
 .k-side .nick{font-family:var(--font-display);font-weight:900;font-size:clamp(19px,2.5vw,32px);
   line-height:1.08;overflow-wrap:break-word}
 .k-side .who{margin-top:8px;font-weight:600;font-size:clamp(12px,1.4vw,15px);color:var(--ink-soft)}
+/* чип рейтингу: медаль ліги + число (VS-картки, пікер) */
+.k-rate-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-display);
+  font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;border:2.5px solid var(--line);
+  border-radius:30px;padding:4px 11px;background:var(--bg);white-space:nowrap}
+.k-rate-chip svg{flex:none}
+.k-side-rate{margin-top:8px}
+.k-side-rate .k-rate-chip{font-size:clamp(13px,1.5vw,16px)}
 .k-art > div{width:clamp(104px,16.5vw,190px) !important;height:auto !important;aspect-ratio:1/1;margin:0 auto clamp(8px,1.6vh,14px) !important}
 .k-vs-mid{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vh,18px)}
 .k-vs-burst{width:clamp(72px,8.6vw,106px);aspect-ratio:1;display:grid;place-items:center;background:var(--pink);
@@ -149,26 +156,34 @@
   margin:14px;border:3px dashed var(--line);border-radius:20px;opacity:.75;text-align:center;padding:18px}
 .k-queue-empty p{font-family:var(--font-display);font-weight:700;font-size:clamp(15px,1.7vw,18px);max-width:240px}
 
-/* ---------- лідерборд ---------- */
-.k-board{position:relative;z-index:1;flex:1;min-height:0;display:grid;grid-template-columns:1.5fr 1fr;
-  gap:clamp(14px,2vw,26px)}
+/* ---------- лідерборд: суб-таби + одна повноширинна панель ---------- */
+.k-board{position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;
+  gap:clamp(12px,1.8vh,18px)}
+/* суб-перемикач: та сама конструкція, що головні таби, але «другий поверх» —
+   менший кегль і кольоровий (не чорнильний) активний стан */
+.k-subtabs{display:flex;align-items:center;gap:7px;align-self:flex-start;max-width:100%;
+  background:var(--paper);border:3px solid var(--line);border-radius:18px;padding:6px;box-shadow:var(--shadow)}
+.k-subtab{min-height:64px;padding:0 clamp(18px,2.6vw,30px);border-radius:12px;font-family:var(--font-display);
+  font-weight:800;font-size:clamp(14px,1.6vw,17px);letter-spacing:.02em;white-space:nowrap;
+  transition:transform .1s var(--ease),background .15s}
+.k-subtab:active{transform:scale(.96)}
+.k-subtab.yellow.on{background:var(--yellow);color:#16110D}
+.k-subtab.cyan.on{background:var(--cyan);color:#16110D}
+.k-board-hint{margin-left:14px;padding-right:12px;font-weight:600;font-size:13px;color:var(--ink-soft);white-space:nowrap}
+@media (max-width:900px){.k-board-hint{display:none}}
 /* padding:0 гасить глобальний landing-стиль section{padding:clamp(70px,…)} —
    саме він давав «мертву смугу» знизу і зрізаний рядок посередині панелі */
 .k-lb,.k-feed{position:relative;padding:0;background:var(--paper);border:3.5px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);
-  display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .k-lb{transform:rotate(-.3deg)} .k-feed{transform:rotate(.3deg)}
 /* мʼякий фейд знизу: зрізаний рядок читається як «є ще — гортай», а не як баг */
 .k-lb::after,.k-feed::after{content:"";position:absolute;left:4px;right:4px;bottom:0;height:26px;
   pointer-events:none;background:linear-gradient(to bottom,transparent,var(--paper))}
-.k-panel-head{display:flex;align-items:baseline;gap:14px;padding:14px 22px;border-bottom:3.5px solid var(--line)}
-.k-panel-head.yellow{background:var(--yellow);color:#16110D}
-.k-panel-head.cyan{background:var(--cyan);color:#16110D}
-.k-panel-head h2{font-family:var(--font-display);font-weight:900;font-size:clamp(19px,2.2vw,26px);letter-spacing:.03em}
-.k-panel-sub{font-weight:600;font-size:clamp(11px,1.3vw,14px);opacity:.75}
-.k-lb-list{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 26px;display:flex;flex-direction:column;gap:10px}
+.k-lb-list{flex:1;min-height:0;overflow-y:auto;padding:clamp(14px,1.8vh,20px) clamp(14px,1.8vw,22px) 28px;
+  display:flex;flex-direction:column;gap:clamp(10px,1.4vh,14px)}
 .k-lb-row{display:grid;grid-template-columns:48px 56px minmax(0,1fr) auto auto;align-items:center;
-  gap:clamp(9px,1.2vw,14px);border:3px solid var(--line);border-radius:18px;background:var(--bg);
-  padding:8px 14px 8px 8px;min-height:76px}
+  gap:clamp(10px,1.6vw,20px);border:3px solid var(--line);border-radius:18px;background:var(--bg);
+  padding:10px clamp(14px,1.8vw,22px) 10px 10px;min-height:80px}
 .k-lb-row.first{background:rgba(166,226,46,.22)}
 .k-lb-rank{width:48px;height:48px;display:grid;place-items:center;border:3px solid var(--line);border-radius:14px;
   font-family:var(--font-display);font-weight:900;font-size:22px;color:#16110D}
@@ -176,22 +191,45 @@
 .k-lb-art > div{margin:0 !important}
 .k-lb-nick{min-width:0;font-family:var(--font-display);font-weight:800;font-size:clamp(18px,2.1vw,26px);
   line-height:1.1}
+.k-lb-stats{display:inline-flex;align-items:center;gap:clamp(10px,1.3vw,16px)}
 .k-lb-wl{font-family:var(--font-display);font-weight:800;font-size:clamp(17px,1.8vw,22px);font-variant-numeric:tabular-nums;white-space:nowrap}
 .k-lb-wl b{color:var(--pink)} .k-lb-wl i{font-style:normal;opacity:.4;padding:0 2px}
 /* стрік — завжди горизонтальна пігулка: іконка й число поруч, без деформацій */
 .k-lb-streak{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:none;
-  font-family:var(--font-display);font-weight:800;font-size:15px;border:2.5px solid var(--line);
-  border-radius:30px;padding:7px 12px;background:var(--paper);min-width:52px;white-space:nowrap}
+  font-family:var(--font-display);font-weight:800;font-size:16px;border:2.5px solid var(--line);
+  border-radius:30px;padding:8px 14px;background:var(--paper);min-width:56px;white-space:nowrap}
 .k-lb-streak.hot{background:var(--coral);color:#fff}
-.k-lb-streak svg{flex:none;width:16px;height:16px}
-.k-feed-list{flex:1;min-height:0;overflow-y:auto;padding:14px 14px 26px;display:flex;flex-direction:column;gap:10px}
-.k-feed-item{border:3px solid var(--line);border-radius:18px;background:var(--bg);padding:12px 16px}
-.k-feed-line{display:flex;align-items:center;gap:9px;min-width:0}
+.k-lb-streak svg{flex:none;width:17px;height:17px}
+/* рейтинг — герой рядка: великі цифри Unbounded + медаль ліги + smallcaps-ліга */
+.k-lb-rate{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:118px}
+.k-lb-rate .num{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);
+  font-weight:900;font-size:clamp(24px,2.6vw,34px);line-height:1;font-variant-numeric:tabular-nums}
+.k-lb-rate .num svg{flex:none}
+.k-lb-rate .lg{font-family:var(--font-body);font-weight:700;font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-soft)}
+.k-lb-row.first .k-lb-rate .num{font-size:clamp(27px,2.9vw,38px)}
+.k-feed-list{flex:1;min-height:0;overflow-y:auto;padding:clamp(14px,1.8vh,20px) clamp(14px,1.8vw,22px) 28px;
+  display:flex;flex-direction:column;gap:clamp(10px,1.4vh,14px)}
+.k-feed-item{border:3px solid var(--line);border-radius:18px;background:var(--bg);
+  padding:clamp(12px,1.6vh,16px) clamp(14px,1.8vw,22px)}
+.k-feed-line{display:flex;align-items:center;gap:10px;min-width:0}
+.k-feed-side{display:inline-flex;align-items:center;gap:8px;min-width:0;flex:0 1 auto}
 .k-feed-dash{opacity:.35;flex:none}
-.k-feed-nick{display:inline-flex;align-items:center;min-width:0;flex:0 1 auto;
-  font-family:var(--font-display);font-weight:700;font-size:clamp(15px,1.7vw,19px)}
+.k-feed-nick{display:inline-flex;align-items:center;min-width:0;
+  font-family:var(--font-display);font-weight:700;font-size:clamp(16px,1.9vw,22px)}
 .k-feed-nick.won{color:var(--pink)}
 .k-feed-nick.won::before{content:"★";font-size:.7em;margin-right:4px;flex:none;transform:translateY(-1px)}
+/* Elo-дельта гри: жирний +N переможцю, приглушений −N лузеру (тільки не-NULL) */
+.k-feed-delta{flex:none;font-style:normal;font-family:var(--font-display);font-weight:800;font-size:13.5px;
+  font-variant-numeric:tabular-nums;border:2.5px solid var(--line);border-radius:20px;padding:4px 10px;white-space:nowrap}
+.k-feed-delta.win{background:var(--lime);color:#16110D}
+.k-feed-delta.lose{border-style:dashed;color:var(--ink-soft);font-weight:700;opacity:.85}
+/* планшет+: гра в один рядок — пара зліва, сети й час справа */
+@media (min-width:880px){
+  .k-feed-item{display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .k-feed-line{flex:1 1 auto}
+  .k-feed-meta{margin-top:0;flex:none}
+}
 .k-feed-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
 .k-feed-sets{display:flex;gap:6px;flex-wrap:wrap}
 .k-feed-sets em{font-style:normal;font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;
@@ -239,6 +277,8 @@
 .k-pick-nick{font-family:var(--font-display);font-weight:800;font-size:clamp(16px,1.8vw,20px);
   line-height:1.05;text-align:center;overflow-wrap:anywhere}
 .k-pick-name{font-size:12.5px;font-weight:600;color:var(--ink-soft);text-align:center;overflow-wrap:anywhere}
+.k-pick-rate{margin-top:7px;font-size:12.5px;padding:3px 9px;gap:5px}
+.k-pick.on .k-pick-rate{--line:var(--bg);border-color:var(--bg);color:var(--bg);background:transparent}
 .k-pick-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:14px;
   border:3px dashed var(--line);border-radius:22px;padding:38px 20px;opacity:.8;text-align:center}
 .k-pick-empty p{font-family:var(--font-display);font-weight:700;max-width:340px}
@@ -330,7 +370,6 @@
 
 /* ============ ПОРТРЕТ / ВУЗЬКІ ЕКРАНИ ============ */
 @media (orientation:portrait){
-  .k-board{grid-template-columns:1fr;grid-template-rows:1.4fr 1fr}
   .k-stage{grid-template-columns:1fr;grid-template-rows:auto minmax(220px,1fr)}
   .k-free{flex:0 1 auto;gap:clamp(14px,2.4vh,26px)}
   .k-hl{font-size:clamp(52px,11vw,104px)}
@@ -358,22 +397,32 @@
   .k-stage{grid-template-rows:auto auto}
   .k-queue{min-height:220px}
   .k-queue-list{max-height:50dvh}
-  .k-board{grid-template-rows:auto auto}
-  .k-lb-list,.k-feed-list{max-height:60dvh}
+  .k-subtabs{align-self:stretch}
+  .k-subtab{flex:1;min-height:56px;padding:0 10px}
+  .k-lb-list,.k-feed-list{max-height:70dvh}
   .k-board-empty{min-height:140px}
   .k-side .nick{font-size:15px}
   /* обведений заголовок: тонша обводка + вільніший інтерліньяж, щоб рядки не злипались */
   .k-hl{font-size:clamp(44px,12.5vw,58px);line-height:1.06;letter-spacing:0}
   .k-hl .stroke{-webkit-text-stroke-width:2.5px}
-  /* лідерборд: компактні одно-рядкові ряди без переносу ніка */
-  .k-lb-row{grid-template-columns:32px 40px minmax(0,1fr) auto auto;
-    column-gap:8px;min-height:56px;padding:7px 9px 7px 7px}
-  .k-lb-rank{width:32px;height:32px;font-size:14px;border-radius:9px;border-width:2.5px}
+  /* лідерборд: рейтинг лишається героєм, W-L і серія — другий підрядок */
+  .k-lb-row{grid-template-columns:32px 40px minmax(0,1fr) auto;
+    grid-template-areas:"rank art nick rate" "rank art stats rate";
+    column-gap:8px;row-gap:4px;min-height:62px;padding:7px 9px 7px 7px}
+  .k-lb-rank{grid-area:rank;width:32px;height:32px;font-size:14px;border-radius:9px;border-width:2.5px}
+  .k-lb-art{grid-area:art}
   .k-lb-art > div{width:40px !important;height:40px !important;border-radius:10px !important}
-  .k-lb-nick{font-size:15.5px}
+  .k-lb-nick{grid-area:nick;font-size:15.5px;align-self:end}
+  .k-lb-stats{grid-area:stats;align-self:start;gap:7px}
   .k-lb-wl{font-size:13.5px}
   .k-lb-streak{font-size:11.5px;padding:2px 7px;min-width:38px;border-width:2px}
   .k-lb-streak svg{width:12px;height:12px}
+  .k-lb-rate{grid-area:rate;min-width:0;gap:2px}
+  .k-lb-rate .num{font-size:18px;gap:4px}
+  .k-lb-row.first .k-lb-rate .num{font-size:20px}
+  .k-lb-rate .num svg{width:16px;height:16px}
+  .k-lb-rate .lg{font-size:8.5px;letter-spacing:.1em}
+  .k-side-rate .k-rate-chip{font-size:12px;padding:3px 9px}
   .k-scrim{padding:8px}
   .k-close{width:60px;height:60px}
   .k-sheet-foot{flex-direction:column;align-items:stretch;gap:10px}
