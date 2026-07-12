@@ -1,11 +1,12 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Player } from '@/lib/tournament/types';
 import HeroArt from '@/components/HeroArt';
 import SelfieCapture from '@/components/SelfieCapture';
 import { NickFit, RatingChip } from '@/components/table/bits';
 import { quickAddPlayer, setPlayerArt } from '@/lib/table/api';
 import { stylizeSelfie } from '@/lib/api';
+import { markArtPending, clearArtPending, isArtPending } from '@/lib/table/artPending';
 import { SUPERPOWER_LABEL } from '@/lib/avatar';
 import { STYLES } from '@/config';
 
@@ -19,12 +20,43 @@ const QA_ERR: Record<string, string> = {
   name_too_long: 'Задовге імʼя — скороти',
 };
 
+/** Крок stagger-появи карток і стеля сумарної затримки (спека: ~20мс, ≤400мс). */
+const STAGGER_STEP_MS = 20;
+const STAGGER_CAP_MS = 400;
+
+/**
+ * Чистий перехід вибору: тап по вибраному знімає, по новому — додає;
+ * коли повний — заміняє найстаршого. `out` — хто і з якого слота вилетів
+ * (щоб евікшн було ВИДНО, а не «Артем зник»).
+ */
+function applyPick(prev: string[], id: string, count: number): {
+  next: string[]; out: { id: string; slot: number } | null; picked: boolean;
+} {
+  const at = prev.indexOf(id);
+  if (at >= 0) return { next: prev.filter((x) => x !== id), out: { id, slot: at }, picked: false };
+  if (prev.length < count) return { next: [...prev, id], out: null, picked: true };
+  return { next: [...prev.slice(1), id], out: { id: prev[0], slot: 0 }, picked: true };
+}
+
+/** Обличчя чипа слота: міні-арт + нік (одним рядком). */
+function SlotFace({ p }: { p: Player }) {
+  return (
+    <>
+      <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
+        initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={38} radius={10}
+        pending={!p.hero?.art && isArtPending(p.id)} />
+      <span className="k-slot-nick"><NickFit nick={p.nickname || p.name} oneLine /></span>
+    </>
+  );
+}
+
 /**
  * Повноекранний пікер гравців для кіоску. Тап = вибір; коли вибрано `count`,
- * зайвий тап заміняє найстарішого вибраного. quickAdd (діє лише коли пул не
- * обмежений чергою) → велика кнопка «Я ТУТ НОВИЙ» у шапці:
- * імʼя → селфі (можна пропустити) → стиль → миттєво в пул (арт домальовується фоном).
- * Пул >6 гравців → пошук по ніку/імені, як каса самообслуговування.
+ * зайвий тап заміняє найстарішого вибраного. Вибрані живуть у ПОСТІЙНИХ
+ * СЛОТАХ під шапкою — видимі при будь-якому пошуку/скролі, тап по слоту знімає.
+ * quickAdd (діє лише коли пул не обмежений чергою) → велика кнопка
+ * «Я ТУТ НОВИЙ» у шапці: імʼя → селфі (можна пропустити) → стиль → миттєво
+ * в пул (арт домальовується фоном). Пул >6 гравців → пошук по ніку/імені.
  */
 export default function PlayerPicker({
   players, allowedIds, count, preselected = [], title, confirmLabel, onConfirm, onClose, quickAdd,
@@ -63,6 +95,24 @@ export default function PlayerPicker({
   const [qa, setQa] = useState<QuickAdd | null>(null);
   const [q, setQ] = useState('');
 
+  /* --- анімації: виліт зі слота, сплеск на виборі, stagger сітки --- */
+  const [leaving, setLeaving] = useState<{ key: number; p: Player; slot: number }[]>([]);
+  const leaveKey = useRef(0);
+  const [burst, setBurst] = useState<{ id: string; key: number } | null>(null);
+  const [stagger, setStagger] = useState(true);
+
+  // stagger — разовий, тільки на відкриття шіта: далі пошук/полінг не миготять
+  useEffect(() => {
+    const t = setTimeout(() => setStagger(false), STAGGER_CAP_MS + 450);
+    return () => clearTimeout(t);
+  }, []);
+  // сплеск короткий; прибираємо вузли після відльоту зірочок
+  useEffect(() => {
+    if (!burst) return;
+    const t = setTimeout(() => setBurst(null), 700);
+    return () => clearTimeout(t);
+  }, [burst]);
+
   // живий фільтр: нік АБО імʼя, без регістру (українські літери теж)
   const shown = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase('uk');
@@ -75,12 +125,15 @@ export default function PlayerPicker({
   const openQa = (name = '') =>
     setQa({ step: 1, name, selfie: null, style: 'attacker', busy: false, err: null });
 
-  function toggle(id: string) {
-    setSel((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length < count) return [...prev, id];
-      return [...prev.slice(1), id]; // повний — заміняємо найстарішого
-    });
+  /** Спільний вхід для тапів по картках, слотах і квик-адду двомісного пікера. */
+  function pick(id: string) {
+    const { next, out, picked } = applyPick(sel, id, count);
+    if (out) {
+      const p = pool.find((x) => x.id === out.id);
+      if (p) setLeaving((l) => [...l.slice(-3), { key: ++leaveKey.current, p, slot: out.slot }]);
+    }
+    if (picked) setBurst((b) => ({ id, key: (b?.key ?? 0) + 1 }));
+    setSel(next);
   }
 
   async function confirm() {
@@ -98,8 +151,10 @@ export default function PlayerPicker({
       const { id } = await quickAddPlayer(nick, qa.style);
       if (qa.selfie) {
         const { selfie, style } = qa;
+        markArtPending(id); // картки/ряди новачка показують міні-лоадер, поки арт вариться
         // fire-and-forget: помилки мовчки ігноруємо — лишиться кольорова заглушка
-        void stylizeSelfie(selfie, style).then((r) => setPlayerArt(id, r.url)).catch(() => {});
+        void stylizeSelfie(selfie, style).then((r) => setPlayerArt(id, r.url))
+          .catch(() => clearArtPending(id));
       }
       if (count === 1) {
         await onConfirm([id]); // одразу вибираємо новачка й закриваємось
@@ -111,8 +166,7 @@ export default function PlayerPicker({
           id, name: nick, nickname: nick, seed: 0,
           hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: qa.style },
         }]);
-        setSel((prev) => (prev.includes(id) ? prev
-          : prev.length < count ? [...prev, id] : [...prev.slice(1), id]));
+        pick(id);
         setQ('');
         setQa(null);
       }
@@ -124,6 +178,37 @@ export default function PlayerPicker({
   }
 
   const selNames = sel.map((id) => pool.find((p) => p.id === id)?.nickname ?? '?');
+
+  /** Один постійний слот: вибраний завжди тут, хай що показує пошук/скрол. */
+  const renderSlot = (i: number) => {
+    const id = sel[i];
+    const p = id ? pool.find((x) => x.id === id) ?? {
+      id, name: '?', nickname: '· · ·', seed: 0,
+      hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: 'allrounder' },
+    } : undefined;
+    return (
+      <div className={'k-slot' + (p ? ' filled' : '')} key={i}>
+        {leaving.filter((l) => l.slot === i).map((l) => (
+          <span className="k-slot-chip out" key={l.key} aria-hidden="true"
+            onAnimationEnd={() => setLeaving((cur) => cur.filter((x) => x.key !== l.key))}>
+            <SlotFace p={l.p} />
+          </span>
+        ))}
+        {p ? (
+          <button className="k-slot-chip in" key={p.id} disabled={pending}
+            aria-label={`Зняти ${p.nickname || p.name} з вибору`} onClick={() => pick(p.id)}>
+            <SlotFace p={p} />
+            <i className="x" aria-hidden="true">✕</i>
+          </button>
+        ) : (
+          <span className="k-slot-empty">
+            <i aria-hidden="true">+</i>
+            {count === 2 ? `гравець ${i + 1}…` : 'тапни себе в списку…'}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="k-scrim" role="dialog" aria-modal="true" aria-label={title}>
@@ -210,15 +295,36 @@ export default function PlayerPicker({
           </div>
         ) : (
         <>
-        <div className="k-pick-grid">
-          {shown.map((p) => {
+        {/* ПОСТІЙНІ СЛОТИ ВИБОРУ: вибрані видно завжди — пошук/скрол їх не ховає,
+            евікшн «найстаршого» вилітає анімовано, а не зникає мовчки */}
+        <div className="k-slotbar" data-count={count}>
+          {renderSlot(0)}
+          {count === 2 && <span className="k-slot-vs" aria-hidden="true">проти</span>}
+          {count === 2 && renderSlot(1)}
+        </div>
+
+        <div className={'k-pick-grid' + (stagger ? ' stagger' : '')}>
+          {shown.map((p, i) => {
             const idx = sel.indexOf(p.id);
             return (
-              <button key={p.id} className={'k-pick' + (idx >= 0 ? ' on' : '')} onClick={() => toggle(p.id)}>
+              <button key={p.id} className={'k-pick' + (idx >= 0 ? ' on' : '')}
+                style={stagger ? { ['--d' as string]: `${Math.min(i * STAGGER_STEP_MS, STAGGER_CAP_MS)}ms` } : undefined}
+                onClick={() => pick(p.id)}>
                 {idx >= 0 && <span className="k-pick-slot">{count === 2 ? idx + 1 : '✓'}</span>}
+                {burst?.id === p.id && (
+                  <span className="k-burst" key={burst.key} aria-hidden="true">
+                    <i className="star" style={{ ['--bx' as string]: '-46px', ['--by' as string]: '-38px', background: 'var(--yellow)' }} />
+                    <i className="dot" style={{ ['--bx' as string]: '44px', ['--by' as string]: '-30px', background: 'var(--pink)' }} />
+                    <i className="star" style={{ ['--bx' as string]: '52px', ['--by' as string]: '20px', background: 'var(--cyan)' }} />
+                    <i className="dot" style={{ ['--bx' as string]: '-38px', ['--by' as string]: '34px', background: 'var(--lime)' }} />
+                    <i className="star" style={{ ['--bx' as string]: '6px', ['--by' as string]: '-54px', background: 'var(--coral)' }} />
+                    <i className="dot" style={{ ['--bx' as string]: '-8px', ['--by' as string]: '48px', background: 'var(--purple)' }} />
+                  </span>
+                )}
                 <div className="k-pick-art">
                   <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
-                    initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={150} radius={20} />
+                    initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={150} radius={20}
+                    pending={!p.hero?.art && isArtPending(p.id)} />
                 </div>
                 <span className="k-pick-nick"><NickFit nick={p.nickname || p.name} oneLine /></span>
                 <span className="k-pick-name k-oneline">{p.name}</span>
