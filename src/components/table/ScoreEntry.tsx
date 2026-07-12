@@ -22,6 +22,25 @@ const HINT: Record<SetsError, string> = {
   match_tied: 'Порівну сетів — потрібен вирішальний',
 };
 
+/** Цифра рахунку, що «стрибає як м'яч» при зміні: + — приземлення (сплющення),
+    − — підліт (розтяг). WAAPI самозавершна, reduced-motion — без стрибка. */
+function Pts({ v }: { v: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const prev = useRef(v);
+  useEffect(() => {
+    if (prev.current === v) return;
+    const up = v > prev.current;
+    prev.current = v;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    ref.current?.animate([
+      { transform: 'scale(1,1)' },
+      { transform: up ? 'scale(1.22,.76) translateY(3px)' : 'scale(.82,1.16) translateY(-3px)', offset: .4 },
+      { transform: 'scale(1,1)' },
+    ], { duration: 200, easing: 'cubic-bezier(.22,1,.36,1)' });
+  }, [v]);
+  return <span className="k-pts" ref={ref}>{v}</span>;
+}
+
 /** Кнопка степера з утриманням (hold-to-repeat). Тільки pointer-події. */
 // Навмисно без keyboard-активації (onClick/onKeyDown) — це тач-кіоск, клавіатури немає.
 function StepBtn({ label, onStep, disabled, className }: {
@@ -120,7 +139,7 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
                   <button key={side} disabled={pending} aria-pressed={on}
                     className={'k-who-card' + (on ? ' on' : winner ? ' off' : '')}
                     onClick={() => setWinner(side)}>
-                    {on && <PodiumCrown className="k-who-crown" />}
+                    {on && <PodiumCrown className="k-who-crown smash" />}
                     <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
                       initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={150} radius={22} />
                     <span className="k-who-nick"><NickFit nick={p.nickname || p.name} oneLine /></span>
@@ -146,7 +165,7 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
                   <span className="k-quick-lbl">скільки набрав <b>{lp.nickname || lp.name}</b>?</span>
                   <div className="k-stepper quick">
                     <StepBtn label="−" onStep={() => bumpLoser(-1)} disabled={pending} />
-                    <span className="k-pts">{loserPts}</span>
+                    <Pts v={loserPts} />
                     <StepBtn label="+" onStep={() => bumpLoser(1)} disabled={pending} className="plus" />
                   </div>
                 </div>
@@ -172,13 +191,13 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
                   <span className="k-set-n">СЕТ {i + 1}</span>
                   <div className="k-stepper">
                     <StepBtn label="−" onStep={() => bump(i, 0, -1)} disabled={pending} />
-                    <span className="k-pts">{s[0]}</span>
+                    <Pts v={s[0]} />
                     <StepBtn label="+" onStep={() => bump(i, 0, 1)} disabled={pending} className="plus" />
                   </div>
                   <span className="k-colon">:</span>
                   <div className="k-stepper">
                     <StepBtn label="−" onStep={() => bump(i, 1, -1)} disabled={pending} />
-                    <span className="k-pts">{s[1]}</span>
+                    <Pts v={s[1]} />
                     <StepBtn label="+" onStep={() => bump(i, 1, 1)} disabled={pending} className="plus" />
                   </div>
                   <button className="k-set-x" disabled={pending} aria-label={`Прибрати сет ${i + 1}`} onClick={() => removeSet(i)}>✕</button>

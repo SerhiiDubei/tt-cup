@@ -91,6 +91,120 @@ export default function Showcase({ top3, onDismiss }: {
 
     const trail: { x: number; y: number; t: number }[] = [];
 
+    /* --- зграя міні-м'ячиків: блукає → шикується у кубок → розліт (цикл) ---
+       Патерн towers (SwarmLogo): цілі беруться з офскрін-растеризації силуета,
+       кожен м'ячик — пружина до своєї цілі. */
+    const SWARM_N = 110;
+    type Boid = { x: number; y: number; vx: number; vy: number };
+    const swarm: Boid[] = [];
+    let targets: { x: number; y: number }[] = [];
+    let lastPhase = '';
+    let lastNow = 0;
+
+    const trophyPoints = (() => {
+      const T = 200;
+      const oc = document.createElement('canvas');
+      oc.width = T; oc.height = T;
+      const c = oc.getContext('2d');
+      if (!c) return [] as { x: number; y: number }[];
+      // КОНТУР, не заливка: розсип крапок по лініях читається як гліф,
+      // а по заливці — як безформна хмара
+      c.strokeStyle = '#000'; c.lineWidth = 9;
+      c.beginPath(); // чаша
+      c.moveTo(56, 34); c.lineTo(144, 34);
+      c.bezierCurveTo(144, 92, 126, 116, 100, 116);
+      c.bezierCurveTo(74, 116, 56, 92, 56, 34);
+      c.closePath(); c.stroke();
+      c.beginPath(); c.arc(46, 60, 22, -Math.PI * .5, Math.PI * .62); c.stroke();  // ручки
+      c.beginPath(); c.arc(154, 60, 22, Math.PI * .38, Math.PI * 1.5); c.stroke();
+      c.strokeRect(93, 118, 14, 20);  // ніжка
+      c.strokeRect(74, 141, 52, 8);   // плита
+      c.strokeRect(62, 152, 76, 12);  // база
+      const pts: { x: number; y: number }[] = [];
+      const img = c.getImageData(0, 0, T, T).data;
+      for (let y = 0; y < T; y += 4) {
+        for (let x = 0; x < T; x += 4) {
+          if (img[(y * T + x) * 4 + 3] > 120) pts.push({ x: x / T, y: y / T });
+        }
+      }
+      return pts;
+    })();
+
+    const assignTargets = () => {
+      // кубок — у вільній зоні: ландшафт — зліва від подіуму, портрет — над ним
+      const portrait = h > w * 1.15;
+      const size = Math.min(w, h) * (portrait ? .38 : .42);
+      const cx = (portrait ? w * .5 : w * .22) - size / 2;
+      const cy = h * (portrait ? .04 : .12);
+      const step = Math.max(1, Math.floor(trophyPoints.length / SWARM_N));
+      targets = [];
+      for (let i = 0; i < SWARM_N; i++) {
+        const p = trophyPoints[(i * step) % Math.max(1, trophyPoints.length)];
+        if (p) targets.push({ x: cx + p.x * size, y: cy + p.y * size });
+      }
+    };
+
+    // фази циклу зграї, мс: блукання → кубок → розліт
+    const CYCLE = 15000, FORM_AT = 7500, BURST_AT = 12800;
+    const stepSwarm = (now: number, dt: number) => {
+      if (swarm.length === 0 && w > 0) {
+        for (let i = 0; i < SWARM_N; i++) swarm.push({
+          x: Math.random() * w, y: Math.random() * h,
+          vx: (Math.random() - .5) * 120, vy: (Math.random() - .5) * 120,
+        });
+      }
+      const tc = now % CYCLE;
+      const phase = tc < FORM_AT ? 'wander' : tc < BURST_AT ? 'form' : 'burst';
+      if (phase !== lastPhase) {
+        if (phase === 'form') assignTargets();
+        if (phase === 'burst') for (const b of swarm) {
+          const a = Math.random() * Math.PI * 2, sp = 240 + Math.random() * 340;
+          b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp;
+        }
+        lastPhase = phase;
+      }
+      const k = dt / 1000;
+      swarm.forEach((b, i) => {
+        if (phase === 'form' && targets[i % targets.length]) {
+          // пряме позиційне зближення: гліф збирається чітко, без пружинного дрейфу
+          const t = targets[i % targets.length];
+          const e = Math.min(1, dt * .005);
+          b.x += (t.x - b.x) * e;
+          b.y += (t.y - b.y) * e + Math.sin(now * .003 + i * .7) * .25; // «дихання»
+          b.vx = 0; b.vy = 0;
+          return;
+        } else {
+          // дрейф до мандрівного атрактора + шум; на розльоті — лише інерція
+          if (phase === 'wander') {
+            const ax = w / 2 + Math.sin(now * .00023 + i * .07) * w * .34;
+            const ay = h / 2 + Math.cos(now * .00031 + i * .05) * h * .3;
+            b.vx += ((ax - b.x) * .35 + (Math.random() - .5) * 380) * k;
+            b.vy += ((ay - b.y) * .35 + (Math.random() - .5) * 380) * k;
+          }
+          const damp = Math.exp(-dt / 1400);
+          b.vx *= damp; b.vy *= damp;
+        }
+        b.x += b.vx * k; b.y += b.vy * k;
+        if (b.x < -20) b.x += w + 40; else if (b.x > w + 20) b.x -= w + 40;
+        if (b.y < -20) b.y += h + 40; else if (b.y > h + 20) b.y -= h + 40;
+      });
+      return phase;
+    };
+
+    const drawSwarm = (phase: string) => {
+      const r = Math.max(4, Math.min(6.5, w * .005));
+      ctx.lineWidth = 1.8;
+      swarm.forEach((b, i) => {
+        ctx.globalAlpha = phase === 'form' ? .95 : .7;
+        ctx.fillStyle = i % 9 === 0 ? col.pink : i % 9 === 5 ? col.cyan : col.yellow;
+        ctx.strokeStyle = col.ink;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+    };
+
     const geom = () => {
       const px = Math.max(70, Math.min(w * 0.16, 200));
       // портрет: карусель подіуму займає центр — ралі опускаємо в нижню третину,
@@ -144,7 +258,12 @@ export default function Showcase({ top3, onDismiss }: {
 
     const draw = (now: number) => {
       const { x, y, u, ltr, g } = ballAt(now);
+      const dt = Math.min(50, lastNow ? now - lastNow : 16);
+      lastNow = now;
       ctx.clearRect(0, 0, w, h);
+
+      // зграя — фоновий шар під ралі
+      drawSwarm(stepSwarm(now, dt));
 
       // пунктир «стола» + сітка по центру
       ctx.strokeStyle = col.ink;

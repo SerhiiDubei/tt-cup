@@ -11,6 +11,8 @@ import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
 import Ceremony, { type CeremonyData } from '@/components/table/Ceremony';
+import QueueIdle from '@/components/table/QueueIdle';
+import LiveRally from '@/components/table/LiveRally';
 import Showcase from '@/components/table/Showcase';
 import { useArmed, NickFit, RatingChip, byGender } from '@/components/table/bits';
 import { BRAND } from '@/config';
@@ -48,6 +50,46 @@ const FALLBACK_PLAYER = (id: string): Player => ({
   id, name: '?', nickname: '· · ·', seed: 0,
   hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: 'allrounder' },
 });
+
+/* мок «стіл вільний» (?demo=free): статичний стан без жодного виклику API —
+   локальна розробка анімацій/верстки, коли Supabase не налаштований */
+function mockFreeState(): TableState {
+  const mk = (i: string, nickname: string, color: string, rating: number) => ({
+    id: `mock-${i}`, name: 'Демо', nickname, seed: 0, rating,
+    hero: { color, shape: 'circle', emblem: '★', style: 'allrounder' },
+  } as Player & { rating: number });
+  const players = [
+    mk('a', 'TOPSPIN_OLEG', 'var(--pink)', 1082),
+    mk('b', 'LOOP_KING', 'var(--cyan)', 1041),
+    mk('c', 'SLICE_ART', 'var(--yellow)', 1017),
+    mk('d', 'НАКАТ', 'var(--purple)', 996),
+  ];
+  return {
+    game: null, queue: [], players,
+    leaderboard: players.map((p, i) => ({
+      id: p.id, rating: p.rating, wins: 9 - i * 2, losses: 2 + i,
+      streak: i === 0 ? 3 : 0, move: null, form: 'WWLWW', titles: [],
+    })),
+    weekly: [], recent: [], lastWinner: 'mock-a',
+  };
+}
+
+/* мок «гра йде» (?demo=game): активна гра + черга з двох — анімації живого
+   табло без Supabase */
+function mockGameState(): TableState {
+  const s = mockFreeState();
+  return {
+    ...s,
+    game: {
+      id: 'mock-game', a: 'mock-a', b: 'mock-b', sets: [], winner: null,
+      status: 'active', started_at: new Date(Date.now() - 27_000).toISOString(), ended_at: null,
+    },
+    queue: [
+      { id: 'mock-q1', player_id: 'mock-c', joined_at: new Date().toISOString() },
+      { id: 'mock-q2', player_id: 'mock-d', joined_at: new Date().toISOString() },
+    ],
+  };
+}
 
 /* ---------- декоративний squiggle (крафтовий SVG) ---------- */
 function Squiggle({ color = 'var(--pink)' }: { color?: string }) {
@@ -155,7 +197,7 @@ function QueuePanel({ queue, busy, onLeave }: { queue: Player[]; busy: boolean; 
       </div>
       {queue.length === 0 ? (
         <div className="k-queue-empty">
-          <i className="ttball bounce" />
+          <QueueIdle />
           <p>Черга порожня — стіл чекає на тебе</p>
         </div>
       ) : (
@@ -192,6 +234,13 @@ export default function Kiosk() {
 
   const stateRef = useRef<TableState | null>(null);
 
+  /* демо-режими (див. блок нижче) читаємо до полінгу: ?demo=free живе
+     повністю на моку і не має чіпати API взагалі */
+  const [demo, setDemo] = useState<string | null>(null);
+  useEffect(() => {
+    setDemo(new URLSearchParams(window.location.search).get('demo'));
+  }, []);
+
   /* --- полінг стану --- */
   const refetch = useCallback(async () => {
     try {
@@ -205,6 +254,15 @@ export default function Kiosk() {
   }, []);
 
   useEffect(() => {
+    // мок замість живого стану ('idle' — теж вільний стіл, щоб заставка
+    // могла відкритись без Supabase)
+    if (demo === 'free' || demo === 'game' || demo === 'idle') {
+      const s = demo === 'game' ? mockGameState() : mockFreeState();
+      stateRef.current = s;
+      setState(s);
+      setFails(0);
+      return;
+    }
     let timer: ReturnType<typeof setInterval> | null = null;
     const start = () => { if (!timer) timer = setInterval(() => { void refetch(); }, POLL_MS); };
     const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
@@ -215,7 +273,7 @@ export default function Kiosk() {
     void refetch(); start();
     document.addEventListener('visibilitychange', onVis);
     return () => { stop(); document.removeEventListener('visibilitychange', onVis); };
-  }, [refetch]);
+  }, [refetch, demo]);
 
   /* --- wake lock, щоб планшет не засинав --- */
   useEffect(() => {
@@ -298,11 +356,9 @@ export default function Kiosk() {
      лишаються в коді — без URL-параметра їх не увімкнути):
      ?demo=ceremony — церемонія; ?demo=finish — швидкий фініш із моками і
      console.log замість finishGame; ?demo=idle — заставка за 3с;
-     ?demo=queue — локальний мок-список черги для анімацій в'їзду/FLIP */
-  const [demo, setDemo] = useState<string | null>(null);
-  useEffect(() => {
-    setDemo(new URLSearchParams(window.location.search).get('demo'));
-  }, []);
+     ?demo=queue — локальний мок-список черги для анімацій в'їзду/FLIP;
+     ?demo=free / ?demo=game — мок «стіл вільний» / «гра йде» без API
+     (сам demo-стан оголошено вище) */
   const [demoCeremony, setDemoCeremony] = useState(false);
   const [demoFinish, setDemoFinish] = useState(false);
   useEffect(() => {
@@ -450,6 +506,7 @@ export default function Kiosk() {
                   <div className="k-vs-burst">VS</div>
                   <div className="k-timer">{clockFrom(game.started_at, now)}</div>
                 </div>
+                <LiveRally />
               </div>
               <OddsBar ra={P(game.a).rating ?? 1000} rb={P(game.b).rating ?? 1000} />
               <div className="k-live-actions">
