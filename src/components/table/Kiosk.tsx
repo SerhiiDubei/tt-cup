@@ -1,15 +1,17 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { TableState } from '@/lib/table/state';
 import type { Player, SetScore } from '@/lib/tournament/types';
 import { getTableState, startGame, finishGame, joinQueue, cancelGame, leaveQueue } from '@/lib/table/api';
 import { winProb, leagueOf } from '@/lib/table/elo';
+import { isArtPending } from '@/lib/table/artPending';
 import HeroArt from '@/components/HeroArt';
 import PlayerPicker from '@/components/table/PlayerPicker';
 import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
 import Ceremony, { type CeremonyData } from '@/components/table/Ceremony';
+import Showcase from '@/components/table/Showcase';
 import { useArmed, NickFit, RatingChip } from '@/components/table/bits';
 import { BRAND } from '@/config';
 
@@ -23,6 +25,10 @@ type Overlay =
 /* ---------- дрібні хелпери ---------- */
 
 const POLL_MS = 3000;
+const EASE = 'cubic-bezier(.22,1,.36,1)';
+/** Заставка-вітрина: 2 хв без тапів (у демо ?demo=idle — 3 с, лишається в коді). */
+const IDLE_MS = 120_000;
+const IDLE_DEMO_MS = 3_000;
 
 const ERR_TEXT: Record<string, string> = {
   timeout: 'Немає звʼязку — спробуй ще раз',
@@ -82,7 +88,7 @@ function CupIcon() {
 function QueueRow({ p, i, busy, onLeave }: { p: Player; i: number; busy: boolean; onLeave: (id: string) => void }) {
   const [armed, fire] = useArmed();
   return (
-    <div className="k-qrow">
+    <div className="k-qrow" data-qid={p.id}>
       <span className="k-qpos" style={{ background: POS_COLORS[i % POS_COLORS.length] }}>{i + 1}</span>
       <span className="k-qname">
         {i === 0 && <span className="k-qnext">наступний</span>}
@@ -97,7 +103,50 @@ function QueueRow({ p, i, busy, onLeave }: { p: Player; i: number; busy: boolean
   );
 }
 
+/**
+ * Панель черги з FLIP-анімацією: позиції міряємо ДО фарби (useLayoutEffect,
+ * координати відносно контенту списку — скрол не дає фальшивих зсувів) і
+ * програємо через WAAPI (анімації самозавершні, нічого чистити руками):
+ * нова картка в'їжджає з підскоком, перенумерація їде плавно. Перший рендер
+ * панелі — без в'їзду (щоб перемикання гра/вільно не «сипало» всю чергу).
+ */
 function QueuePanel({ queue, busy, onLeave }: { queue: Player[]; busy: boolean; onLeave: (id: string) => void }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const prevTops = useRef<Map<string, number> | null>(null);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const tops = new Map<string, number>();
+    if (list) {
+      const base = list.getBoundingClientRect().top - list.scrollTop;
+      list.querySelectorAll<HTMLElement>('[data-qid]').forEach((el) => {
+        tops.set(el.dataset.qid as string, el.getBoundingClientRect().top - base);
+      });
+    }
+    const prev = prevTops.current;
+    prevTops.current = tops;
+    if (!list || !prev) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    list.querySelectorAll<HTMLElement>('[data-qid]').forEach((el) => {
+      if (typeof el.animate !== 'function') return;
+      const id = el.dataset.qid as string;
+      const from = prev.get(id);
+      const to = tops.get(id) as number;
+      if (from == null) {
+        el.animate([
+          { transform: 'translateY(30px) scale(.92)', opacity: 0 },
+          { transform: 'translateY(-7px) scale(1.03)', opacity: 1, offset: .65 },
+          { transform: 'none', opacity: 1 },
+        ], { duration: 460, easing: EASE });
+      } else if (Math.abs(from - to) > 1) {
+        el.animate(
+          [{ transform: `translateY(${from - to}px)` }, { transform: 'none' }],
+          { duration: 320, easing: EASE },
+        );
+      }
+    });
+  });
+
   return (
     <aside className="k-queue">
       <div className="k-queue-head">
@@ -110,7 +159,7 @@ function QueuePanel({ queue, busy, onLeave }: { queue: Player[]; busy: boolean; 
           <p>Черга порожня — стіл чекає на тебе</p>
         </div>
       ) : (
-        <div className="k-queue-list">
+        <div className="k-queue-list" ref={listRef}>
           {queue.map((p, i) => <QueueRow key={p.id} p={p} i={i} busy={busy} onLeave={onLeave} />)}
         </div>
       )}
@@ -245,14 +294,56 @@ export default function Kiosk() {
     (CeremonyData & { next: { winnerId: string; loserId: string; sets: SetScore[] } | null }) | null
   >(null);
 
-  /* демо-гілка для візуальної перевірки церемонії: /table?demo=ceremony
-     (навмисно лишається в коді — без URL-параметра її не увімкнути) */
-  const [demoCeremony, setDemoCeremony] = useState(false);
+  /* демо-гілки для візуальної перевірки БЕЗ запису в живу БД (навмисно
+     лишаються в коді — без URL-параметра їх не увімкнути):
+     ?demo=ceremony — церемонія; ?demo=finish — швидкий фініш із моками і
+     console.log замість finishGame; ?demo=idle — заставка за 3с;
+     ?demo=queue — локальний мок-список черги для анімацій в'їзду/FLIP */
+  const [demo, setDemo] = useState<string | null>(null);
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('demo') === 'ceremony') setDemoCeremony(true);
+    setDemo(new URLSearchParams(window.location.search).get('demo'));
   }, []);
+  const [demoCeremony, setDemoCeremony] = useState(false);
+  const [demoFinish, setDemoFinish] = useState(false);
+  useEffect(() => {
+    if (demo === 'ceremony') setDemoCeremony(true);
+    if (demo === 'finish') setDemoFinish(true);
+  }, [demo]);
 
-  const onLeave = useCallback((id: string) => { void run(() => leaveQueue(id)); }, [run]);
+  /* мок-черга (?demo=queue): що ~2.6с додається картка, далі — ротація порядку;
+     все локально, жодного виклику API */
+  const demoQueue = demo === 'queue';
+  const [mockQueue, setMockQueue] = useState<Player[]>([]);
+  useEffect(() => {
+    if (!demoQueue) return;
+    const names = ['TOP_SPIN', 'НАКАТ', 'SMASH_BRO', 'LOOPER', 'CHOP_CHOP', 'БЛОКС'];
+    const colors = ['var(--cyan)', 'var(--pink)', 'var(--yellow)', 'var(--lime)', 'var(--purple)', 'var(--coral)'];
+    const t = setInterval(() => {
+      // апдейтер чистий (id — перший вільний індекс), тож StrictMode-безпечний
+      setMockQueue((prev) => {
+        if (prev.length < names.length) {
+          let i = 0;
+          while (prev.some((p) => p.id === `mock-${i}`)) i += 1;
+          return [...prev, {
+            id: `mock-${i}`, name: 'Демо', nickname: names[i % names.length], seed: 0,
+            hero: { color: colors[i % colors.length], shape: 'circle', emblem: '★', style: 'attacker' },
+          }];
+        }
+        const next = [...prev];
+        next.push(next.shift() as Player); // ротація → видно FLIP-перенумерацію
+        return next;
+      });
+    }, 2600);
+    return () => clearInterval(t);
+  }, [demoQueue]);
+
+  const onLeave = useCallback((id: string) => {
+    if (id.startsWith('mock-')) { // демо-ряд прибираємо локально, БД не чіпаємо
+      setMockQueue((prev) => prev.filter((p) => p.id !== id));
+      return;
+    }
+    void run(() => leaveQueue(id));
+  }, [run]);
 
   /* --- пули для пікерів --- */
   const queueIds = useMemo(() => (state?.queue ?? []).map((q) => q.player_id), [state?.queue]);
@@ -268,6 +359,39 @@ export default function Kiosk() {
     const busyIds = new Set([...queueIds, ...(game ? [game.a, game.b] : [])]);
     return (state?.players ?? []).filter((p) => !busyIds.has(p.id));
   }, [state?.players, queueIds, game]);
+
+  /* --- заставка-вітрина: стіл вільний + жодного тапу ≥2 хв + нічого не відкрито --- */
+  const [showcase, setShowcase] = useState(false);
+  const lastActRef = useRef(Date.now());
+  const hasGame = !!game;
+  const loaded = state !== null;
+  const overlayOpen = overlay.k !== 'none' || ceremony !== null || demoCeremony || demoFinish;
+
+  useEffect(() => {
+    // будь-який тап/дотик будь-де скидає таймер простою
+    const act = () => { lastActRef.current = Date.now(); };
+    window.addEventListener('pointerdown', act, { capture: true, passive: true });
+    return () => window.removeEventListener('pointerdown', act, { capture: true });
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || hasGame || overlayOpen) { setShowcase(false); return; }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; // заставку не запускаємо взагалі
+    const idleMs = demo === 'idle' ? IDLE_DEMO_MS : IDLE_MS;
+    const t = setInterval(() => {
+      if (document.hidden) return;
+      if (Date.now() - lastActRef.current >= idleMs) setShowcase(true);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [loaded, hasGame, overlayOpen, demo]);
+
+  // подіум для заставки: топ-3 «за весь час» з поточного стану (рейтинги живі)
+  const top3 = useMemo(
+    () => (state?.leaderboard ?? []).slice(0, 3).map((r) => ({ p: P(r.id), rating: r.rating ?? 1000 })),
+    [state?.leaderboard, P],
+  );
+
+  const queueForPanel = demoQueue ? mockQueue : queuePlayers;
 
   /* ---------- рендер ---------- */
   return (
@@ -313,7 +437,8 @@ export default function Kiosk() {
                       <span className="corner" />
                       <div className="k-art">
                         <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
-                          initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={170} radius={24} />
+                          initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={170} radius={24}
+                          pending={!p.hero?.art && isArtPending(p.id)} />
                       </div>
                       <div className="nick"><NickFit nick={p.nickname || p.name} /></div>
                       {p.rating != null && <div className="k-side-rate"><RatingChip rating={p.rating} /></div>}
@@ -337,7 +462,7 @@ export default function Kiosk() {
               </div>
             </div>
           </div>
-          <QueuePanel queue={queuePlayers} busy={busy} onLeave={onLeave} />
+          <QueuePanel queue={queueForPanel} busy={busy} onLeave={onLeave} />
         </div>
       ) : (
         /* ================= СТІЛ ВІЛЬНИЙ ================= */
@@ -360,7 +485,7 @@ export default function Kiosk() {
               )}
             </div>
           </div>
-          <QueuePanel queue={queuePlayers} busy={busy} onLeave={onLeave} />
+          <QueuePanel queue={queueForPanel} busy={busy} onLeave={onLeave} />
         </div>
       )}
 
@@ -486,6 +611,25 @@ export default function Kiosk() {
           }}
           onDone={() => setDemoCeremony(false)}
         />
+      )}
+      {/* демо швидкого фінішу: моки + console.log замість finishGame — БД не чіпається */}
+      {demoFinish && (
+        <ScoreEntry
+          a={{ ...FALLBACK_PLAYER('demo-a'), nickname: 'SPINZILLA', name: 'Оля', rating: 1043,
+            hero: { color: 'var(--cyan)', shape: 'circle', emblem: '★', style: 'spinner' } }}
+          b={{ ...FALLBACK_PLAYER('demo-b'), nickname: 'BLOKARENKO', name: 'Артем', rating: 987,
+            hero: { color: 'var(--pink)', shape: 'circle', emblem: '★', style: 'defender' } }}
+          onCancel={() => setDemoFinish(false)}
+          onSubmit={async (sets) => {
+            // еталон перевірки payload: порядок a:b, як у finishGame
+            console.log('[demo:finish] onSubmit sets payload =', JSON.stringify(sets));
+          }}
+        />
+      )}
+      {/* заставка-вітрина: монтуємо лише коли стіл вільний і нічого не відкрито */}
+      {showcase && loaded && !hasGame && !overlayOpen && (
+        <Showcase top3={top3}
+          onDismiss={() => { lastActRef.current = Date.now(); setShowcase(false); }} />
       )}
     </div>
   );

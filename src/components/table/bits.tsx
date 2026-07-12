@@ -221,7 +221,11 @@ export function PodiumCrown({ className }: { className?: string }) {
   );
 }
 
-/** Бейдж «АПСЕТ» — рожевий зубчастий вибух під текстом (перемога андердога). */
+/**
+ * Бейдж «АПСЕТ» — рожевий зубчастий вибух під текстом (перемога андердога).
+ * В'їжджає один раз із трусом; дві зірочки-іскри (CSS clip-path, не емодзі)
+ * спалахують і гаснуть — анімації разові, з prefers-reduced-motion вимкнені.
+ */
 export function UpsetChip() {
   return (
     <span className="k-upset" aria-label="апсет: переміг андердог">
@@ -230,6 +234,8 @@ export function UpsetChip() {
           fill="var(--pink)" stroke="var(--line)" strokeWidth="2.5" strokeLinejoin="round" />
       </svg>
       <em>АПСЕТ</em>
+      <i className="spk s1" aria-hidden="true" />
+      <i className="spk s2" aria-hidden="true" />
     </span>
   );
 }
