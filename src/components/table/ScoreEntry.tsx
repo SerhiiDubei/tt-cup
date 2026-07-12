@@ -143,7 +143,13 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
                     <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
                       initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={150} radius={22} />
                     <span className="k-who-nick"><NickFit nick={p.nickname || p.name} oneLine /></span>
-                    <span className="k-who-tag">{on ? byGender(p, 'ПЕРЕМІГ', 'ПЕРЕМОГЛА', 'ПЕРЕМІГ(ЛА)') : byGender(p, 'тапни, якщо переміг', 'тапни, якщо перемогла', 'тапни, якщо переміг(ла)')}</span>
+                    {/* після вибору друга картка каже факт («програла»), а не
+                        кличе тапати — тап нею досі змінює переможця */}
+                    <span className="k-who-tag">{on
+                      ? byGender(p, 'ПЕРЕМІГ', 'ПЕРЕМОГЛА', 'ПЕРЕМІГ(ЛА)')
+                      : winner
+                        ? byGender(p, 'програв', 'програла', 'програв(ла)')
+                        : byGender(p, 'тапни, якщо переміг', 'тапни, якщо перемогла', 'тапни, якщо переміг(ла)')}</span>
                   </button>
                 );
               })}
@@ -168,6 +174,11 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
                     <Pts v={loserPts} />
                     <StepBtn label="+" onStep={() => bumpLoser(1)} disabled={pending} className="plus" />
                   </div>
+                  {/* понад target-1 очок — дюси: одразу показуємо, який це сет,
+                      бо «до 21, а набрав 29» інакше виглядає помилкою */}
+                  {loserPts >= target - 1 && (
+                    <span className="k-deuce-hint">дюси — сет {quickWinnerPts(target, loserPts)}:{loserPts}</span>
+                  )}
                 </div>
               </div>
             )}
