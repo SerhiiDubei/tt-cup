@@ -12,7 +12,6 @@ import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
 import Ceremony, { type CeremonyData } from '@/components/table/Ceremony';
 import QueueIdle from '@/components/table/QueueIdle';
-import LiveRally from '@/components/table/LiveRally';
 import Showcase from '@/components/table/Showcase';
 import { useArmed, NickFit, RatingChip, byGender } from '@/components/table/bits';
 import { BRAND } from '@/config';
@@ -506,7 +505,6 @@ export default function Kiosk() {
                   <div className="k-vs-burst">VS</div>
                   <div className="k-timer">{clockFrom(game.started_at, now)}</div>
                 </div>
-                <LiveRally />
               </div>
               <OddsBar ra={P(game.a).rating ?? 1000} rb={P(game.b).rating ?? 1000} />
               <div className="k-live-actions">
