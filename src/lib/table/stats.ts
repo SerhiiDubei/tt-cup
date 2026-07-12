@@ -73,6 +73,16 @@ export function kyivWeekStart(nowTs: string): string {
   return new Date(monday - offsetMs).toISOString();
 }
 
+/** Час останньої done-гри кожного гравця (для сортування пулу «свіжі зверху»). */
+export function lastPlayedMap(games: CasualGame[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const g of doneAsc(games)) { // старі → нові: останній запис переможе
+    m.set(g.a, g.ended_at!);
+    m.set(g.b, g.ended_at!);
+  }
+  return m;
+}
+
 export type WeeklyRow = { id: string; gained: number; wins: number; losses: number };
 
 /** Тижнева гонка: сума дельт + W-L у вікні [sinceTs, ∞). Сорт: набране ↓, перемоги ↓. */

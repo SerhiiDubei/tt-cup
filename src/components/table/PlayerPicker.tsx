@@ -59,11 +59,13 @@ function SlotFace({ p }: { p: Player }) {
  * в пул (арт домальовується фоном). Пул >6 гравців → пошук по ніку/імені.
  */
 export default function PlayerPicker({
-  players, allowedIds, count, preselected = [], title, confirmLabel, onConfirm, onClose, quickAdd,
+  players, allowedIds, count, minCount, preselected = [], title, confirmLabel, onConfirm, onClose, quickAdd,
 }: {
   players: Player[];
   allowedIds?: string[];        // undefined = весь пул
   count: 1 | 2;
+  /** Мінімум вибраних для підтвердження (дефолт = count). 1 при count=2 — «можна вдвох». */
+  minCount?: number;
   preselected?: string[];
   title: string;
   confirmLabel: string;
@@ -78,7 +80,11 @@ export default function PlayerPicker({
   const pool = useMemo(() => {
     if (!allowedIds) {
       const seen = new Set(players.map((p) => p.id));
-      return [...players, ...extras.filter((e) => !seen.has(e.id))];
+      // авто-сорт «кому легше знайтись»: хто грав нещодавно — зверху, далі за ніком
+      const sorted = [...players].sort((a, b) =>
+        (b.lastPlayedAt ?? '').localeCompare(a.lastPlayedAt ?? '') ||
+        (a.nickname || a.name).localeCompare(b.nickname || b.name, 'uk'));
+      return [...sorted, ...extras.filter((e) => !seen.has(e.id))];
     }
     const byId = new Map(players.map((p) => [p.id, p] as const));
     // порядок allowedIds (порядок черги) важливіший за порядок пулу
@@ -137,7 +143,8 @@ export default function PlayerPicker({
   }
 
   async function confirm() {
-    if (pending || sel.length !== count) return;
+    const min = minCount ?? count;
+    if (pending || sel.length < min || sel.length > count) return;
     setPending(true);
     try { await onConfirm(sel); } finally { setPending(false); }
   }
@@ -203,7 +210,9 @@ export default function PlayerPicker({
         ) : (
           <span className="k-slot-empty">
             <i aria-hidden="true">+</i>
-            {count === 2 ? `гравець ${i + 1}…` : 'тапни себе в списку…'}
+            {count === 2
+              ? (i === 1 && (minCount ?? count) === 1 ? 'можна вдвох (необовʼязково)' : `гравець ${i + 1}…`)
+              : 'тапни себе в списку…'}
           </span>
         )}
       </div>
@@ -217,7 +226,9 @@ export default function PlayerPicker({
             бари не з'їдають місце під картки */}
         <div className="k-sheet-head">
           <h2>{title}</h2>
-          {qa === null && count === 2 && <span className="k-sheet-hint">обери двох</span>}
+          {qa === null && count === 2 && (
+            <span className="k-sheet-hint">{(minCount ?? count) === 1 ? 'один або двоє' : 'обери двох'}</span>
+          )}
           {qa === null && showSearch && (
             <div className="k-search">
               <svg className="k-search-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -363,12 +374,12 @@ export default function PlayerPicker({
         <footer className="k-sheet-foot">
           <div className="k-sel-line">
             {count === 2
-              ? (sel.length === 2 ? <><b>{selNames[0]}</b><span className="vs">проти</span><b>{selNames[1]}</b></>
-                : sel.length === 1 ? <><b>{selNames[0]}</b><span className="vs">проти</span><i>тапни другого…</i></>
+              ? (sel.length === 2 ? <><b>{selNames[0]}</b><span className="vs">{(minCount ?? count) === 1 ? '+' : 'проти'}</span><b>{selNames[1]}</b></>
+                : sel.length === 1 ? <><b>{selNames[0]}</b>{(minCount ?? count) === 1 ? <i> — можна додати другого…</i> : <><span className="vs">проти</span><i>тапни другого…</i></>}</>
                 : <i>тапни двох гравців…</i>)
               : (sel.length === 1 ? <b>{selNames[0]}</b> : <i>тапни себе у списку…</i>)}
           </div>
-          <button className="kbtn lg pink k-confirm" disabled={pending || sel.length !== count} onClick={() => { void confirm(); }}>
+          <button className="kbtn lg pink k-confirm" disabled={pending || sel.length < (minCount ?? count)} onClick={() => { void confirm(); }}>
             {pending ? 'СЕКУНДУ…' : confirmLabel}
           </button>
         </footer>

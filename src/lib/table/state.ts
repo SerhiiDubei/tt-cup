@@ -1,7 +1,7 @@
 import { supaServer } from '@/lib/supabase/server';
 import { publicPlayers } from '@/lib/state';
 import { computeLeaderboard } from './leaderboard';
-import { rankMoves, formOf, titlesOf, weeklyRows, kyivWeekStart } from './stats';
+import { rankMoves, formOf, titlesOf, weeklyRows, kyivWeekStart, lastPlayedMap } from './stats';
 import type { BoardRow, CasualGame, QueueEntry } from './types';
 import type { Player } from '@/lib/tournament/types';
 
@@ -21,7 +21,9 @@ export async function loadTableState() {
   const err = players.error ?? active.error ?? done.error ?? queue.error;
   if (err) throw new Error(err.message);
   const doneGames = (done.data as CasualGame[]) ?? [];
-  const allPlayers = (players.data as (Player & { token?: string; rating?: number })[]) ?? [];
+  const lastPlayed = lastPlayedMap((done.data as CasualGame[]) ?? []);
+  const allPlayers = ((players.data as (Player & { token?: string; rating?: number })[]) ?? [])
+    .map((p) => ({ ...p, lastPlayedAt: lastPlayed.get(p.id) ?? null }));
   const ratings = new Map(allPlayers.map((p) => [p.id, p.rating ?? 1000]));
 
   // «шоу-пакет» топу: рух за добу, форма, титули, тижнева гонка (все з дельт)

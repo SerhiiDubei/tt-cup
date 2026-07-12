@@ -564,13 +564,15 @@ export default function Kiosk() {
       {overlay.k === 'pick-queue' && state && (
         <PlayerPicker
           players={joinPool}
-          count={1}
+          count={2}
+          minCount={1}
           title="ХТО В ЧЕРГУ?"
-          confirmLabel="Я В ЧЕРЗІ"
+          confirmLabel="У ЧЕРГУ"
           quickAdd
           onClose={closeOverlay}
           onConfirm={async (ids) => {
-            const ok = await run(() => joinQueue(ids[0]));
+            // можна вдвох: записуємо послідовно, порядок вибору = порядок у черзі
+            const ok = await run(async () => { for (const id of ids) await joinQueue(id); });
             if (ok) closeOverlay();
           }}
         />
