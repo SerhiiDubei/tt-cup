@@ -36,7 +36,11 @@ const ERR_TEXT: Record<string, string> = {
   state_failed: 'Немає звʼязку — спробуй ще раз',
   nick_taken: 'Такий нік уже є — зміни імʼя',
 };
-const errText = (code: string) => ERR_TEXT[code] ?? 'Стан змінився — синхронізуюсь';
+// короткі snake_case-коди — конфлікти стану (409); текст із пробілами —
+// серверна помилка (500, напр. postgres) — чесно кажемо, що не збереглось
+const errText = (code: string) => ERR_TEXT[code] ?? (code.includes(' ')
+  ? 'Помилка збереження — спробуй ще раз'
+  : 'Стан змінився — синхронізуюсь');
 
 function clockFrom(startedAt: string, now: number) {
   const s = Math.max(0, Math.floor((now - Date.parse(startedAt)) / 1000));
@@ -232,6 +236,7 @@ export default function Kiosk() {
   const [now, setNow] = useState(() => Date.now());
 
   const stateRef = useRef<TableState | null>(null);
+  const finishFailsRef = useRef(0); // поспіль невдалі збереження рахунку
 
   /* демо-режими (див. блок нижче) читаємо до полінгу: ?demo=free живе
      повністю на моку і не має чіпати API взагалі */
@@ -595,9 +600,13 @@ export default function Kiosk() {
             if (!ok) {
               // тимчасовий збій → лишаємо введений рахунок для повтору;
               // закриваємось тільки якщо гру вже закрили з іншого екрана
+              finishFailsRef.current += 1;
+              if (finishFailsRef.current >= 2) // повторний збій — чесна ескалація
+                setToast('Знову не зберігається — сфоткай рахунок і скажи адміну');
               if (stateRef.current?.game?.id !== gameId) closeOverlay();
               return;
             }
+            finishFailsRef.current = 0;
             const post = stateRef.current; // run уже зробив refetch
             const freshQueue = post?.queue ?? [];
             const next = freshQueue.length > 0 && winnerId
