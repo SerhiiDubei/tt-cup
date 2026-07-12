@@ -495,6 +495,9 @@ button.k-slot-chip:active{transform:scale(.97)}
 .k-confirm{flex:none;min-width:clamp(220px,32vw,380px)}
 
 /* ---------- швидка реєстрація («Я ТУТ НОВИЙ») ---------- */
+.k-gender{display:flex;gap:10px;justify-content:center}
+.k-gender .k-pill{min-width:96px;min-height:56px}
+
 .k-qa{flex:1;min-height:0;overflow-y:auto;padding:clamp(16px,3vh,30px) clamp(16px,2.6vw,30px);
   display:flex;flex-direction:column;gap:clamp(14px,2.6vh,24px);align-items:center;justify-content:center}
 .k-qa-step{font-family:var(--font-display);font-weight:700;font-size:clamp(13px,1.5vw,16px);letter-spacing:.09em;

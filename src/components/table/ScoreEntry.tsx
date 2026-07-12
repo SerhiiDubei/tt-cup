@@ -2,19 +2,23 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Player, SetScore } from '@/lib/tournament/types';
 import {
-  validateSets, casualWinner, quickSets, quickDefaultLoser,
+  validateSets, casualWinner, quickSets, quickDefaultLoser, quickWinnerPts,
   QUICK_TARGETS, type QuickTarget, type SetsError,
 } from '@/lib/table/scoring';
 import HeroArt from '@/components/HeroArt';
-import { NickFit, PodiumCrown } from '@/components/table/bits';
+import { NickFit, PodiumCrown, byGender } from '@/components/table/bits';
 
 const DEFAULT_SET: SetScore = [11, 9];
 const MAX = 99;
+
+/** Стеля степпера очок переможеного: понад target-2 — дюсовий рахунок (l+2:l). */
+const QUICK_LOSER_MAX = 29;
 
 const HINT: Record<SetsError, string> = {
   no_sets: 'Додай хоча б один сет',
   bad_points: 'Перевір цифри — щось дивне',
   set_tied: 'У сеті нічиєї не буває — додай очко комусь',
+  bad_set_score: 'Такого рахунку не буває: сет — до 11 або до 21, дюси з різницею 2 (12:10, 22:20…)',
   match_tied: 'Порівну сетів — потрібен вирішальний',
 };
 
@@ -64,11 +68,11 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
   const switchTarget = (t: QuickTarget) => {
     if (t === target) return;
     // дефолт слідує за ціллю (9 ↔ 19); кастомне значення лише клемпимо
-    setLoserPts((p) => (p === quickDefaultLoser(target) ? quickDefaultLoser(t) : Math.min(p, t - 1)));
+    setLoserPts((p) => (p === quickDefaultLoser(target) ? quickDefaultLoser(t) : Math.min(p, QUICK_LOSER_MAX)));
     setTarget(t);
   };
   const bumpLoser = (d: 1 | -1) =>
-    setLoserPts((p) => Math.min(target - 1, Math.max(0, p + d)));
+    setLoserPts((p) => Math.min(QUICK_LOSER_MAX, Math.max(0, p + d)));
 
   const wp = winner === 'a' ? a : winner === 'b' ? b : null; // переможець
   const lp = winner === 'a' ? b : winner === 'b' ? a : null; // переможений
@@ -120,7 +124,7 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
                     <HeroArt src={p.hero?.art} alt={p.nickname} color={p.hero?.color || 'var(--yellow)'}
                       initial={(p.nickname || p.name || '?').charAt(0).toUpperCase()} size={150} radius={22} />
                     <span className="k-who-nick"><NickFit nick={p.nickname || p.name} oneLine /></span>
-                    <span className="k-who-tag">{on ? 'ПЕРЕМІГ' : 'тапни, якщо переміг'}</span>
+                    <span className="k-who-tag">{on ? byGender(p, 'ПЕРЕМІГ', 'ПЕРЕМОГЛА', 'ПЕРЕМІГ(ЛА)') : byGender(p, 'тапни, якщо переміг', 'тапни, якщо перемогла', 'тапни, якщо переміг(ла)')}</span>
                   </button>
                 );
               })}
@@ -193,10 +197,10 @@ export default function ScoreEntry({ a, b, onSubmit, onCancel }: {
           <div className="k-sel-line">
             {mode === 'quick'
               ? (wp
-                ? <>Переміг: <b>{wp.nickname || wp.name}</b><em className="k-quick-score">{target}:{loserPts}</em></>
+                ? <>{byGender(wp, 'Переміг', 'Перемогла', 'Переміг(ла)')}: <b>{wp.nickname || wp.name}</b><em className="k-quick-score">{quickWinnerPts(target, loserPts)}:{loserPts}</em></>
                 : <i>тапни картку переможця</i>)
               : (setsWinner
-                ? <>Переміг: <b>{setsWinner.nickname || setsWinner.name}</b></>
+                ? <>{byGender(setsWinner, 'Переміг', 'Перемогла', 'Переміг(ла)')}: <b>{setsWinner.nickname || setsWinner.name}</b></>
                 : <i>{HINT[err as SetsError]}</i>)}
           </div>
           <button className="kbtn lg" onClick={onCancel} disabled={pending}>НАЗАД</button>

@@ -1,4 +1,4 @@
-export type Hero = { color: string; shape: string; emblem: string; style: string; theme?: string; art?: string };
+export type Hero = { color: string; shape: string; emblem: string; style: string; theme?: string; art?: string; gender?: string };
 export type Player = { id: string; name: string; nickname: string; hero: Hero; motto?: string; seed: number; casual?: boolean; rating?: number };
 export type SetScore = [number, number];
 export type Match = { id: string; stage: 'swiss'|'playoff'; round: string; slot: number;

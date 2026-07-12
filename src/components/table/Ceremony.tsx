@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Player } from '@/lib/tournament/types';
 import { leagueOf } from '@/lib/table/elo';
 import HeroArt from '@/components/HeroArt';
-import { NickFit, LeagueMedal } from '@/components/table/bits';
+import { NickFit, LeagueMedal, byGender } from '@/components/table/bits';
 
 /**
  * Церемонія після гри (клієнтська, спека Addendum 2): конфеті + нік переможця +
@@ -97,7 +97,7 @@ export default function Ceremony({ data, onDone }: { data: CeremonyData; onDone:
           </div>
           <div className="k-cere-nick"><NickFit nick={winner.nickname || winner.name} oneLine shrink={false} /></div>
           <div className="k-cere-delta">+{delta}</div>
-          {overtook && <div className="k-cere-pass">обійшов <b>@{overtook}</b></div>}
+          {overtook && <div className="k-cere-pass">{byGender(winner, 'обійшов', 'обійшла')} <b>@{overtook}</b></div>}
         </div>
       ) : (
         <div className="k-cere-inner league" key="league">

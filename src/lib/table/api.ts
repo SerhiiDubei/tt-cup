@@ -28,5 +28,5 @@ export const finishGame = (gameId: string, sets: SetScore[]) => jpost('/api/tabl
 export const cancelGame = (gameId: string) => jpost('/api/table/cancel', { gameId });
 export const joinQueue = (playerId: string) => jpost('/api/table/queue/join', { playerId });
 export const leaveQueue = (playerId: string) => jpost('/api/table/queue/leave', { playerId });
-export const quickAddPlayer = (name: string, style?: string) => jpost('/api/table/player', { name, style }) as Promise<{ id: string }>;
+export const quickAddPlayer = (name: string, style?: string, gender?: string) => jpost('/api/table/player', { name, style, gender }) as Promise<{ id: string }>;
 export const setPlayerArt = (playerId: string, art: string) => jpost('/api/table/player/avatar', { playerId, art });

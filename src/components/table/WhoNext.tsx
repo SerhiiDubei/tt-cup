@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { Player, SetScore } from '@/lib/tournament/types';
 import HeroArt from '@/components/HeroArt';
 import PlayerPicker from '@/components/table/PlayerPicker';
+import { byGender } from '@/components/table/bits';
 
 /**
  * Після гри: «Хто далі?» — переможець лишається / обидва йдуть / пізніше.
@@ -42,7 +43,7 @@ export default function WhoNext({ winner, loser, sets, queue, onStart, onLater }
                 <HeroArt src={winner.hero?.art} alt={winner.nickname} color={winner.hero?.color || 'var(--yellow)'}
                   initial={(winner.nickname || '?').charAt(0).toUpperCase()} size={150} radius={24} />
               </div>
-              <div className="k-next-name">ПЕРЕМІГ<br /><span>{winner.nickname || winner.name}</span></div>
+              <div className="k-next-name">{byGender(winner, 'ПЕРЕМІГ', 'ПЕРЕМОГЛА', 'ПЕРЕМІГ(ЛА)')}<br /><span>{winner.nickname || winner.name}</span></div>
             </div>
             <div className="k-next-score">
               <span className="big">{setsWon}</span>

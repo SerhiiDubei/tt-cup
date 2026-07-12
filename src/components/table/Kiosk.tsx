@@ -12,7 +12,7 @@ import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
 import Ceremony, { type CeremonyData } from '@/components/table/Ceremony';
 import Showcase from '@/components/table/Showcase';
-import { useArmed, NickFit, RatingChip } from '@/components/table/bits';
+import { useArmed, NickFit, RatingChip, byGender } from '@/components/table/bits';
 import { BRAND } from '@/config';
 
 type Overlay =
@@ -86,7 +86,7 @@ function CupIcon() {
 
 /* ---------- ряд черги ---------- */
 function QueueRow({ p, i, busy, onLeave }: { p: Player; i: number; busy: boolean; onLeave: (id: string) => void }) {
-  const [armed, fire] = useArmed();
+  const [armed, fire, armRef] = useArmed();
   return (
     <div className="k-qrow" data-qid={p.id}>
       <span className="k-qpos" style={{ background: POS_COLORS[i % POS_COLORS.length] }}>{i + 1}</span>
@@ -94,7 +94,7 @@ function QueueRow({ p, i, busy, onLeave }: { p: Player; i: number; busy: boolean
         {i === 0 && <span className="k-qnext">наступний</span>}
         <NickFit nick={p.nickname || p.name} oneLine />
       </span>
-      <button className={'k-qx' + (armed ? ' armed' : '')} disabled={busy}
+      <button ref={armRef} className={'k-qx' + (armed ? ' armed' : '')} disabled={busy}
         aria-label={`Прибрати ${p.nickname} з черги`}
         onClick={() => fire(() => onLeave(p.id))}>
         {armed ? 'Точно?' : '✕'}
@@ -169,9 +169,9 @@ function QueuePanel({ queue, busy, onLeave }: { queue: Player[]; busy: boolean; 
 
 /* ---------- кнопка «Скасувати гру» (подвійний тап) ---------- */
 function CancelGameButton({ busy, onCancel }: { busy: boolean; onCancel: () => void }) {
-  const [armed, fire] = useArmed();
+  const [armed, fire, armRef] = useArmed();
   return (
-    <button className={'kbtn ghost-danger' + (armed ? ' armed' : '')} disabled={busy}
+    <button ref={armRef} className={'kbtn ghost-danger' + (armed ? ' armed' : '')} disabled={busy}
       onClick={() => fire(onCancel)}>
       {armed ? 'Точно скасувати? Тапни ще раз' : 'Скасувати гру'}
     </button>
@@ -480,7 +480,7 @@ export default function Kiosk() {
               </div>
               {state.lastWinner && (
                 <span className="k-lastwin">
-                  <CupIcon /> минулу гру виграв <b>@{P(state.lastWinner).nickname}</b>
+                  <CupIcon /> минулу гру {byGender(P(state.lastWinner), 'виграв', 'виграла')} <b>@{P(state.lastWinner).nickname}</b>
                 </span>
               )}
             </div>

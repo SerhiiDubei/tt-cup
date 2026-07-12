@@ -12,7 +12,7 @@ import { STYLES } from '@/config';
 
 const STYLE_LABEL: Record<string, string> = { attacker: 'Атакер', defender: 'Захисник', allrounder: 'Універсал', spinner: 'Спінер' };
 
-type QuickAdd = { step: 1 | 2 | 3; name: string; selfie: string | null; style: string; busy: boolean; err: string | null };
+type QuickAdd = { step: 1 | 2 | 3; name: string; selfie: string | null; style: string; gender: 'male' | 'female' | null; busy: boolean; err: string | null };
 
 const QA_ERR: Record<string, string> = {
   nick_taken: 'Таке імʼя вже зайняте — підправ його трохи',
@@ -123,7 +123,7 @@ export default function PlayerPicker({
   }, [pool, q]);
 
   const openQa = (name = '') =>
-    setQa({ step: 1, name, selfie: null, style: 'attacker', busy: false, err: null });
+    setQa({ step: 1, name, selfie: null, style: 'attacker', gender: null, busy: false, err: null });
 
   /** Спільний вхід для тапів по картках, слотах і квик-адду двомісного пікера. */
   function pick(id: string) {
@@ -148,7 +148,7 @@ export default function PlayerPicker({
     setQa({ ...qa, busy: true, err: null });
     try {
       const nick = qa.name.trim();
-      const { id } = await quickAddPlayer(nick, qa.style);
+      const { id } = await quickAddPlayer(nick, qa.style, qa.gender ?? undefined);
       if (qa.selfie) {
         const { selfie, style } = qa;
         markArtPending(id); // картки/ряди новачка показують міні-лоадер, поки арт вариться
@@ -164,7 +164,7 @@ export default function PlayerPicker({
         // пікер на двох: новачок одразу в сітці й у виборі — лишилось тапнути суперника
         setExtras((prev) => [...prev, {
           id, name: nick, nickname: nick, seed: 0,
-          hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: qa.style },
+          hero: { color: 'var(--yellow)', shape: 'circle', emblem: '★', style: qa.style, ...(qa.gender ? { gender: qa.gender } : {}) },
         }]);
         pick(id);
         setQ('');
@@ -277,6 +277,12 @@ export default function PlayerPicker({
 
             {qa.step === 3 && (
               <>
+                <div className="k-gender" role="group" aria-label="Стать (необовʼязково)">
+                  {([['male', 'ВІН'], ['female', 'ВОНА'], [null, '—']] as const).map(([g, label]) => (
+                    <button key={label} className={'k-pill' + (qa.gender === g ? ' on' : '')} disabled={qa.busy}
+                      aria-pressed={qa.gender === g} onClick={() => setQa({ ...qa, gender: g })}>{label}</button>
+                  ))}
+                </div>
                 <div className="k-styles">
                   {STYLES.map((s) => (
                     <button key={s} className={'k-style-btn' + (qa.style === s ? ' on' : '')} disabled={qa.busy}

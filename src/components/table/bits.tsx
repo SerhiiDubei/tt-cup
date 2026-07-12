@@ -5,12 +5,37 @@ import type { Title } from '@/lib/table/types';
 
 const ARM_MS = 4000;
 
-/** Подвійний тап: перший «озброює» на 4с, другий виконує. */
+/** «виграв/виграла» за статтю героя; стать не вказана — універсальне «виграв(ла)». */
+export function byGender(
+  p: { hero?: { gender?: string } } | null | undefined,
+  m: string, f: string, u?: string
+): string {
+  const g = p?.hero?.gender;
+  return g === 'female' ? f : g === 'male' ? m : (u ?? `${m}(ла)`);
+}
+
+/**
+ * Подвійний тап: перший «озброює» на 4с, другий виконує.
+ * Тап будь-де ПОЗА кнопкою знімає озброєння одразу (фідбек клубу: click-out) —
+ * третім елементом повертається ref, який вішається на кнопку.
+ */
 export function useArmed(ms = ARM_MS) {
   const [armed, setArmed] = useState(false);
   const armedRef = useRef(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
+  useEffect(() => {
+    if (!armed) return;
+    const onDown = (e: PointerEvent) => {
+      // тап по самій кнопці обробляє fire(); все інше — збиває «Точно?»
+      if (btnRef.current && e.target instanceof Node && btnRef.current.contains(e.target)) return;
+      if (t.current) clearTimeout(t.current);
+      armedRef.current = false; setArmed(false);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, [armed]);
   const fire = useCallback((fn: () => void) => {
     if (t.current) clearTimeout(t.current);
     if (armedRef.current) {
@@ -21,7 +46,7 @@ export function useArmed(ms = ARM_MS) {
       t.current = setTimeout(() => { armedRef.current = false; setArmed(false); }, ms);
     }
   }, [ms]);
-  return [armed, fire] as const;
+  return [armed, fire, btnRef] as const;
 }
 
 /**
