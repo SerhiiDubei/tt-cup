@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateSets, casualWinner } from './scoring';
+import { validateSets, casualWinner, quickSets, quickDefaultLoser } from './scoring';
 
 describe('validateSets', () => {
   it('rejects empty', () => expect(validateSets([])).toBe('no_sets'));
@@ -13,4 +13,24 @@ describe('validateSets', () => {
 describe('casualWinner', () => {
   it('a wins 2-1', () => expect(casualWinner('A', 'B', [[11, 9], [7, 11], [11, 5]])).toBe('A'));
   it('b wins 0-1', () => expect(casualWinner('A', 'B', [[3, 11]])).toBe('B'));
+});
+
+describe('quickSets', () => {
+  it('переможець a → [[target, loserPts]]', () => expect(quickSets(true, 11, 9)).toEqual([[11, 9]]));
+  it('переможець b → [[loserPts, target]]', () => expect(quickSets(false, 21, 19)).toEqual([[19, 21]]));
+  it('валідний за побудовою навіть на краях (0 очок)', () => {
+    expect(validateSets(quickSets(true, 11, 0))).toBeNull();
+    expect(validateSets(quickSets(false, 21, 20))).toBeNull();
+  });
+  it('орієнтація a:b узгоджена з casualWinner', () => {
+    expect(casualWinner('A', 'B', quickSets(true, 11, 7))).toBe('A');
+    expect(casualWinner('A', 'B', quickSets(false, 21, 14))).toBe('B');
+  });
+});
+
+describe('quickDefaultLoser', () => {
+  it('9 для гри до 11, 19 — до 21', () => {
+    expect(quickDefaultLoser(11)).toBe(9);
+    expect(quickDefaultLoser(21)).toBe(19);
+  });
 });

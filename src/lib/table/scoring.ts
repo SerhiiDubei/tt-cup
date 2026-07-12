@@ -24,3 +24,20 @@ export function casualWinner(a: string, b: string, sets: SetScore[]): string {
   const aw = sets.filter(([x, y]) => x > y).length;
   return aw > sets.length - aw ? a : b;
 }
+
+/* ---------- швидкий фініш «ХТО ПЕРЕМІГ?» (один сет до 11 або до 21) ---------- */
+
+export const QUICK_TARGETS = [11, 21] as const;
+export type QuickTarget = (typeof QUICK_TARGETS)[number];
+
+/** Дефолт очок переможеного: 9 при грі до 11, 19 — до 21 (типовий рахунок). */
+export const quickDefaultLoser = (target: QuickTarget): number => target - 2;
+
+/**
+ * Один сет швидкого фінішу, орієнтований a:b — той самий контракт, що й у
+ * повній формі (finishGame очікує сети в порядку гравців гри). Валідний за
+ * побудовою, коли 0 ≤ loserPts < target.
+ */
+export function quickSets(winnerIsA: boolean, target: number, loserPts: number): SetScore[] {
+  return winnerIsA ? [[target, loserPts]] : [[loserPts, target]];
+}
