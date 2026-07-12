@@ -62,13 +62,23 @@ export default function QueueIdle() {
 
     const padY = (side: number) => (side === 1 ? H - GHOST_ZONE * S - 4 : GHOST_ZONE * S + 4);
 
+    // стіл справжніх пропорцій: грають УЗДОВЖ довгої сторони (152.5/274 ≈ .56),
+    // інакше на широкій панелі виходить «гра в поперек»
+    const tableGeom = () => {
+      const gz = GHOST_ZONE * S;
+      const len = H - gz * 2;
+      const tw = Math.min(W - 20, len * 0.6);
+      return { gz, len, tw, tx: (W - tw) / 2 };
+    };
+
     const newShot = (fromIdx: number) => {
       const from = pads[fromIdx], to = pads[1 - fromIdx];
-      const margin = 36;
+      const g = tableGeom();
+      const margin = Math.max(24, g.tw * .16); // приземлення не впритул до кромки
       shot = makeShot({
         rnd, tuning: TUNING,
         from: { x: from.x, y: from.y },
-        to: { x: margin + rnd() * Math.max(1, W - margin * 2), y: padY(to.side) },
+        to: { x: g.tx + margin + rnd() * Math.max(1, g.tw - margin * 2), y: padY(to.side) },
         len: H, smash: isSmashTime(), bounce: true,
       });
       t = 0; bounced = false; toSide = 1 - fromIdx;
@@ -81,9 +91,10 @@ export default function QueueIdle() {
       ctx.save();
       if (shake > .3) ctx.translate((rnd() - .5) * shake, (rnd() - .5) * shake);
 
-      // стіл-спрайт на всю сцену, між смугами привидів
-      const gz = GHOST_ZONE * S;
-      drawTable(ctx, 10, gz, W - 20, H - gz * 2, pal.cyan, pal.ink, S);
+      // стіл-спрайт правильних пропорцій по центру, між смугами привидів
+      const g = tableGeom();
+      const gz = g.gz;
+      drawTable(ctx, g.tx, g.gz, g.tw, g.len, pal.cyan, pal.ink, S);
 
       for (const r of fx.ripples) drawRipple(ctx, r.x, r.y, r.t, pal.ink, S);
 
@@ -194,7 +205,7 @@ export default function QueueIdle() {
 
       // ракетки: приймаючий їде до точки прийому, інший погойдується
       pads.forEach((p, i) => {
-        const target = i === toSide ? s.x1 : W / 2 + Math.sin(time * .0007 + i * 2.1) * W * .16;
+        const target = i === toSide ? s.x1 : W / 2 + Math.sin(time * .0007 + i * 2.1) * tableGeom().tw * .3;
         p.x += (target - p.x) * Math.min(1, dt * .006);
         p.y = padY(p.side) + Math.sin(time * .0011 + i * 1.7) * 2.5;
         p.swing += dt;
