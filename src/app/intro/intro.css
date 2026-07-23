@@ -1,0 +1,61 @@
+/* Лабораторія інтро: темна сцена + перемикач варіантів */
+
+.il-stage {
+  position: fixed;
+  inset: 0;
+  background: #16110d;
+  overflow: hidden;
+}
+.il-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.il-ui {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+.il-btn {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #fbf1dd;
+  background: rgba(251, 241, 221, 0.08);
+  border: 2.5px solid rgba(251, 241, 221, 0.5);
+  border-radius: 11px;
+  padding: 9px 13px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.il-btn:hover { transform: translateY(-1px); }
+.il-btn.on {
+  background: #ffc619;
+  color: #16110d;
+  border-color: #16110d;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+}
+.il-replay { font-size: 15px; padding: 9px 12px; }
+.il-desc {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 92vw;
+  text-align: center;
+  font-family: 'Onest', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(251, 241, 221, 0.6);
+  z-index: 10;
+}

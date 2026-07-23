@@ -1,0 +1,336 @@
+/* ============================================================
+   ЛІГА DRUID BATTLE CUP — флоу /join + кабінет /ya + адмін оплат
+   Мобайл-фьорст: один стовпець, великі тапи, нічого не вилазить.
+   Memphis-система клубу: крем/чорнило, 3px бордери, жорсткі тіні.
+   Префікс jn- щоб не конфліктувати зі старим сайтом/кіоском.
+   ============================================================ */
+.jn-root {
+  --bg: #fbf1dd;
+  --paper: #ffffff;
+  --ink: #16110d;
+  --ink-soft: #5b5148;
+  --pink: #ff2e88;
+  --cyan: #00cfc1;
+  --yellow: #ffc619;
+  --blue: #2d4bff;
+  --coral: #ff5a36;
+  --lime: #a6e22e;
+  --shadow: 4px 4px 0 var(--ink);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Onest', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* верхній відступ під ЄДИНИЙ фіксований хедер (D-040) */
+  padding: 96px 16px calc(40px + env(safe-area-inset-bottom));
+}
+.jn-root * { box-sizing: border-box; }
+.jn-wrap { max-width: 480px; margin: 0 auto; }
+
+.jn-brand {
+  font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 13px;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  display: inline-block; background: var(--ink); color: var(--bg);
+  padding: 6px 12px; border-radius: 10px; transform: rotate(-1.5deg);
+  margin-bottom: 18px;
+}
+.jn-step { font-family: ui-monospace, monospace; font-size: 12px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+.jn-h1 {
+  font-family: 'Unbounded', sans-serif; font-weight: 900;
+  font-size: clamp(22px, 6.5vw, 30px); line-height: 1.12; text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.jn-lead { font-size: 15px; color: var(--ink-soft); margin: 0 0 22px; line-height: 1.5; }
+
+/* Прогрес — три мʼячики */
+.jn-dots { display: flex; gap: 8px; margin: 0 0 20px; }
+.jn-dot { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--ink);
+  background: var(--paper); transition: background 0.2s var(--ease); }
+.jn-dot.on { background: var(--pink); }
+.jn-dot.done { background: var(--lime); }
+
+/* Питання рівня */
+.jn-q { margin-bottom: 22px; }
+.jn-q h3 { font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 16px; margin: 0 0 10px; }
+.jn-opts { display: grid; gap: 8px; }
+.jn-opt {
+  width: 100%; min-height: 54px; text-align: left;
+  font-family: 'Onest', sans-serif; font-weight: 700; font-size: 15px; line-height: 1.3;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 12px 16px; cursor: pointer;
+  transition: transform 0.12s var(--ease), background 0.12s;
+}
+.jn-opt:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.jn-opt.on { background: var(--yellow); }
+
+/* Поля */
+.jn-field { margin-bottom: 14px; }
+.jn-field label { display: block; font-weight: 800; font-size: 13px; text-transform: uppercase;
+  letter-spacing: 0.04em; margin-bottom: 6px; }
+.jn-input {
+  width: 100%; min-height: 52px; font: inherit; font-weight: 600; font-size: 16px;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 14px; box-shadow: var(--shadow);
+  padding: 12px 16px; outline: none;
+}
+.jn-input:focus { background: #fffdf6; border-color: var(--blue); }
+
+/* Чек волонтера */
+.jn-check {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 14px 16px; cursor: pointer;
+  font-weight: 800; font-size: 15px; margin: 18px 0 0;
+}
+.jn-check .box { flex: none; width: 26px; height: 26px; border: 3px solid var(--ink);
+  border-radius: 8px; background: var(--paper); display: grid; place-items: center;
+  font-size: 15px; line-height: 1; }
+.jn-check.on { background: #eafff0; }
+.jn-check.on .box { background: var(--lime); }
+.jn-roles { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.jn-role { font: inherit; font-weight: 700; font-size: 13px; padding: 8px 12px;
+  border: 2.5px solid var(--ink); border-radius: 999px; background: var(--paper); cursor: pointer; }
+.jn-role.on { background: var(--cyan); }
+
+/* Тарифи (D-036): якісно розведені, з ілюстраціями; преміум — шимер */
+.jn-prices { display: grid; gap: 14px; margin-bottom: 6px; }
+.jn-price {
+  position: relative; overflow: hidden;
+  display: flex; gap: 12px; align-items: center;
+  width: 100%; text-align: left; background: var(--paper); cursor: pointer;
+  border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow);
+  padding: 14px; transition: transform 0.12s var(--ease), background 0.12s;
+}
+.jn-price:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.jn-price.on { background: var(--yellow); }
+.jn-price-art {
+  flex: none; width: 84px; height: 96px; object-fit: contain;
+  filter: drop-shadow(2px 3px 0 rgba(22, 17, 13, 0.25));
+}
+.jn-price-body { min-width: 0; }
+.jn-price .sum { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 24px; }
+.jn-price .what { font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.05em; margin-top: 2px; }
+.jn-price .note { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; line-height: 1.45; }
+/* преміум: золота рамка + пробіг блиску */
+.jn-price.prem { border-color: #b8860b; box-shadow: 4px 4px 0 #b8860b; }
+.jn-price.prem.on { background: linear-gradient(120deg, #ffc619, #ffe08a 45%, #ffc619); }
+.jn-price.prem::after {
+  content: ''; position: absolute; top: -60%; bottom: -60%; width: 46px;
+  left: -70px; transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: jnShine 3.2s ease-in-out infinite;
+}
+@keyframes jnShine {
+  0%, 55% { left: -70px; }
+  85%, 100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) { .jn-price.prem::after { animation: none; } }
+
+/* Степ-анкета: навігація і тихий волонтер-лінк (D-036) */
+.jn-qnav { display: flex; gap: 10px; flex-direction: column; margin-top: 4px; }
+.jn-vollink { margin-top: 22px; font-size: 13.5px; color: var(--ink-soft); text-align: center; }
+.jn-vollink button {
+  font: inherit; font-weight: 800; color: var(--blue); background: none; border: none;
+  cursor: pointer; text-decoration: underline; padding: 0;
+}
+
+/* Кнопки */
+.jn-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 56px; margin-top: 16px;
+  font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 15px;
+  text-transform: uppercase; letter-spacing: 0.02em; text-decoration: none;
+  background: var(--pink); color: #fff;
+  border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow);
+  padding: 14px 18px; cursor: pointer;
+  transition: transform 0.12s var(--ease);
+}
+.jn-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.jn-btn:disabled { opacity: 0.45; cursor: default; }
+.jn-btn.cyan { background: var(--cyan); color: var(--ink); }
+.jn-btn.ghost { background: var(--paper); color: var(--ink); font-family: 'Onest', sans-serif;
+  font-weight: 800; min-height: 48px; }
+
+.jn-err { margin-top: 12px; font-weight: 700; color: var(--coral); }
+
+/* Картки кабінету/оплати */
+.jn-card {
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 16px;
+  box-shadow: var(--shadow); padding: 18px 16px; margin-bottom: 14px;
+}
+.jn-card h3 { font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 15px;
+  text-transform: uppercase; margin: 0 0 8px; }
+.jn-code {
+  font-family: ui-monospace, monospace; font-weight: 800; font-size: 34px;
+  letter-spacing: 0.06em; text-align: center;
+  background: var(--bg); border: 3px dashed var(--ink); border-radius: 14px;
+  padding: 14px 10px; margin: 10px 0;
+}
+.jn-hint { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; margin: 8px 0 0; }
+.jn-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.jn-chip { font-weight: 800; font-size: 13px; padding: 6px 12px;
+  border: 2.5px solid var(--ink); border-radius: 999px; background: var(--paper); }
+.jn-chip.lime { background: var(--lime); }
+.jn-chip.yellow { background: var(--yellow); }
+.jn-chip.pink { background: var(--pink); color: #fff; }
+.jn-chip.cyan { background: var(--cyan); }
+
+.jn-status { display: flex; align-items: center; gap: 10px;
+  font-weight: 800; font-size: 16px; }
+.jn-status .ico { font-size: 22px; }
+
+/* Адмін-таблиця (мобайл: картки) */
+.jn-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border-top: 2px dashed rgba(22,17,13,0.2); padding: 12px 0; }
+.jn-row:first-child { border-top: none; }
+.jn-row .who { flex: 1 1 160px; min-width: 0; }
+.jn-row .who b { display: block; font-size: 15px; }
+.jn-row .who span { font-size: 12.5px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.jn-paybtn { font: inherit; font-weight: 800; font-size: 13px; padding: 8px 12px;
+  border: 2.5px solid var(--ink); border-radius: 10px; background: var(--paper); cursor: pointer; }
+.jn-paybtn.on { background: var(--lime); }
+
+/* ---------- Кабінет v2 (D-036) ---------- */
+.jn-wrap.wide { max-width: 640px; }
+.jn-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.jn-nav .jn-brand { margin-bottom: 0; }
+.jn-nav-links { display: flex; gap: 14px; }
+.jn-nav-links a { font-weight: 800; font-size: 13.5px; color: var(--ink); text-decoration: none; border-bottom: 2.5px solid var(--pink); padding-bottom: 1px; }
+
+.jn-profile { display: flex; align-items: center; gap: 14px; margin: 6px 0 14px; }
+.jn-ava {
+  flex: none; width: 72px; height: 72px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 22px; color: #fff;
+  background: radial-gradient(circle at 32% 28%, var(--pink), var(--purple));
+  border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+}
+.jn-profile-who { min-width: 0; }
+
+.jn-count { text-align: center; background: var(--ink); color: var(--bg); }
+.jn-count .jn-hint { color: rgba(251, 241, 221, 0.75); }
+.jn-count-label { margin: 0 0 4px; font-weight: 700; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--yellow); }
+.jn-count-big { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: clamp(34px, 9vw, 48px); line-height: 1.1; margin: 2px 0 8px; }
+.jn-count-big small { font-size: 0.42em; font-weight: 700; }
+
+.jn-payline { font-weight: 800; font-size: 15.5px; }
+.jn-payline.ok { background: #eafff0; }
+
+/* (аудит R-012 #1: старий override 34px ховав контент під фіксований хедер —
+   видалено; базовий padding-top 96px діє на всіх ширинах) */
+
+/* ---------- ЛК v3 (D-037): шапка-банер, матчі, сітка, лінки ---------- */
+.jn-phead {
+  position: relative; border: 3px solid var(--ink); border-radius: 18px;
+  overflow: hidden; box-shadow: var(--shadow); margin-bottom: 14px; min-height: 150px;
+  display: flex; align-items: flex-end;
+}
+.jn-phead-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.62); }
+.jn-phead-in { position: relative; z-index: 2; display: flex; align-items: center; gap: 14px; padding: 40px 16px 14px; width: 100%;
+  background: linear-gradient(180deg, transparent, rgba(22, 17, 13, 0.72)); }
+.jn-phead-who h1 { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: clamp(22px, 5vw, 30px); color: #fff8ec; margin: 0; text-transform: uppercase; }
+.jn-phead-who p { margin: 2px 0 0; font-size: 13px; font-weight: 600; color: rgba(255, 248, 236, 0.85); }
+.jn-phead .jn-chips { margin-top: 8px; }
+
+.jn-grid { display: grid; gap: 0 14px; }
+@media (min-width: 700px) { .jn-grid { grid-template-columns: 1.25fr 1fr; align-items: start; } }
+
+.jn-matches { display: grid; gap: 6px; }
+.jn-match {
+  display: flex; align-items: center; gap: 10px;
+  border: 2.5px dashed rgba(22, 17, 13, 0.25); border-radius: 12px; padding: 9px 12px;
+}
+.jn-match .n {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 12px;
+  border: 2.5px solid var(--ink); background: var(--paper);
+}
+.jn-match .vs { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.jn-match .res { font-family: ui-monospace, monospace; font-weight: 700; font-size: 13px; color: var(--ink-soft); }
+
+.jn-links { display: grid; gap: 8px; }
+.jn-links a {
+  display: block; font-weight: 800; font-size: 14.5px; color: var(--ink); text-decoration: none;
+  border: 2.5px solid var(--ink); border-radius: 12px; padding: 11px 14px; background: var(--paper);
+  transition: transform 0.12s var(--ease);
+}
+.jn-links a:hover { transform: translate(-1px, -1px); }
+
+/* ---------- Єдиний бренд з іконкою Джеремі (D-038) ---------- */
+.jn-logo { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; }
+.jn-logo img {
+  width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+  border: 2.5px solid var(--ink); background: #d9d3c6; box-shadow: 2px 2px 0 var(--ink);
+}
+.jn-logo .jn-brand { margin-bottom: 0; }
+
+/* ---------- Ростер гравців ліги (D-038) ---------- */
+.jn-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.jn-rcard {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: var(--shadow); padding: 10px 12px;
+}
+.jn-rcard .who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.jn-rcard b { font-size: 14.5px; overflow-wrap: anywhere; }
+.jn-ava.sm { width: 40px; height: 40px; font-size: 15px; flex: none; }
+/* сторінки під фіксованим хедером основного сайту */
+.jn-root.insite { padding-top: 98px; }
+/* нік у банері не вилазить за край (QA 22.07) */
+.jn-phead-who { min-width: 0; }
+.jn-phead-who h1 { font-size: clamp(17px, 4.6vw, 30px); overflow-wrap: anywhere; }
+
+/* Стандартна Google-кнопка (D-047) */
+.g-btn {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; min-height: 54px; margin-top: 16px;
+  font-family: 'Onest', system-ui, sans-serif; font-weight: 700; font-size: 15.5px;
+  color: #1f1f1f; background: #fff;
+  border: 3px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow);
+  padding: 12px 18px; cursor: pointer;
+  transition: transform 0.12s var(--ease);
+}
+.g-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+/* ---------- Лоадер першого візиту (D-050) ---------- */
+.ld { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 0 8px; }
+.ld-stage { position: relative; height: 64px; width: 64px; display: grid; place-items: center; }
+.ld-ball {
+  position: absolute; top: 0; left: 50%; margin-left: -16px;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: radial-gradient(circle at 35% 30%, #ffffff 0 46%, #f0e3ca 47% 100%);
+  animation: ldBounce 0.55s cubic-bezier(0.32, 0, 0.72, 1) infinite alternate;
+}
+.ld-shadow {
+  position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  width: 34px; height: 8px; border-radius: 50%;
+  background: rgba(22, 17, 13, 0.25);
+  animation: ldShadow 0.55s cubic-bezier(0.32, 0, 0.72, 1) infinite alternate;
+}
+@keyframes ldBounce {
+  from { transform: translateY(0) scale(1, 1); }
+  to { transform: translateY(26px) scale(1.18, 0.8); }
+}
+@keyframes ldShadow {
+  from { transform: translateX(-50%) scale(0.55); opacity: 0.35; }
+  to { transform: translateX(-50%) scale(1.1); opacity: 0.7; }
+}
+.ld-txt { margin: 0; font-weight: 700; font-size: 14px; color: var(--ink-soft); }
+.ld-sk { width: 100%; display: grid; gap: 12px; margin-top: 16px; }
+.sk {
+  border-radius: 16px; border: 3px solid rgba(22, 17, 13, 0.08);
+  background: linear-gradient(100deg, #f3e9d3 38%, #fbf4e4 50%, #f3e9d3 62%);
+  background-size: 200% 100%;
+  animation: skShimmer 1.3s ease-in-out infinite;
+}
+@keyframes skShimmer {
+  from { background-position: 130% 0; }
+  to { background-position: -30% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-ball, .ld-shadow, .sk { animation: none; }
+}

@@ -1,0 +1,83 @@
+/* ============================================================
+   /v2/afisha — 5 варіацій афіші DRUID BATTLE CUP (D-036).
+   Формат 3:4 (друк/пост); обовʼязково QR на лендак у кожній.
+   ============================================================ */
+.af-page { min-height: 100svh; background: #16110d; padding: 26px 14px 60px; font-family: 'Onest', system-ui, sans-serif; }
+.af-title { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 17px; text-transform: uppercase; color: #fbf1dd; text-align: center; margin: 0 0 6px; }
+.af-sub { color: rgba(251, 241, 221, 0.6); font-size: 13px; text-align: center; margin: 0 0 26px; }
+.af-cap { color: rgba(251, 241, 221, 0.78); font-size: 13px; line-height: 1.5; max-width: 430px; margin: 10px auto 40px; }
+
+.af {
+  position: relative; max-width: 430px; aspect-ratio: 3 / 4;
+  margin: 0 auto; border-radius: 14px; overflow: hidden;
+}
+.af-num {
+  position: absolute; top: 10px; left: 10px; z-index: 9;
+  font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 13px;
+  background: #ffc619; color: #16110d; border: 3px solid #16110d; border-radius: 10px; padding: 4px 10px;
+}
+.af-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.af-qr { border: 3px solid #16110d; border-radius: 12px; background: #fff8ec; display: block; }
+
+/* Спільна типографіка назви */
+.af-logo { font-family: 'Unbounded', sans-serif; font-weight: 900; text-transform: uppercase; line-height: 0.98; letter-spacing: -0.01em; }
+
+/* ---- 1 · Вечірня гірлянда ---- */
+.af1 .af-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 8, 20, 0.72) 0%, rgba(10, 8, 20, 0.18) 40%, rgba(10, 8, 20, 0.06) 55%, rgba(10, 8, 20, 0.82) 82%); }
+.af1 .af-top { position: absolute; top: 26px; left: 20px; right: 20px; z-index: 2; }
+.af1 .af-logo { font-size: 44px; color: #fff8ec; text-shadow: 3px 3px 0 #16110d; }
+.af1 .af-logo .y { color: #ffc619; }
+.af1 .af-when { margin-top: 10px; font-weight: 800; font-size: 15px; color: #fff8ec; }
+.af1 .af-bottom { position: absolute; left: 20px; right: 20px; bottom: 18px; z-index: 2; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.af1 .af-facts { font-weight: 700; font-size: 12.5px; line-height: 1.55; color: rgba(255, 248, 236, 0.92); }
+.af1 .af-qr { width: 96px; height: 96px; }
+
+/* ---- 2 · Комікс із Джеремі ---- */
+.af2 { background: #ffc619; }
+.af2 .af-dots { position: absolute; inset: 0; background-image: radial-gradient(#16110d 1.3px, transparent 1.3px); background-size: 22px 22px; opacity: 0.12; }
+.af2 .af-logo { position: absolute; top: 24px; left: 20px; right: 20px; font-size: 34px; color: #16110d; z-index: 3; }
+.af2 .af-logo .p { color: #ff2e88; -webkit-text-stroke: 2px #16110d; }
+.af2 .af-hero { position: absolute; right: -10px; bottom: 78px; width: 56%; z-index: 2; filter: drop-shadow(6px 8px 0 rgba(22, 17, 13, 0.3)); }
+.af2 .af-bub {
+  position: absolute; left: 18px; bottom: 210px; z-index: 3; max-width: 46%;
+  background: #fdf6e3; border: 3px solid #16110d;
+  border-radius: 200px 16px 180px 14px / 14px 180px 16px 200px;
+  padding: 14px; font-family: 'Neucha', cursive; font-size: 19px; line-height: 1.25; transform: rotate(-2deg);
+}
+.af2 .af-strip { position: absolute; left: 0; right: 0; bottom: 0; background: #16110d; color: #fff8ec; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 4; }
+.af2 .af-strip b { font-family: 'Unbounded', sans-serif; font-size: 13.5px; }
+.af2 .af-strip span { font-size: 12px; font-weight: 700; opacity: 0.85; }
+.af2 .af-qr { width: 78px; height: 78px; }
+
+/* ---- 3 · Нічний неон ---- */
+.af3 { background: #16110d; }
+.af3 .af-balls { position: absolute; inset: 0; background-image: radial-gradient(circle at 18% 12%, #ff2e88 5px, transparent 6px), radial-gradient(circle at 82% 8%, #ffc619 6px, transparent 7px), radial-gradient(circle at 90% 42%, #00cfc1 4px, transparent 5px), radial-gradient(circle at 8% 55%, #ffc619 5px, transparent 6px), radial-gradient(circle at 76% 88%, #ff2e88 4px, transparent 5px), radial-gradient(circle at 22% 90%, #00cfc1 6px, transparent 7px); opacity: 0.9; }
+.af3 .af-logo { position: absolute; top: 60px; left: 24px; right: 24px; font-size: 52px; color: transparent; -webkit-text-stroke: 2.5px #ffc619; text-align: center; z-index: 2; }
+.af3 .af-logo .full { color: #ffc619; -webkit-text-stroke: 0; }
+.af3 .af-when { position: absolute; top: 46%; left: 0; right: 0; text-align: center; font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 17px; color: #fff8ec; z-index: 2; }
+.af3 .af-qr-wrap { position: absolute; left: 50%; transform: translateX(-50%); bottom: 56px; text-align: center; z-index: 2; }
+.af3 .af-qr { width: 140px; height: 140px; margin: 0 auto; }
+.af3 .af-scan { margin-top: 10px; font-weight: 800; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #00cfc1; }
+
+/* ---- 4 · День Х ---- */
+.af4 .af-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 8, 20, 0.55) 0%, rgba(10, 8, 20, 0.1) 45%, rgba(10, 8, 20, 0.85) 85%); }
+.af4 .af-date { position: absolute; top: 30px; left: 0; right: 0; text-align: center; z-index: 2; font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 88px; line-height: 1; color: #ffc619; text-shadow: 4px 4px 0 #16110d; }
+.af4 .af-date small { display: block; font-size: 20px; color: #fff8ec; margin-top: 4px; }
+.af4 .af-bottom { position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; z-index: 2; }
+.af4 .af-logo { font-size: 26px; color: #fff8ec; text-shadow: 2px 2px 0 #16110d; }
+.af4 .af-note { margin-top: 6px; font-weight: 700; font-size: 12.5px; color: rgba(255, 248, 236, 0.9); }
+.af4 .af-qr { width: 92px; height: 92px; }
+
+/* ---- 5 · Типографіка Memphis ---- */
+.af5 { background: #fbf1dd; }
+.af5 .af-frame { position: absolute; inset: 12px; border: 4px solid #16110d; border-radius: 10px; }
+.af5 .af-logo { position: absolute; top: 44px; left: 28px; right: 28px; font-size: 56px; color: #16110d; z-index: 2; }
+.af5 .af-logo .o1 { color: transparent; -webkit-text-stroke: 2.5px #16110d; }
+.af5 .af-logo .p { color: #ff2e88; }
+.af5 .af-list { position: absolute; left: 30px; bottom: 130px; z-index: 2; font-weight: 800; font-size: 15px; line-height: 1.8; color: #16110d; }
+.af5 .af-list i { font-style: normal; color: #ff2e88; }
+.af5 .af-ball { position: absolute; right: 34px; top: 40%; width: 74px; height: 74px; border-radius: 50%; border: 4px solid #16110d; background: radial-gradient(circle at 32% 28%, #fff 0 46%, #f0e3ca 47% 100%); box-shadow: 5px 5px 0 #16110d; }
+.af5 .af-bottom { position: absolute; left: 28px; right: 28px; bottom: 26px; display: flex; align-items: flex-end; justify-content: space-between; z-index: 2; }
+.af5 .af-when { font-family: 'Unbounded', sans-serif; font-weight: 900; font-size: 17px; color: #16110d; }
+.af5 .af-when small { display: block; font-family: 'Onest', sans-serif; font-weight: 700; font-size: 12.5px; margin-top: 4px; color: #5b5148; }
+.af5 .af-qr { width: 104px; height: 104px; }

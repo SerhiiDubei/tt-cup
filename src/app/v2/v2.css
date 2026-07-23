@@ -1,0 +1,544 @@
+/* ============================================================
+   /v2 — вхідний флоу: прелоадер з мʼячиками + комікс-онбординг.
+   Мова стилю: Memphis TT Cup × нуар-комікс (товсті контури,
+   плоскі заливки, жорсткі тіні, вертикальна панель як у рефі).
+   ============================================================ */
+
+.v2-stage-wrap {
+  position: fixed;
+  inset: 0;
+  background: #16110d;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ---------- ПРОЛОГ (обране інтро «Дощ») ---------- */
+.pl-stage {
+  position: absolute;
+  inset: 0;
+  background: #16110d;
+  cursor: pointer;
+}
+.pl-stage .il-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- ІНТРО (канвас) ---------- */
+.v2-intro {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #16110d;
+  cursor: pointer;
+  padding: 0;
+}
+.v2-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.v2-intro-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(9vh, 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  pointer-events: none;
+}
+.v2-intro-bottom.show {
+  opacity: 1;
+  transform: none;
+}
+.v2-intro-sub {
+  font-family: 'Onest', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(14px, 2vw, 18px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fbf1dd;
+}
+.v2-intro-hint {
+  font-family: 'Onest', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(251, 241, 221, 0.55);
+  animation: v2pulse 1.8s infinite ease-in-out;
+}
+@keyframes v2pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ---------- ПАНЕЛЬ КОМІКСА ---------- */
+.v2-panel {
+  position: relative;
+  width: min(100vw, 560px);
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  border-left: 4px solid #16110d;
+  border-right: 4px solid #16110d;
+  animation: v2panelin 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+@keyframes v2panelin {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.bg-yellow { background: #ffc619; }
+.bg-coral { background: #ff5a36; }
+.bg-ink { background: #241c15; }
+.bg-cream { background: #fbf1dd; }
+.bg-blue { background: #2d4bff; }
+.bg-pink { background: #ff2e88; }
+
+.v2-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+}
+
+/* прогрес-крапки */
+.v2-dots {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
+  z-index: 5;
+}
+.v2-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2.5px solid #16110d;
+  box-sizing: border-box;
+}
+.bg-ink .v2-dots i,
+.bg-blue .v2-dots i { border-color: #fbf1dd; }
+.v2-dots i.on { background: #fff8ec; border-color: #16110d; }
+.bg-cream .v2-dots i.on,
+.bg-yellow .v2-dots i.on { background: #16110d; }
+
+/* бабл */
+.v2-bubble {
+  position: absolute;
+  top: 40px;
+  left: 18px;
+  right: 18px;
+  z-index: 4;
+  background: #fff8ec;
+  border: 4px solid #16110d;
+  border-radius: 18px;
+  box-shadow: 7px 7px 0 rgba(22, 17, 13, 0.85);
+  padding: 16px 18px;
+  animation: v2bubblein 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes v2bubblein {
+  from { transform: translateY(-8px) scale(0.98); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.v2-bubble::after {
+  content: '';
+  position: absolute;
+  left: 42px;
+  bottom: -18px;
+  width: 26px;
+  height: 26px;
+  background: #fff8ec;
+  border-right: 4px solid #16110d;
+  border-bottom: 4px solid #16110d;
+  transform: rotate(45deg) skew(12deg, 12deg);
+}
+.v2-bubble p {
+  margin: 0;
+  font-family: 'Onest', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(16px, 2.4vh, 19px);
+  line-height: 1.45;
+  color: #16110d;
+  min-height: 3.9em;
+}
+.v2-caret {
+  display: inline-block;
+  width: 10px;
+  height: 1em;
+  margin-left: 2px;
+  background: #16110d;
+  vertical-align: text-bottom;
+  animation: v2pulse 0.7s infinite;
+}
+
+/* персонаж */
+.v2-director {
+  position: absolute;
+  bottom: 0;
+  left: -4%;
+  height: min(58%, 520px);
+  z-index: 2;
+  filter: drop-shadow(10px 8px 0 rgba(22, 17, 13, 0.35));
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+.v2-director-still {
+  animation: v2breathe 3.2s infinite ease-in-out;
+  transform-origin: bottom center;
+}
+/* спрайт-варіант: кадр квадратний з полями, персонаж у центрі —
+   збільшуємо і зсуваємо, щоб стояв унизу зліва як статичний */
+.v2-director-sheet {
+  height: min(74%, 640px);
+  left: 50%;
+  transform: translateX(-58%);
+  bottom: -7%;
+}
+@keyframes v2breathe {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.012) translateY(-2px); }
+}
+
+/* репліки */
+.v2-replies {
+  position: absolute;
+  right: 16px;
+  bottom: max(24px, 5vh);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 6;
+  align-items: flex-end;
+}
+.v2-replies button {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff8ec;
+  background: #16110d;
+  border: 3px solid #fff8ec;
+  border-radius: 12px;
+  box-shadow: 5px 5px 0 rgba(22, 17, 13, 0.45);
+  padding: 12px 16px;
+  cursor: pointer;
+  animation: v2replyin 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transition: transform 0.12s ease;
+}
+.v2-replies button:nth-child(2) { animation-delay: 0.08s; }
+.v2-replies button:hover { transform: translate(-2px, -2px); }
+.v2-replies button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(22, 17, 13, 0.45); }
+@keyframes v2replyin {
+  from { transform: translateX(26px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* фінальна CTA */
+.v2-cta {
+  position: absolute;
+  right: 16px;
+  left: 16px;
+  bottom: max(26px, 6vh);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+  z-index: 6;
+}
+.v2-cta-main {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(15px, 2.2vh, 19px);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #16110d;
+  background: #fff8ec;
+  border: 4px solid #16110d;
+  border-radius: 16px;
+  box-shadow: 7px 7px 0 #16110d;
+  padding: 16px 22px;
+  text-decoration: none;
+  animation: v2replyin 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transition: transform 0.12s ease;
+}
+.v2-cta-main:hover { transform: translate(-2px, -2px); }
+.v2-cta-main:active { transform: translate(3px, 3px); box-shadow: 3px 3px 0 #16110d; }
+.v2-cta-again {
+  font-family: 'Onest', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #16110d;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px;
+}
+
+/* десктоп: панель як «телефон» по центру на чорному */
+@media (min-width: 640px) {
+  .v2-panel {
+    height: min(100%, 920px);
+    align-self: center;
+    border: 4px solid #16110d;
+    border-radius: 22px;
+    box-shadow: 14px 14px 0 rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* ---------- КАСТИНГ ---------- */
+.v2-cast {
+  min-height: 100vh;
+  background: #fbf1dd;
+  padding: clamp(20px, 4vw, 48px);
+  font-family: 'Onest', system-ui, sans-serif;
+  color: #16110d;
+}
+.v2-cast h1 {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(24px, 4vw, 40px);
+  text-transform: uppercase;
+}
+.v2-cast-sub { margin: 10px 0 26px; font-weight: 600; max-width: 60ch; }
+.v2-cast-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; }
+.v2-cast-card {
+  margin: 0;
+  background: #fff;
+  border: 4px solid #16110d;
+  border-radius: 18px;
+  box-shadow: 8px 8px 0 #16110d;
+  overflow: hidden;
+}
+.v2-cast-card img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; }
+.v2-cast-card figcaption { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 12px 14px 14px; border-top: 4px solid #16110d; background: #ffc619; }
+.v2-cast-n {
+  grid-row: span 2;
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 30px;
+  align-self: center;
+}
+.v2-cast-card strong { font-family: 'Unbounded', system-ui, sans-serif; font-size: 14px; text-transform: uppercase; }
+.v2-cast-card small { font-size: 12.5px; font-weight: 500; }
+
+/* ---------- КОМПОЗИЦІЇ ПЕРСОНАЖА ---------- */
+.v2-actor {
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
+  height: min(56%, 500px);
+  filter: drop-shadow(9px 7px 0 rgba(22, 17, 13, 0.3));
+  pointer-events: none;
+  object-fit: contain;
+}
+.v2-actor.pos-left { left: -3%; }
+.v2-actor.pos-center { left: 50%; transform: translateX(-50%); }
+.v2-actor.pos-right { right: -3%; }
+.v2-actor.pos-right.flip, .v2-actor.flip { transform: scaleX(-1); }
+.v2-actor.pos-center.flip { transform: translateX(-50%) scaleX(-1); }
+.v2-actor.scale-bust { height: min(78%, 700px); bottom: -14%; }
+.v2-actor.scale-cameo { height: min(38%, 340px); }
+/* вхід персонажа в панель */
+.v2-actor { animation: v2actorin 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) backwards; animation-delay: 0.12s; }
+@keyframes v2actorin {
+  from { transform: translateY(6%) scale(0.94); opacity: 0; }
+}
+.v2-actor.pos-center { animation-name: v2actorin-c; }
+@keyframes v2actorin-c {
+  from { transform: translateX(-50%) translateY(6%) scale(0.94); opacity: 0; }
+}
+/* легке «живе» похитування пози замість дихання-скейлу */
+.v2-actor.sway { animation: v2actorin 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) backwards, v2sway 4.2s 0.6s infinite ease-in-out; transform-origin: bottom center; }
+.v2-actor.pos-center.sway { animation: v2actorin-c 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) backwards, v2sway-c 4.2s 0.6s infinite ease-in-out; }
+@keyframes v2sway {
+  0%, 100% { rotate: -0.5deg; }
+  50% { rotate: 0.7deg; }
+}
+@keyframes v2sway-c {
+  0%, 100% { rotate: -0.5deg; }
+  50% { rotate: 0.7deg; }
+}
+
+/* бабл: варіанти вирівнювання — композиція міняється панель до панелі */
+.v2-bubble.b-left { right: 22%; }
+.v2-bubble.b-right { left: 22%; }
+.v2-bubble.b-right::after { left: auto; right: 42px; }
+
+/* ---------- ПЕРЕХОДИ ПАНЕЛЕЙ ---------- */
+.v2-panel.tr-slide { animation: v2trSlide 0.34s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes v2trSlide {
+  from { transform: translateX(38px); opacity: 0; }
+}
+.v2-panel.tr-slideleft { animation: v2trSlideL 0.34s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes v2trSlideL {
+  from { transform: translateX(-38px); opacity: 0; }
+}
+.v2-panel.tr-pop { animation: v2trPop 0.36s cubic-bezier(0.34, 1.3, 0.64, 1); }
+@keyframes v2trPop {
+  from { transform: scale(0.92) rotate(-1.6deg); opacity: 0; }
+}
+.v2-panel.tr-wipe { animation: v2trWipe 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes v2trWipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+.v2-panel.tr-rise { animation: v2trRise 0.36s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes v2trRise {
+  from { transform: translateY(34px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-panel, .v2-bubble, .v2-replies button, .v2-cta-main { animation: none !important; }
+  .v2-director-still, .v2-actor { animation: none !important; }
+  .v2-intro-hint { animation: none; }
+  .v2-caret { animation: none; }
+  .v2-next { animation: none; }
+}
+
+/* ---------- ДІАЛОГ v3 (D-030..D-033): режисура фокуса і планів ---------- */
+.v2-panel.dlg { background: #16110d; }
+.v2-bgimg {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  object-fit: cover;
+  transition: filter 0.5s ease;
+}
+/* Анімація бекграунду — повільний Кен Бернс */
+.anim-in .v2-bgimg { animation: v2kbIn 22s ease-out both; }
+.anim-left .v2-bgimg { animation: v2kbLeft 24s ease-out both; }
+.anim-right .v2-bgimg { animation: v2kbRight 24s ease-out both; }
+@keyframes v2kbIn { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes v2kbLeft { from { transform: scale(1.1) translateX(2.5%); } to { transform: scale(1.04) translateX(-2.5%); } }
+@keyframes v2kbRight { from { transform: scale(1.1) translateX(-2.5%); } to { transform: scale(1.04) translateX(2.5%); } }
+/* ФОКУС (D-033): акцент на героєві → фон у блюрі й темніший;
+   акцент на сцені → фон РІЗКИЙ, ледь притемнений лише під вікном. */
+.focus-hero .v2-bgimg { filter: blur(3px) brightness(0.68) saturate(0.92); }
+.focus-scene .v2-bgimg { filter: none; }
+.v2-bgfade { position: absolute; inset: 0; }
+.focus-hero .v2-bgfade {
+  background: linear-gradient(180deg, rgba(22, 17, 13, 0.34) 0%, rgba(22, 17, 13, 0.2) 30%, rgba(22, 17, 13, 0.28) 52%, rgba(22, 17, 13, 0.74) 80%, rgba(22, 17, 13, 0.9) 100%);
+}
+.focus-scene .v2-bgfade {
+  background: linear-gradient(180deg, rgba(22, 17, 13, 0.16) 0%, transparent 24%, transparent 58%, rgba(22, 17, 13, 0.6) 84%, rgba(22, 17, 13, 0.82) 100%);
+}
+/* Обгортка низу: герой у ПОТОЦІ над вікном — ніколи не ховається за текстом
+   (фідбек 21.07: «він за текстом знаходиться»); захід за рамку лише 12px. */
+.v2-dlgwrap {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+}
+.v2-hero {
+  margin-bottom: -12px;
+  position: relative;
+  z-index: 2;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  user-select: none;
+}
+.v2-hero.plan-lg { max-height: 42svh; max-width: 80%; }
+.v2-hero.plan-md { max-height: 31svh; max-width: 60%; }
+.v2-hero.plan-sm { max-height: 21svh; max-width: 38%; }
+.v2-hero.side-left { align-self: flex-start; margin-left: 4px; }
+.v2-hero.side-right { align-self: flex-end; margin-right: 4px; }
+.v2-hero.side-center { align-self: center; }
+/* Шар 4: діалогове вікно — РВАНА мальована рамка (вибір D-031) + Neucha */
+.v2-dlgbox.torn {
+  position: relative;
+  background: #fdf6e3;
+  border: 3px solid #2b2118;
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  box-shadow: 3px 4px 0 rgba(43, 33, 24, 0.85);
+  padding: 20px 16px 14px;
+  transform: rotate(-0.5deg);
+}
+/* Плашка з імʼям — наліпка на рамці */
+.v2-nameplate {
+  position: absolute;
+  top: -14px;
+  right: 16px;
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  background: #a6e22e;
+  color: #2b2118;
+  border: 3px solid #2b2118;
+  border-radius: 160px 12px 140px 10px / 10px 140px 12px 160px;
+  padding: 4px 12px;
+  transform: rotate(1.2deg);
+}
+.v2-nameplate.np-left { right: auto; left: 16px; transform: rotate(-1.2deg); }
+/* Блимаючий індикатор «тапни далі» */
+.v2-next {
+  position: absolute;
+  right: 14px;
+  bottom: 6px;
+  font-size: 15px;
+  color: #16110d;
+  animation: v2nextblink 0.9s steps(1) infinite;
+}
+@keyframes v2nextblink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.v2-dlgtext {
+  font-family: 'Neucha', 'Onest', system-ui, cursive;
+  font-weight: 400;
+  font-size: clamp(19px, 2.7vh, 23px);
+  line-height: 1.32;
+  color: #2b2118;
+  min-height: 3.4em;
+}
+.v2-dlgreplies {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.v2-dlgreplies button:not(.v2-cta-again) {
+  font-family: 'Neucha', 'Onest', system-ui, cursive;
+  font-weight: 700;
+  font-size: 17px;
+  color: #fdf6e3;
+  background: #2b2118;
+  border: 3px solid #2b2118;
+  border-radius: 140px 12px 160px 10px / 10px 160px 12px 140px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.v2-dlgreplies button:not(.v2-cta-again):hover { transform: translate(-1px, -1px); }
+.v2-cta-main.sm {
+  font-size: clamp(13px, 1.9vh, 16px);
+  padding: 12px 18px;
+  box-shadow: 5px 5px 0 #16110d;
+}
+.v2-dlgreplies .v2-cta-again { color: #3a322b; }

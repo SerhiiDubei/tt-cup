@@ -1,0 +1,294 @@
+/* ============================================================
+   /v3 — скрол-історія (The Boat-підхід): вертикальний скрол як
+   вісь оповіді, sticky-сцени, паралакс-шари, біти, хитавиця.
+   ============================================================ */
+
+.v3-root {
+  font-family: 'Onest', system-ui, sans-serif;
+  background: #16110d;
+  color: #16110d;
+}
+
+/* Пролог з мʼячем-прелоадером (стилі кнопки — з v2.css) */
+.v3-prologue { height: 100svh; position: relative; }
+.v3-prologue .v2-intro { position: absolute; inset: 0; }
+
+/* ---------- ГЛАВИ ---------- */
+.v3-chapter { position: relative; }
+.v3-sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+.bg3-coral .v3-sticky { background: #ff5a36; }
+.bg3-ink .v3-sticky { background: #241c15; }
+.bg3-cream .v3-sticky { background: #fbf1dd; }
+.bg3-yellow .v3-sticky { background: #ffc619; }
+.bg3-pink .v3-sticky { background: #ff2e88; }
+
+.v3-stage { position: absolute; inset: 0; transform-origin: 50% 80%; }
+.v3-sway { animation: v3sway 8s ease-in-out infinite alternate; }
+@keyframes v3sway {
+  from { transform: rotate(-0.45deg) translateY(-0.3%); }
+  to { transform: rotate(0.5deg) translateY(0.3%); }
+}
+.v3-stage.sh-a { animation: v3sway 8s ease-in-out infinite alternate, v3shakeA 0.35s ease-out; }
+.v3-stage.sh-b { animation: v3sway 8s ease-in-out infinite alternate, v3shakeB 0.35s ease-out; }
+@keyframes v3shakeA {
+  0% { translate: 0 0; } 25% { translate: -8px 4px; } 50% { translate: 6px -4px; } 75% { translate: -3px 2px; } 100% { translate: 0 0; }
+}
+@keyframes v3shakeB {
+  0% { translate: 0 0; } 25% { translate: 8px -4px; } 50% { translate: -6px 4px; } 75% { translate: 3px -2px; } 100% { translate: 0 0; }
+}
+
+.v3-chip {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: #16110d;
+  color: #fbf1dd;
+  border-radius: 9px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+.v3-chip.light { background: #fbf1dd; color: #16110d; }
+
+/* ---------- ШАРИ ---------- */
+.v3-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  pointer-events: none;
+}
+.v3-svg { display: block; }
+
+.l-cal { display: grid; place-items: center; padding-top: 6svh; }
+.l-cal .v3-svg { width: min(88vw, 480px); }
+
+.v3-sun {
+  position: absolute;
+  top: 12%;
+  right: 12%;
+  width: clamp(70px, 12vw, 120px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #ff8a2a;
+  border: 5px solid #16110d;
+}
+.v3-sun.big { position: absolute; right: 10%; transition: top 0.1s linear; }
+.l-tree { display: flex; align-items: flex-end; }
+.l-tree .v3-svg { width: clamp(90px, 18vw, 160px); margin: 0 0 16svh 6vw; }
+.v3-lake {
+  position: absolute;
+  bottom: -6%;
+  right: -12%;
+  width: 70vw;
+  height: 22svh;
+  background: #2d4bff;
+  border: 5px solid #16110d;
+  border-radius: 50%;
+}
+.l-table { display: flex; align-items: flex-end; justify-content: center; }
+.l-table .v3-svg { width: min(74vw, 420px); margin-bottom: 8svh; }
+
+.l-phone { display: grid; place-items: center; padding-top: 4svh; }
+.l-phone .v3-svg { width: min(52vw, 240px); }
+
+.l-arena { display: flex; align-items: flex-end; justify-content: center; }
+.l-arena .v3-svg { width: min(88vw, 460px); margin-bottom: 6svh; }
+
+/* ---------- ГЕРОЇНЯ ---------- */
+.v3-hero-slot { position: absolute; bottom: 0; z-index: 5; }
+.v3-hero-img { height: 100%; width: auto; filter: drop-shadow(8px 6px 0 rgba(22, 17, 13, 0.3)); }
+.v3-talk-sprite { height: 100%; aspect-ratio: 1; }
+.v3-walker {
+  position: absolute;
+  bottom: 4svh;
+  z-index: 5;
+  height: min(34svh, 300px);
+  transition: left 0.08s linear;
+}
+.v3-walk-sprite { height: 100%; }
+
+/* ---------- БІТИ ---------- */
+.v3-beat {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.v3-beat.fx-up { transform: translateY(22px); }
+.v3-beat.fx-pop { transform: scale(0.85); transition-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1); }
+.v3-beat.fx-onoma { transform: scale(0.4) rotate(-14deg); transition-duration: 0.25s; }
+.v3-beat.fx-fade { transform: none; }
+.v3-beat.on { opacity: 1; transform: none; }
+.v3-beat.on.fx-onoma { transform: rotate(-7deg); }
+
+/* Текст, що пливе у сцені */
+.v3-line {
+  position: absolute;
+  z-index: 7;
+  font-weight: 800;
+  font-size: clamp(17px, 2.6svh, 23px);
+  line-height: 1.35;
+  color: #16110d;
+  text-shadow: 0 0 14px rgba(251, 241, 221, 0.55);
+}
+.v3-line.dark { color: #fbf1dd; text-shadow: 0 0 14px rgba(22, 17, 13, 0.6); }
+.v3-line.big {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(26px, 4.6svh, 44px);
+  text-transform: uppercase;
+  line-height: 1.08;
+}
+
+/* Ономатопеї */
+.v3-onoma {
+  position: absolute;
+  z-index: 8;
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(34px, 6svh, 58px);
+  color: #ffc619;
+  -webkit-text-stroke: 3px #16110d;
+  letter-spacing: 0.02em;
+}
+.v3-onoma.small { font-size: clamp(22px, 3.6svh, 34px); }
+
+/* Мішень міні-ігор */
+.v3-target { position: absolute; right: 6%; bottom: 26%; width: clamp(80px, 16vw, 130px); z-index: 6; }
+
+/* Конфеті */
+.v3-confetti { position: absolute; inset: 0; overflow: hidden; z-index: 4; }
+.v3-confetti i {
+  position: absolute;
+  top: -4%;
+  width: 12px;
+  height: 12px;
+  border: 2.5px solid #16110d;
+  border-radius: 3px;
+  animation: v3confetti 2.6s linear infinite;
+}
+.v3-confetti i:nth-child(3n) { border-radius: 50%; }
+@keyframes v3confetti {
+  to { transform: translateY(110svh) rotate(560deg); }
+}
+
+/* ---------- CTA ---------- */
+.v3-cta {
+  min-height: 72svh;
+  background: #16110d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 10svh 6vw;
+  text-align: center;
+}
+.v3-cta h2 {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(24px, 5vw, 44px);
+  color: #fbf1dd;
+  text-transform: uppercase;
+}
+.v3-cta-main {
+  font-family: 'Unbounded', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(16px, 2.4svh, 20px);
+  text-transform: uppercase;
+  color: #16110d;
+  background: #ffc619;
+  border: 4px solid #fbf1dd;
+  border-radius: 16px;
+  box-shadow: 7px 7px 0 rgba(251, 241, 221, 0.25);
+  padding: 17px 26px;
+  text-decoration: none;
+  transition: transform 0.12s ease;
+}
+.v3-cta-main:hover { transform: translate(-2px, -2px); }
+.v3-cta-main:active { transform: translate(3px, 3px); }
+.v3-cta-again {
+  font-family: 'Onest', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: rgba(251, 241, 221, 0.7);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- ФІКСОВАНИЙ UI ---------- */
+.v3-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 50;
+  background: rgba(22, 17, 13, 0.25);
+}
+.v3-progress-ball {
+  position: absolute;
+  top: -9px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 55%, #e9dcc2 56% 100%);
+  border: 3px solid #16110d;
+}
+.v3-ui {
+  position: fixed;
+  right: 14px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v3-ui-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 3px solid #16110d;
+  background: #fbf1dd;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 rgba(22, 17, 13, 0.5);
+  transition: transform 0.12s ease;
+}
+.v3-ui-btn:hover { transform: translate(-1px, -1px); }
+.v3-ui-btn.on { background: #ffc619; }
+
+/* ---------- МАСОВКА: мʼячики-люди ---------- */
+.bf-still { position: absolute; z-index: 3; }
+.bf-cross {
+  position: absolute;
+  z-index: 3;
+  left: -14vw;
+  animation-name: bfcross;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes bfcross {
+  to { transform: translateX(128vw); }
+}
+.bf-sprite { image-rendering: auto; }
+
+/* ---------- ДОСТУПНІСТЬ ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .v3-sway, .v3-stage.sh-a, .v3-stage.sh-b { animation: none; }
+  .v3-beat { transition: opacity 0.3s ease; transform: none !important; }
+  .v3-confetti i { animation: none; top: auto; bottom: 20%; }
+  .v3-walker { transition: none; }
+}

@@ -1,0 +1,167 @@
+/* ============================================================
+   /v2/vars — стенд D-031 v2: LAYERING + GRIDDING.
+   Шари слота (знизу вгору):
+     1. фон-картинка: blur + затемнення (задній план «тоне»)
+     2. віньєтка: радіальна + нижній градієнт
+     3. ПЕРСОНАЖ: різкий, drop-shadow, прив'язаний до третини сітки
+     4. діалогове вікно: поверх ніг персонажа (перекриття = глибина)
+     5. плашка імені / номер варіанта
+   Сітка: модуль 8px — поля 16, низ вікна 16, hero bottom 88.
+   ============================================================ */
+.vr-page {
+  min-height: 100svh;
+  background: #16110d;
+  padding: 26px 14px 60px;
+  font-family: 'Onest', system-ui, sans-serif;
+}
+.vr-title {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 17px;
+  text-transform: uppercase;
+  color: #fbf1dd;
+  text-align: center;
+  margin: 30px 0 6px;
+}
+.vr-title:first-child { margin-top: 0; }
+.vr-sub { color: rgba(251, 241, 221, 0.6); font-size: 13px; text-align: center; margin: 0 0 24px; }
+
+/* ---------- слот-сцена ---------- */
+.vr-slot {
+  position: relative;
+  max-width: 420px;
+  height: 560px;
+  margin: 0 auto 8px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #16110d;
+}
+/* шар 1: фон */
+.vr-bg {
+  position: absolute;
+  inset: -3%;
+  width: 106%;
+  height: 106%;
+  object-fit: cover;
+  filter: blur(3px) brightness(0.72) saturate(0.92);
+}
+/* шар 2: віньєтка — центр дихає, краї тонуть */
+.vr-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 32%, transparent 42%, rgba(22, 17, 13, 0.55) 100%),
+    linear-gradient(180deg, rgba(22, 17, 13, 0.28) 0%, transparent 28%, transparent 52%, rgba(22, 17, 13, 0.72) 100%);
+}
+.vr-num {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  background: #ffc619;
+  color: #16110d;
+  border: 3px solid #16110d;
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+/* шар 3: персонаж — різкий проти розмитого фону, стоїть ЗА вікном */
+.vr-hero {
+  position: absolute;
+  bottom: 88px;
+  left: 16px;
+  max-height: 408px;
+  max-width: 62%;
+  width: auto;
+  object-fit: contain;
+  z-index: 2;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.6));
+}
+.vr-slot.pos-right .vr-hero { left: auto; right: 16px; }
+.vr-slot.pos-center .vr-hero { left: 50%; transform: translateX(-50%); max-width: 80%; }
+/* клоузап на весь кадр (варіації без вирізання) */
+.vr-slot.full .vr-hero {
+  inset: 0;
+  bottom: 0;
+  left: 0;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: none;
+  filter: none;
+}
+.vr-caption { color: rgba(251, 241, 221, 0.78); font-size: 13px; line-height: 1.5; max-width: 420px; margin: 0 auto 34px; }
+
+/* ---------- шар 4: рамка 2 (рвана) + Neucha ---------- */
+.vr-box2 {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+  background: #fdf6e3;
+  border: 3px solid #2b2118;
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  box-shadow: 3px 4px 0 rgba(43, 33, 24, 0.85);
+  padding: 18px 16px 14px;
+  transform: rotate(-0.5deg);
+}
+.vr-box2 .vr-name {
+  position: absolute;
+  top: -14px;
+  right: 16px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  background: #a6e22e;
+  color: #2b2118;
+  border: 3px solid #2b2118;
+  border-radius: 160px 12px 140px 10px / 10px 140px 12px 160px;
+  padding: 4px 12px;
+  transform: rotate(1.2deg);
+}
+.vr-box2 .vr-text {
+  margin: 0;
+  font-family: 'Neucha', 'Onest', cursive;
+  font-size: 20px;
+  line-height: 1.32;
+  color: #2b2118;
+}
+
+/* ---------- шар 4: рамка 4 (JRPG) + Press Start 2P ---------- */
+.vr-box4 {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+  background: rgba(12, 10, 26, 0.92);
+  border: 4px solid #fbf1dd;
+  outline: 4px solid #16110d;
+  border-radius: 8px;
+  padding: 20px 14px 16px;
+}
+.vr-box4 .vr-name {
+  position: absolute;
+  top: -16px;
+  left: 14px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  background: #16110d;
+  color: #a6e22e;
+  border: 3px solid #fbf1dd;
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+.vr-box4 .vr-text {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10.5px;
+  line-height: 1.9;
+  color: #fbf1dd;
+}
+.vr-box4 .vr-next { position: absolute; right: 12px; bottom: 6px; color: #a6e22e; font-size: 12px; }

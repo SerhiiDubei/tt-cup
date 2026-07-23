@@ -1,0 +1,221 @@
+/* ============================================================
+   /v2/frames — стенд 5 варіантів рамки діалогового вікна (D-030).
+   Один і той самий контент (Джеремі + репліка) у пʼяти рамках.
+   Сергій обирає → обрана стає рамкою онбордингу.
+   ============================================================ */
+.fr-page {
+  min-height: 100svh;
+  background: #16110d;
+  padding: 26px 14px 60px;
+  font-family: 'Onest', system-ui, sans-serif;
+}
+.fr-title {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 17px;
+  text-transform: uppercase;
+  color: #fbf1dd;
+  text-align: center;
+  margin: 0 0 6px;
+}
+.fr-sub { color: rgba(251, 241, 221, 0.6); font-size: 13px; text-align: center; margin: 0 0 26px; }
+
+.fr-slot {
+  position: relative;
+  max-width: 420px;
+  margin: 0 auto 44px;
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 430px;
+  display: flex;
+  align-items: flex-end;
+  background: center / cover no-repeat url('/v2/bg/league.jpg');
+}
+.fr-slot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 17, 13, 0.4) 0%, rgba(22, 17, 13, 0.28) 45%, rgba(22, 17, 13, 0.82) 100%);
+}
+.fr-num {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  background: #ffc619;
+  color: #16110d;
+  border: 3px solid #16110d;
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+.fr-wrap { position: relative; z-index: 2; width: 100%; padding: 0 12px 14px; display: flex; flex-direction: column; }
+.fr-face {
+  width: min(46vw, 190px);
+  align-self: flex-start;
+  margin: 0 0 -14px 8px;
+  border: 4px solid #16110d;
+  border-radius: 18px;
+  background: #d9d3c6;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.45);
+  position: relative;
+  z-index: 2;
+}
+.fr-text { margin: 0; }
+.fr-caption { color: rgba(251, 241, 221, 0.75); font-size: 13px; line-height: 1.5; max-width: 420px; margin: 10px auto 0; }
+
+/* ---------- Варіант 1: Комікс-класика (Memphis) ---------- */
+.fr1 .fr-box {
+  position: relative;
+  background: #fff8ec;
+  border: 4px solid #16110d;
+  border-radius: 18px;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.55);
+  padding: 22px 16px 16px;
+}
+.fr1 .fr-name {
+  position: absolute;
+  top: -15px;
+  right: 16px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: #16110d;
+  color: #ffc619;
+  border-radius: 9px;
+  padding: 5px 12px;
+}
+.fr1 .fr-text { font-weight: 600; font-size: 16px; line-height: 1.45; color: #16110d; }
+
+/* ---------- Варіант 2: Мальована рвана (реф Cardpocalypse) ---------- */
+.fr2 .fr-box {
+  position: relative;
+  background: #fdf6e3;
+  border: 3px solid #2b2118;
+  /* «тремтяча» намальована рамка: асиметричні радіуси */
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  box-shadow: 3px 4px 0 rgba(43, 33, 24, 0.85), inset 0 0 0 2px rgba(43, 33, 24, 0.12);
+  padding: 20px 18px 16px;
+  transform: rotate(-0.5deg);
+}
+.fr2 .fr-name {
+  position: absolute;
+  top: -14px;
+  right: 16px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  background: #a6e22e;
+  color: #2b2118;
+  border: 3px solid #2b2118;
+  border-radius: 160px 12px 140px 10px / 10px 140px 12px 160px;
+  padding: 4px 12px;
+  transform: rotate(1.2deg);
+}
+.fr2 .fr-text { font-weight: 600; font-size: 16px; line-height: 1.5; color: #2b2118; }
+
+/* ---------- Варіант 3: Бабл з хвостиком (реф Elder Owen / LINE) ---------- */
+.fr3 .fr-box {
+  position: relative;
+  background: #fffdf6;
+  border-radius: 22px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  padding: 22px 18px 18px;
+}
+.fr3 .fr-box::before {
+  /* хвіст до персонажа */
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 64px;
+  width: 30px;
+  height: 30px;
+  background: #fffdf6;
+  clip-path: polygon(15% 100%, 100% 100%, 70% 0%);
+}
+.fr3 .fr-name {
+  position: absolute;
+  top: -15px;
+  right: 16px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  background: #5c2a4f;
+  color: #fff8ec;
+  border-radius: 8px;
+  padding: 5px 14px;
+}
+.fr3 .fr-text { font-weight: 600; font-size: 16px; line-height: 1.5; color: #241c15; }
+.fr3 .fr-touch {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #00cfc1;
+}
+
+/* ---------- Варіант 4: Ретро-JRPG (піксельна класика) ---------- */
+.fr4 .fr-box {
+  position: relative;
+  background: rgba(12, 10, 26, 0.92);
+  border: 4px solid #fbf1dd;
+  outline: 4px solid #16110d;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px rgba(251, 241, 221, 0.25) inset;
+  padding: 22px 16px 16px;
+}
+.fr4 .fr-name {
+  position: absolute;
+  top: -16px;
+  left: 14px;
+  font-family: ui-monospace, 'Cascadia Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  background: #16110d;
+  color: #a6e22e;
+  border: 3px solid #fbf1dd;
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+.fr4 .fr-text {
+  font-family: ui-monospace, 'Cascadia Mono', monospace;
+  font-weight: 500;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #fbf1dd;
+}
+.fr4 .fr-next { position: absolute; right: 12px; bottom: 6px; color: #a6e22e; font-size: 13px; }
+
+/* ---------- Варіант 5: Стріт-стікер (під вайб Джеремі) ---------- */
+.fr5 .fr-box {
+  position: relative;
+  background: #16110d;
+  border: 3px solid #16110d;
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px #ffc619, 7px 7px 0 rgba(0, 0, 0, 0.6);
+  padding: 24px 16px 16px;
+}
+.fr5 .fr-name {
+  position: absolute;
+  top: -14px;
+  left: 12px;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  background: #ff2e88;
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 12px;
+  transform: rotate(-2deg);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+.fr5 .fr-text { font-weight: 600; font-size: 16px; line-height: 1.5; color: #fff8ec; }
+.fr5 .fr-text b { color: #ffc619; }

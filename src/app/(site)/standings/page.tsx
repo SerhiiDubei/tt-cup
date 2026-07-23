@@ -1,51 +1,38 @@
-import { loadState } from '@/lib/state';
-import StandingsTable from '@/components/app/StandingsTable';
+import type { Metadata } from 'next';
+import CtaSmart from '@/components/liga/CtaSmart';
+import '../../liga.css';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { title: 'Сітка — DRUID BATTLE CUP' };
 
-export default async function StandingsPage() {
-  const { tournament, players, matches } = await loadState();
-
-  const isRegistration = !tournament || tournament.status === 'registration';
-  const hasPlayers = players.length > 0;
-
+/** Рейтинг ліги (D-038): порожній стан до жеребкування 2.08; далі — live 50/50. */
+export default function StandingsPage() {
   return (
-    <main>
-      <section>
-        <div className="wrap">
-          <div className="reveal in">
-            <span className="eyebrow">Турнірна таблиця</span>
-            <h2 className="title">Хто в зеленій зоні</h2>
-            <p className="lead">
-              Швейцарська система: очки за перемоги, далі — Бухгольц і різниця партій.
-              Топ-8 виходять у плей-офф.
-            </p>
-          </div>
+    <main className="jn-root insite"><div className="jn-wrap wide">
+      <p className="jn-step">ліга · 2–23 серпня</p>
+      <h1 className="jn-h1">Сітка і рейтинг</h1>
+      <p className="jn-lead">
+        Живий залік ліги: спортивні очки × 50% + фанові × 50%. Хто з ким зіграв,
+        хто де стоїть — усе буде тут, онлайн.
+      </p>
 
-          <div className="reveal d1 in" style={{ marginTop: 28 }}>
-            {isRegistration ? (
-              <div className="card" style={{ textAlign: 'center' }}>
-                <span className="chip live">Реєстрація триває</span>
-                <p className="lead" style={{ margin: '14px auto 0' }}>
-                  Таблиця зʼявиться після першого туру швейцарки.
-                </p>
-              </div>
-            ) : !hasPlayers ? (
-              <div className="card" style={{ textAlign: 'center' }}>
-                <p className="lead" style={{ margin: '0 auto' }}>
-                  Поки немає учасників.
-                </p>
-              </div>
-            ) : (
-              <StandingsTable
-                players={players}
-                matches={matches}
-                qualify={tournament.status !== 'registration'}
-              />
-            )}
-          </div>
-        </div>
-      </section>
-    </main>
+      <div className="jn-card jn-count">
+        <p className="jn-count-label">Таблиця зʼявиться після жеребкування</p>
+        <div className="jn-count-big">2 серпня 🎲</div>
+        <p className="jn-hint" style={{ margin: 0 }}>
+          Система розкине пари за рівнями → 21 день ліги → фінали Дня Х <b>23 серпня</b>.
+        </p>
+      </div>
+
+      <div className="jn-card">
+        <h3>Як рахуємо</h3>
+        <p className="jn-hint" style={{ margin: 0 }}>
+          Перемога — 3 очки, зіграна поразка — 1, незіграний матч — 0.
+          Фанові бали приносять міні-ігри Дня Х. Тому в топ реально пробитись
+          і середнячку — перевірено симуляцією.
+        </p>
+      </div>
+
+      <CtaSmart />
+    </div></main>
   );
 }

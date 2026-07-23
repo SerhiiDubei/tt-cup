@@ -1,24 +1,34 @@
-import { loadState } from '@/lib/state';
-import Hero from '@/components/landing/Hero';
-import LiveStats from '@/components/landing/LiveStats';
-import FormatExplainer from '@/components/landing/FormatExplainer';
-import BuilderTeaser from '@/components/landing/BuilderTeaser';
-import Rules from '@/components/landing/Rules';
-import Cta from '@/components/landing/Cta';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { useEffect } from 'react';
+import LigaLoader from '@/components/liga/LigaLoader';
+import { GOOGLE_AUTH_ENABLED, supaBrowser } from '@/lib/ligaAuth';
 
-export default async function Page() {
-  const { tournament, players } = await loadState();
-  const count = players.length;
-  const sample = players.find((p) => p.hero?.art) || null;
+const ONBOARD = 'https://ttcup-onboard.vercel.app';
+
+/**
+ * Корінь = вхідні двері (D-051): вирішує за станом людини.
+ *  · НОВАЧОК (нема токена й сесії) → онбординг-історія — стартовий флоу;
+ *  · СВІЙ → хаб /standings (інтро вже бачив, не мучимо).
+ * Заставка — фірмовий мʼячик, тому переходу без білого флешу.
+ */
+export default function Home() {
+  useEffect(() => {
+    (async () => {
+      try {
+        if (localStorage.getItem('dbc_token')) { location.replace('/standings'); return; }
+      } catch { /* ок */ }
+      if (GOOGLE_AUTH_ENABLED) {
+        const { data: { session } } = await supaBrowser().auth.getSession();
+        if (session) { location.replace('/standings'); return; }
+      }
+      location.replace(ONBOARD); // новачок → історія
+    })();
+  }, []);
+
   return (
-    <main>
-      <Hero tournament={tournament} count={count} sample={sample} />
-      <LiveStats tournament={tournament} count={count} />
-      <BuilderTeaser players={players} />
-      <Rules />
-      <Cta tournament={tournament} />
-    </main>
+    <main className="jn-root"><div className="jn-wrap">
+      <LigaLoader label="Хвильку…" />
+    </div></main>
   );
 }

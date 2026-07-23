@@ -347,3 +347,65 @@ footer.site a{opacity:.85} footer.site a:hover{opacity:1;text-decoration:underli
 .artifact .spark{position:absolute;z-index:0;font-size:26px;animation:sparkle 1.5s ease-in-out infinite}
 @keyframes sparkle{0%,100%{transform:scale(.55);opacity:.35}50%{transform:scale(1.25);opacity:1}}
 @media(prefers-reduced-motion:reduce){.artifact,.artifact .glow,.artifact .big-art,.artifact .spark{animation:none}}
+
+/* Іконка Джеремі в хедері (D-038: єдиний бренд скрізь) */
+.logo-jeremy {
+  width: 28px; height: 28px; border-radius: 50%; object-fit: cover;
+  border: 2.5px solid var(--ink, #16110d); background: #d9d3c6; margin-right: 8px;
+}
+
+/* ---------- Акаунт у хедері (D-044): аватар, дропдаун, статус ---------- */
+.nav-links a.active { color: var(--pink, #ff2e88); border-bottom: 2.5px solid var(--pink, #ff2e88); }
+.acct { position: relative; }
+.acct-btn {
+  position: relative; width: 42px; height: 42px; border-radius: 50%;
+  border: 3px solid var(--line, #16110d); background: var(--paper, #fff);
+  padding: 0; cursor: pointer; overflow: visible;
+  display: grid; place-items: center;
+}
+.acct-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.acct-btn span {
+  font-family: var(--font-display, 'Unbounded'), sans-serif; font-weight: 900; font-size: 13px;
+  color: #fff; width: 100%; height: 100%; border-radius: 50%;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 32% 28%, #ff2e88, #8a45ff);
+}
+.acct-dot {
+  position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px;
+  border-radius: 50%; background: #a6e22e; border: 2.5px solid var(--line, #16110d);
+}
+.acct-menu {
+  position: absolute; right: 0; top: calc(100% + 10px); min-width: 210px; z-index: 950;
+  background: var(--paper, #fff); border: 3px solid var(--line, #16110d);
+  border-radius: 14px; box-shadow: 5px 5px 0 var(--line, #16110d);
+  padding: 6px; display: grid;
+}
+.acct-name {
+  font-weight: 800; font-size: 13px; padding: 8px 10px 6px;
+  border-bottom: 2px dashed rgba(22, 17, 13, 0.2); margin-bottom: 4px;
+  color: var(--ink, #16110d);
+}
+.acct-menu a, .acct-menu button {
+  font: inherit; font-weight: 700; font-size: 14.5px; text-align: left;
+  color: var(--ink, #16110d); background: none; border: none; cursor: pointer;
+  padding: 9px 10px; border-radius: 9px; text-decoration: none;
+}
+.acct-menu a:hover, .acct-menu button:hover { background: rgba(255, 198, 25, 0.35); }
+.acct-login {
+  font-family: var(--font-display, 'Unbounded'), sans-serif; font-weight: 800; font-size: 12px;
+  text-transform: uppercase; text-decoration: none; color: #fff;
+  background: var(--pink, #ff2e88); border: 3px solid var(--line, #16110d);
+  border-radius: 12px; padding: 9px 14px; box-shadow: 3px 3px 0 var(--line, #16110d);
+}
+
+/* Мобільний хедер (фікс «кнопка пливе»): один ряд, лого не переноситься;
+   на вузьких екранах текст лого ховається — лишається іконка Джеремі */
+header { flex-wrap: nowrap; gap: 10px; }
+.logo { white-space: nowrap; flex-shrink: 1; min-width: 0; }
+.logo .logo-txt { overflow: hidden; text-overflow: ellipsis; }
+.nav-tools { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+@media (max-width: 560px) {
+  .logo { font-size: 15px; padding: 7px 10px; gap: 7px; }
+  .logo .logo-txt { display: none; }
+  .acct-login { font-size: 11px; padding: 8px 12px; }
+}
