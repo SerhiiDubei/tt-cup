@@ -1,0 +1,19 @@
+{
+  "source": "sample.mp4",
+  "output_dir": "/home/user/tt-cup/projects/frame-extractor/output/sample",
+  "frame_count": 362,
+  "format": "jpg",
+  "metadata": {
+    "duration": "00:00:12.07",
+    "resolution": "576x1024",
+    "fps": "30"
+  },
+  "options": {
+    "fps": null,
+    "every": null,
+    "width": null,
+    "height": null,
+    "quality": 2
+  },
+  "total_bytes": 19338283
+}
