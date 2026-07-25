@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>scene-lang — layered scene builder</title>
+<style>
+  :root {
+    --bg: #14161c; --panel: #1c1f28; --panel2: #232733; --line: #2f3542;
+    --txt: #d7dbe6; --dim: #8b93a7; --accent: #6ad0ff; --accent2: #ffcf6a;
+    --danger: #ff6a7a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--txt);
+    font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #app { display: grid; grid-template-columns: 220px 1fr 250px; height: 100vh; }
+  .panel { background: var(--panel); border-right: 1px solid var(--line);
+    padding: 12px; overflow-y: auto; }
+  #right { border-right: none; border-left: 1px solid var(--line); }
+  h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--dim); margin: 16px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  .stagewrap { display: flex; align-items: center; justify-content: center;
+    background: #0d0f14 repeating-linear-gradient(45deg,#0d0f14 0 10px,#101319 10px 20px); }
+  #stage { image-rendering: pixelated; box-shadow: 0 8px 40px #000a; }
+  button, select { font: inherit; color: var(--txt); background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.on { background: var(--accent); color: #06222e; border-color: var(--accent); }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .obj-btn { display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 8px 4px; }
+  .obj-btn canvas { image-rendering: pixelated; }
+  label.field { display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin: 5px 0; color: var(--dim); }
+  input[type=range] { width: 110px; }
+  input[type=text] { width: 100%; background: var(--panel2); border: 1px solid var(--line);
+    color: var(--txt); border-radius: 5px; padding: 5px; font: inherit; }
+  .layer-item { border: 1px solid var(--line); border-radius: 6px; padding: 8px;
+    margin-bottom: 8px; background: var(--panel2); }
+  .layer-item.active { border-color: var(--accent); }
+  .layer-head { display: flex; align-items: center; justify-content: space-between; }
+  .tag { font-size: 11px; color: var(--dim); }
+  .hint { color: var(--dim); font-size: 11px; margin-top: 4px; }
+  #inspector .field span { color: var(--txt); }
+  .sep { height: 1px; background: var(--line); margin: 12px 0; }
+  .pill { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: #2c3140; color: var(--dim); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- LEFT: palette + grid + scene io -->
+  <div class="panel" id="left">
+    <h2>Об'єкти</h2>
+    <div class="grid2" id="palette"></div>
+    <div class="hint">Клік — додати на активний шар</div>
+
+    <h2>Grid</h2>
+    <div class="row">
+      <button id="grid-ortho" class="on">Orthogonal</button>
+      <button id="grid-iso">Isometric</button>
+    </div>
+    <label class="field">tile <input id="tile" type="range" min="16" max="64" step="4" value="32"><span id="tileval">32</span></label>
+    <div class="row">
+      <button id="snap" class="on">Snap: ON</button>
+      <button id="ysort">Y-sort шар</button>
+    </div>
+    <label class="field"><span>auto y-sort</span><input id="autoysort" type="checkbox"></label>
+
+    <h2>Сцена</h2>
+    <div class="grid2">
+      <button id="export-scene">JSON ↓</button>
+      <button id="import-scene">JSON ↑</button>
+      <button id="export-composite">PNG сцена</button>
+      <button id="clear">Очистити</button>
+    </div>
+    <input id="import-file" type="file" accept="application/json" style="display:none">
+    <div class="hint">Стрілки — посунути. Del — видалити.</div>
+  </div>
+
+  <!-- CENTER: stage -->
+  <div class="stagewrap"><div id="stage"></div></div>
+
+  <!-- RIGHT: layers + inspector -->
+  <div class="panel" id="right">
+    <h2>Шари (плани)</h2>
+    <div id="layers"></div>
+
+    <h2>Групи</h2>
+    <div id="groups"><div class="hint">Груп поки немає</div></div>
+
+    <div class="sep"></div>
+    <h2>Обраний об'єкт</h2>
+    <div id="inspector"><div class="hint">Нічого не обрано</div></div>
+  </div>
+</div>
+
+<script src="./vendor/konva.min.js"></script>
+<script src="./editor.js"></script>
+</body>
+</html>
