@@ -58,6 +58,9 @@
 .ob-hub-btn:nth-of-type(1) .n { background: var(--yellow); }
 .ob-hub-btn:nth-of-type(2) .n { background: var(--cyan); }
 .ob-hub-btn:nth-of-type(3) .n { background: var(--pink); color: #fff; }
+.ob-hub-btn:nth-of-type(4) .n { background: var(--ink); color: var(--yellow); }
+.ob-hub-btn:nth-of-type(5) .n { background: var(--blue); color: #fff; }
+.ob-hub-btn:nth-of-type(6) .n { background: var(--lime); }
 .ob-hub-btn b { display: block; font-family: 'Unbounded'; font-weight: 800; font-size: 14px; text-transform: uppercase; }
 .ob-hub-btn span { display: block; font-size: 12.5px; color: #5b5148; margin-top: 2px; }
 
@@ -173,3 +176,78 @@
   .ob-say, .ob-q, .ob-msg { animation: none; }
   .ob-stub .ball, .ob-typing i { animation: none; }
 }
+
+/* ============================================================
+   Варіанти D/E/F — архітектури діалогу з референс-ігор
+   ============================================================ */
+
+/* ---------- D · Disco Elysium: стрічка-скрипт ---------- */
+.ob-de { position: relative; z-index: 2; display: flex; flex-direction: column; min-height: 100svh;
+  background: rgba(14, 11, 9, 0.88); }
+.ob-de-feed { flex: 1; overflow-y: auto; padding: calc(56px + env(safe-area-inset-top)) 18px 16px;
+  display: flex; flex-direction: column; gap: 13px; }
+.ob-de-line { animation: obIn 0.3s var(--ease); }
+.ob-de-line .nm { font-family: 'Unbounded'; font-weight: 800; font-size: 11.5px; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--yellow); margin-bottom: 3px; }
+.ob-de-line.me .nm { color: var(--cyan); }
+.ob-de-line.voice .nm { color: var(--pink); }
+.ob-de-line p { margin: 0; color: #efe6d5; font-size: 15px; line-height: 1.5; font-weight: 500; }
+.ob-de-line.voice p { font-style: italic; color: #cbb8e8; }
+.ob-de-sep { border: none; border-top: 1.5px solid rgba(239, 230, 213, 0.12); margin: 2px 0; }
+.ob-de-opts { border-top: 2.5px solid rgba(239, 230, 213, 0.18); background: rgba(10, 8, 6, 0.92);
+  padding: 12px 14px calc(16px + env(safe-area-inset-bottom)); display: grid; gap: 4px; }
+.ob-de-opt { display: flex; gap: 9px; align-items: baseline; width: 100%; text-align: left;
+  font: inherit; font-size: 14.5px; font-weight: 600; color: #efe6d5;
+  background: none; border: none; border-radius: 9px; padding: 9px 10px; cursor: pointer; }
+.ob-de-opt:active { background: rgba(255, 198, 25, 0.14); }
+.ob-de-opt .i { font-family: ui-monospace, monospace; font-weight: 700; color: var(--yellow); flex: none; }
+.ob-de-opt.seen { opacity: 0.42; }
+.ob-de-opt.seen .i::after { content: ' ✓'; color: var(--lime); }
+.ob-de-opt.cta { color: var(--pink); font-weight: 800; }
+.ob-de-opt.cta .i { color: var(--pink); }
+
+/* ---------- E · Persona/VN: одна репліка + далі ▸ ---------- */
+.ob-vn { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: flex-end;
+  min-height: 100svh; padding: 0 14px calc(18px + env(safe-area-inset-bottom)); gap: 10px; }
+.ob-vn-mood { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ink); border: 2.5px solid var(--yellow); border-radius: 99px;
+  padding: 6px 14px; transform: rotate(-2deg); }
+.ob-vn-mood b { font-family: 'Unbounded'; font-weight: 800; font-size: 12px; color: #fff8ec; text-transform: uppercase; }
+.ob-vn-mood span { font-size: 11.5px; font-weight: 700; color: var(--yellow); text-transform: uppercase; letter-spacing: 0.06em; }
+.ob-vn-say { position: relative; background: var(--cream); border: 3px solid var(--ink); border-radius: 4px 18px 18px 18px;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.5); padding: 16px 16px 14px; min-height: 96px;
+  font-size: 16.5px; line-height: 1.5; font-weight: 600; animation: obIn 0.22s var(--ease); }
+.ob-vn-adv { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  min-height: 52px; font-family: 'Unbounded'; font-weight: 800; font-size: 13.5px; text-transform: uppercase;
+  background: var(--ink); color: var(--yellow); border: 3px solid var(--yellow); border-radius: 14px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.12s var(--ease); }
+.ob-vn-adv:active { transform: translate(2px, 2px); }
+.ob-vn-adv .tri { animation: vnTri 0.9s infinite alternate; }
+@keyframes vnTri { from { transform: translateX(0); } to { transform: translateX(5px); } }
+.ob-vn-steps { display: flex; gap: 5px; justify-content: center; }
+.ob-vn-steps i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,248,236,0.35); }
+.ob-vn-steps i.on { background: var(--yellow); }
+
+/* ---------- F · Pokémon textbox: typewriter + ▼ ---------- */
+.ob-pk { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: flex-end;
+  min-height: 100svh; padding: 0 12px calc(16px + env(safe-area-inset-bottom)); }
+.ob-pk-box { position: relative; background: #fffdf4; border: 4px solid var(--ink); border-radius: 12px;
+  box-shadow: 0 0 0 3px #fffdf4, 0 0 0 6px var(--ink), 5px 7px 0 6px rgba(0,0,0,0.45);
+  padding: 15px 16px 13px; min-height: 118px; cursor: pointer; user-select: none; }
+.ob-pk-box .nm { position: absolute; top: -16px; left: 12px; background: var(--ink); color: var(--yellow);
+  font-family: 'Unbounded'; font-weight: 800; font-size: 11px; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 8px; }
+.ob-pk-box p { margin: 0; font-family: ui-monospace, monospace; font-size: 15.5px; line-height: 1.55;
+  font-weight: 600; color: var(--ink); white-space: pre-wrap; }
+.ob-pk-cur { position: absolute; right: 14px; bottom: 8px; color: var(--ink); font-size: 15px;
+  animation: pkCur 0.7s infinite alternate; }
+@keyframes pkCur { from { transform: translateY(0); opacity: 0.5; } to { transform: translateY(4px); opacity: 1; } }
+.ob-pk-menu { display: grid; gap: 3px; margin-top: 9px; }
+.ob-pk-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  font-family: ui-monospace, monospace; font-size: 14.5px; font-weight: 700; color: var(--ink);
+  background: none; border: none; padding: 7px 6px; cursor: pointer; border-radius: 7px; }
+.ob-pk-item:active { background: rgba(22,17,13,0.08); }
+.ob-pk-item .ar { flex: none; width: 14px; color: var(--pink); font-weight: 900; }
+.ob-pk-item.seen { opacity: 0.45; }
+.ob-pk-item.cta { color: #b3005e; }
+@media (prefers-reduced-motion: reduce) { .ob-vn-adv .tri, .ob-pk-cur { animation: none; } }
