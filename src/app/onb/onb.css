@@ -251,3 +251,68 @@
 .ob-pk-item.seen { opacity: 0.45; }
 .ob-pk-item.cta { color: #b3005e; }
 @media (prefers-reduced-motion: reduce) { .ob-vn-adv .tri, .ob-pk-cur { animation: none; } }
+
+/* ============================================================
+   Варіанти G/H/I — роадмапи (Mario map / Zelda fog / board game)
+   ============================================================ */
+.ob-hub-btn:nth-of-type(7) .n { background: #ff8a2a; }
+.ob-hub-btn:nth-of-type(8) .n { background: #8a45ff; color: #fff; }
+.ob-hub-btn:nth-of-type(9) .n { background: #fff; }
+
+/* ---------- G · Мапа світу ---------- */
+.ob-map { position: relative; z-index: 2; min-height: 100svh; }
+.ob-map-path { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+.ob-map-node { position: absolute; z-index: 2; transform: translate(-50%, -50%);
+  width: 58px; height: 58px; border-radius: 50%; border: 3.5px solid var(--ink);
+  background: #fffdf4; box-shadow: 3px 4px 0 rgba(0,0,0,0.45); cursor: pointer;
+  display: grid; place-items: center; font-family: 'Unbounded'; font-weight: 900; font-size: 17px;
+  padding: 0; transition: transform 0.2s var(--ease), background 0.25s; }
+.ob-map-node small { position: absolute; top: 100%; margin-top: 7px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-family: 'Onest'; font-weight: 800; font-size: 10.5px; letter-spacing: 0.02em;
+  color: #fff8ec; background: rgba(22,17,13,0.72); border-radius: 99px; padding: 3px 9px; }
+.ob-map-node.lock { background: #6f675c; opacity: 0.65; cursor: default; }
+.ob-map-node.now { background: var(--yellow); animation: mapPulse 1.1s infinite; }
+.ob-map-node.done { background: var(--lime); }
+.ob-map-node.fin { background: var(--pink); color: #fff; width: 66px; height: 66px; font-size: 13px; }
+@keyframes mapPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.09); } }
+.ob-map-pawn { position: absolute; z-index: 3; width: 26px; height: 26px; border-radius: 50%;
+  border: 3px solid var(--ink); background: radial-gradient(circle at 35% 30%, #fff 0 46%, #f0e3ca 47% 100%);
+  transform: translate(-50%, -140%); transition: left 0.7s var(--ease), top 0.7s var(--ease);
+  pointer-events: none; }
+.ob-seq { position: absolute; z-index: 5; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); }
+
+/* ---------- H · Туман війни ---------- */
+.ob-fog-zone { position: absolute; z-index: 2; border: 2.5px dashed rgba(255,248,236,0.5); border-radius: 16px;
+  background: rgba(10, 8, 6, 0.9); cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  transition: opacity 0.8s var(--ease), background 0.4s; }
+.ob-fog-zone .qmark { font-family: 'Unbounded'; font-weight: 900; font-size: 25px; color: var(--yellow); }
+.ob-fog-zone .zt { font-weight: 800; font-size: 11px; color: rgba(255,248,236,0.85); text-align: center;
+  padding: 0 8px; line-height: 1.25; }
+.ob-fog-zone.open { opacity: 0; pointer-events: none; }
+.ob-fog-pin { position: absolute; z-index: 2; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(22,17,13,0.78); border: 2px solid var(--lime); border-radius: 99px;
+  color: var(--lime); font-size: 11px; font-weight: 800; padding: 4px 10px;
+  animation: obIn 0.5s var(--ease); pointer-events: none; }
+.ob-fog-cta { position: absolute; z-index: 4; left: 50%; top: 46%; transform: translate(-50%, -50%);
+  animation: mapPulse 1.2s infinite; }
+.ob-fog-cta .ob-next { width: auto; padding: 14px 26px; }
+
+/* ---------- I · Настілка ---------- */
+.ob-bd-cell { position: absolute; z-index: 2; transform: translate(-50%, -50%);
+  width: 54px; height: 54px; border-radius: 14px; border: 3px solid var(--ink);
+  background: rgba(255, 253, 244, 0.93); box-shadow: 3px 4px 0 rgba(0,0,0,0.4);
+  display: grid; place-items: center; font-family: 'Unbounded'; font-weight: 900; font-size: 15px; }
+.ob-bd-cell.ev { background: var(--cyan); }
+.ob-bd-cell.done { background: var(--lime); }
+.ob-bd-cell.fin { background: var(--pink); color: #fff; font-size: 11px; width: 62px; height: 62px; }
+.ob-bd-roll { position: absolute; z-index: 5; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%); width: min(78%, 300px); }
+.ob-react { display: grid; gap: 7px; margin-top: 9px; }
+.ob-react button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  font: inherit; font-family: ui-monospace, monospace; font-size: 13.5px; font-weight: 700;
+  background: #fff; border: 2.5px solid var(--ink); border-radius: 10px; padding: 9px 11px;
+  cursor: pointer; box-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
+.ob-react button:active { transform: translate(1px, 1px); }
+.ob-react button .ar { color: var(--pink); font-weight: 900; }

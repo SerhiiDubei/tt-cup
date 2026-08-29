@@ -378,9 +378,201 @@ function Poke({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   );
 }
 
+/* ---------- Спільний typewriter-бокс серії реплік (стиль F) ----------
+   Тап: недодруковане доводиться миттєво → наступна теза → onEnd. */
+function TypeSeq({ lines, onEnd, extra }: { lines: Line[]; onEnd: () => void; extra?: React.ReactNode }) {
+  const [li, setLi] = useState(0);
+  const [chars, setChars] = useState(0);
+  const line = lines[li];
+  const typed = chars >= line.text.length;
+  useEffect(() => {
+    setChars(0);
+    const t = setInterval(() => setChars((c) => (c >= line.text.length ? c : c + 2)), 22);
+    return () => clearInterval(t);
+  }, [line]);
+  const tap = () => {
+    if (!typed) { setChars(line.text.length); return; }
+    if (li < lines.length - 1) setLi(li + 1); else onEnd();
+  };
+  return (
+    <div className="ob-pk-box" onClick={tap}>
+      <span className="nm">{line.who}</span>
+      <p style={line.voice ? { fontStyle: 'italic', opacity: 0.85 } : undefined}>{line.text.slice(0, chars)}</p>
+      {typed && li < lines.length - 1 && <span className="ob-pk-cur">▼</span>}
+      {typed && li === lines.length - 1 && (extra ?? <span className="ob-pk-cur">▼</span>)}
+    </div>
+  );
+}
+
+/* ---------- G · Мапа світу (реф Super Mario World) ----------
+   Вузли на стежці, фішка-мʼячик переїжджає, пройдене — лайм,
+   наступне відкривається; тема відкривається лише на активному вузлі. */
+const MAP_POS = [
+  { x: 50, y: 12 }, { x: 24, y: 27 }, { x: 71, y: 41 }, { x: 27, y: 56 }, { x: 71, y: 70 },
+];
+const MAP_FIN = { x: 50, y: 86 };
+function WorldMap({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [done, setDone] = useState(0);
+  const [open, setOpen] = useState(false);
+  const pawn = done < MAP_POS.length ? MAP_POS[done] : MAP_FIN;
+  const pts = [...MAP_POS, MAP_FIN].map((p) => `${p.x},${p.y}`).join(' ');
+  return (
+    <>
+      <Bg src={BG.front} blur />
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 6 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+      </div>
+      <div className="ob-map">
+        <svg className="ob-map-path" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polyline points={pts} fill="none" stroke="rgba(255,248,236,0.55)" strokeWidth="1.1"
+            strokeDasharray="2.6 2.2" strokeLinecap="round" />
+        </svg>
+        {MAP_POS.map((p, i) => (
+          <button key={i}
+            className={'ob-map-node' + (i < done ? ' done' : i === done ? ' now' : ' lock')}
+            style={{ left: p.x + '%', top: p.y + '%' }}
+            onClick={() => i === done && setOpen(true)}>
+            {i < done ? '✓' : i + 1}
+            <small>{TOPICS[i].q}</small>
+          </button>
+        ))}
+        <button className={'ob-map-node fin' + (done === MAP_POS.length ? ' now' : ' lock')}
+          style={{ left: MAP_FIN.x + '%', top: MAP_FIN.y + '%' }}
+          onClick={() => done === MAP_POS.length && onDone()}>
+          СТАРТ<small>реєстрація</small>
+        </button>
+        <div className="ob-map-pawn" style={{ left: pawn.x + '%', top: pawn.y + '%' }} />
+        {open && done < MAP_POS.length && (
+          <div className="ob-seq">
+            <TypeSeq lines={TOPICS[done].lines} onEnd={() => { setOpen(false); setDone(done + 1); }} />
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ---------- H · Туман війни (реф Zelda BotW / Civilization) ----------
+   Двір закритий туман-зонами; відповів на тему — зона проявляється.
+   Дізнатися правила = буквально відкрити локацію. */
+const FOG_ZONES = [
+  { x: 4, y: 10, w: 44, h: 18 }, { x: 52, y: 10, w: 44, h: 18 },
+  { x: 4, y: 31, w: 92, h: 15 }, { x: 4, y: 49, w: 44, h: 16 }, { x: 52, y: 49, w: 44, h: 16 },
+];
+function Fog({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [open, setOpen] = useState<boolean[]>(Array(FOG_ZONES.length).fill(false));
+  const [cur, setCur] = useState<number | null>(null);
+  const allOpen = open.every(Boolean);
+  return (
+    <>
+      <Bg src={BG.front} />
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 6 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+      </div>
+      {FOG_ZONES.map((z, i) => (
+        <button key={i}
+          className={'ob-fog-zone' + (open[i] ? ' open' : '')}
+          style={{ left: z.x + '%', top: z.y + '%', width: z.w + '%', height: z.h + '%', zIndex: 3 }}
+          onClick={() => !open[i] && cur === null && setCur(i)}>
+          <span className="qmark">?</span>
+          <span className="zt">{TOPICS[i].q}</span>
+        </button>
+      ))}
+      {FOG_ZONES.map((z, i) => open[i] && (
+        <span key={'p' + i} className="ob-fog-pin" style={{ left: (z.x + z.w / 2) + '%', top: (z.y + z.h / 2) + '%' }}>
+          ✓ {TOPICS[i].q}
+        </span>
+      ))}
+      {allOpen && cur === null && (
+        <div className="ob-fog-cta"><button className="ob-next" onClick={onDone}>Зареєструватися →</button></div>
+      )}
+      {cur !== null && (
+        <div className="ob-seq" style={{ position: 'absolute', zIndex: 6 }}>
+          <TypeSeq lines={TOPICS[cur].lines}
+            onEnd={() => { setOpen((o) => o.map((v, i) => (i === cur ? true : v))); setCur(null); }} />
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ---------- I · Настілка (реф Mario Party / гусек) ----------
+   Фішка їде клітинками по дошці; на зупинках — серія тез + ОДНОРАЗОВІ
+   реакції-відповіді (використана зникає назавжди — механіка E). */
+const BD_CELLS = [
+  { x: 18, y: 14 }, { x: 50, y: 20 }, { x: 80, y: 30 }, { x: 50, y: 42 },
+  { x: 20, y: 52 }, { x: 46, y: 63 }, { x: 76, y: 74 },
+];
+const REACTIONS = [
+  { r: 'Ого, серйозно?', a: 'Серйозніше нікуди. Ну, майже.' },
+  { r: 'Звучить просто.', a: 'Бо воно і є просто. Складне ми лишили собі.' },
+  { r: 'А якщо я нуб?', a: 'Ідеально. Нижня сітка створена для майбутніх легенд.' },
+  { r: 'Покажи вже фінал.', a: 'Терпіння. Спочатку дограй цю дошку.' },
+  { r: 'Мені вже подобається.', a: 'Це двір так діє. На всіх.' },
+  { r: 'Хто це все придумав?', a: 'Двір. Я лише записав.' },
+];
+function Board({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [pos, setPos] = useState(0);           // 0 = старт-клітинка
+  const [phase, setPhase] = useState<'idle' | 'seq' | 'react'>('idle');
+  const [used, setUsed] = useState<Record<string, boolean>>({});
+  const [echo, setEcho] = useState<string | null>(null);
+  const topic = pos >= 1 && pos <= 5 ? TOPICS[pos - 1] : null;
+  const freeReacts = REACTIONS.filter((x) => !used[x.r]).slice(0, 2);
+  const roll = () => {
+    const np = pos + 1;
+    setPos(np); setEcho(null);
+    if (np <= 5) setTimeout(() => setPhase('seq'), 750); else setPhase('idle');
+  };
+  const react = (x: { r: string; a: string }) => { setUsed((u) => ({ ...u, [x.r]: true })); setEcho(x.a); };
+  return (
+    <>
+      <Bg src={BG.terrace} blur />
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 6 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+      </div>
+      {BD_CELLS.map((c, i) => (
+        <span key={i} className={'ob-bd-cell' + (i >= 1 && i <= 5 ? ' ev' : '') + (i < pos ? ' done' : '')}
+          style={{ left: c.x + '%', top: c.y + '%', zIndex: 2 }}>
+          {i === 0 ? '🏁' : i <= 5 ? (i < pos ? '✓' : i) : ''}
+          {i === 6 ? 'ФІНІШ' : ''}
+        </span>
+      ))}
+      <div className="ob-map-pawn" style={{ left: BD_CELLS[Math.min(pos, 6)].x + '%', top: BD_CELLS[Math.min(pos, 6)].y + '%', zIndex: 3 }} />
+      {phase === 'seq' && topic && (
+        <div className="ob-seq" style={{ zIndex: 6 }}>
+          <TypeSeq lines={echo ? [{ who: 'ЯРЕМА', text: echo }] : topic.lines}
+            onEnd={() => { if (echo) { setPhase('idle'); } else { setPhase('react'); } }} />
+        </div>
+      )}
+      {phase === 'react' && topic && (
+        <div className="ob-seq" style={{ zIndex: 6 }}>
+          <div className="ob-pk-box">
+            <span className="nm">ТВОЯ РЕАКЦІЯ</span>
+            <div className="ob-react">
+              {freeReacts.map((x) => (
+                <button key={x.r} onClick={() => { react(x); setPhase('seq'); }}>
+                  <span className="ar">▸</span>{x.r}
+                </button>
+              ))}
+              <button onClick={() => setPhase('idle')}><span className="ar">▸</span>Їдемо далі →</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {phase === 'idle' && (
+        <div className="ob-bd-roll">
+          {pos < 6
+            ? <button className="ob-next" onClick={roll}>ХІД →</button>
+            : <button className="ob-next lime" onClick={onDone}>ФІНІШ! Зареєструватися →</button>}
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ---------- Хаб ---------- */
 export default function OnbLab() {
-  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'stub'>('hub');
+  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'stub'>('hub');
   const back = () => setV('hub');
   const done = () => setV('stub');
 
@@ -416,6 +608,18 @@ export default function OnbLab() {
               <span className="n">F</span>
               <span><b>Текстбокс</b><span>реф Pokémon: друк по літерах + ▼, меню в боксі</span></span>
             </button>
+            <button className="ob-hub-btn" onClick={() => setV('g')}>
+              <span className="n">G</span>
+              <span><b>Мапа світу</b><span>реф Mario World: стежка вузлів, фішка їде</span></span>
+            </button>
+            <button className="ob-hub-btn" onClick={() => setV('h')}>
+              <span className="n">H</span>
+              <span><b>Туман війни</b><span>реф Zelda/Civ: відповів — відкрив шматок двору</span></span>
+            </button>
+            <button className="ob-hub-btn" onClick={() => setV('i')}>
+              <span className="n">I</span>
+              <span><b>Настілка</b><span>реф Mario Party: хід фішкою + одноразові реакції</span></span>
+            </button>
           </div>
         </>
       )}
@@ -425,6 +629,9 @@ export default function OnbLab() {
       {v === 'd' && <Disco key="d" onBack={back} onDone={done} />}
       {v === 'e' && <Vn key="e" onBack={back} onDone={done} />}
       {v === 'f' && <Poke key="f" onBack={back} onDone={done} />}
+      {v === 'g' && <WorldMap key="g" onBack={back} onDone={done} />}
+      {v === 'h' && <Fog key="h" onBack={back} onDone={done} />}
+      {v === 'i' && <Board key="i" onBack={back} onDone={done} />}
       {v === 'stub' && <Stub onBack={back} />}
     </div></main>
   );
