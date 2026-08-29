@@ -1237,9 +1237,254 @@ function VnFinal({ onBack, onDone }: { onBack: () => void; onDone: () => void })
   );
 }
 
+/* ---------- N · ОНБОРДИНГ 3.0: консистентні кадри + спрайт-оповідач + піксель-UI ----------
+   Всі кадри — з пайплайна (style_fatpixel_v2_balanced), UI — згенеровані
+   піксель-елементи (border-image), Ярема — спрайт з емоціями над діалогом. */
+const V3 = '/onb/v3/';
+const YAR: Record<string, string> = {
+  intriga: V3 + 'yar-1.png', smile: V3 + 'yar-2.png', shrug: V3 + 'yar-3.png',
+  hype: V3 + 'yar-4.png', strict: V3 + 'yar-5.png', wink: V3 + 'yar-7.png',
+};
+type B30 =
+  | { t: 'title'; ch: string; nm: string; bg: string }
+  | { t: 'line'; bg: string; who?: string; emo: string; text: string }
+  | { t: 'anim'; bgs: string[]; emo: string; text: string }
+  | { t: 'react'; bg: string; emo: string; prompt: string }
+  | { t: 'find'; bg: string; emo: string; ball: { x: number; y: number; w: number }; intro: string; found: string }
+  | { t: 'timed'; bg: string; emo: string; q: string; opts: [string, string]; a: [string, string] }
+  | { t: 'puzzle'; bg: string; emo: string; q: string; opts: number[]; right: number; win: string; lose: string }
+  | { t: 'evidence'; bg: string; emo: string; q: string; right: string; win: string; lose: string }
+  | { t: 'game'; bg: string };
+
+const B30S: B30[] = [
+  { t: 'title', ch: 'Розділ 1', nm: 'Двір', bg: V3 + 'bg-front.jpg' },
+  { t: 'line', bg: V3 + 'bg-front.jpg', emo: 'intriga', text: 'Бачиш цей стіл? Один. На весь двір. І скоро тут — Druid Battle Cup.' },
+  { t: 'anim', bgs: [V3 + 'bg-rally-a.jpg', V3 + 'bg-rally-b.jpg'], emo: 'smile', text: 'Онлайн-фаза вже гріється: матчі йдуть щодня, коли зручно гравцям.' },
+  { t: 'line', bg: V3 + 'bg-table.jpg', emo: 'intriga', text: 'Система збере сітку сама й дасть тобі вісім суперників. Нік — у телеграмі, граєте коли зручно обом.' },
+  { t: 'react', bg: V3 + 'bg-table.jpg', emo: 'smile', prompt: 'Твоя реакція?' },
+  { t: 'title', ch: 'Розділ 2', nm: 'Розслідування', bg: V3 + 'bg-find.jpg' },
+  { t: 'find', bg: V3 + 'bg-find.jpg', emo: 'strict', ball: { x: 42, y: 78, w: 52 },
+    intro: 'Мʼяч закотився у траву. Бачиш його? Тапни.',
+    found: 'Око — алмаз! Забирай у кишеню, знадобиться.' },
+  { t: 'timed', bg: V3 + 'bg-shoe.jpg', emo: 'hype', q: 'Швидко! Мʼяч летить — форхенд чи бекхенд?!',
+    opts: ['Форхенд', 'Бекхенд'], a: ['Класика. Поважаю.', 'Ризиково. Але красиво.'] },
+  { t: 'line', bg: V3 + 'bg-sad.jpg', emo: 'shrug', text: 'Суперник зник і не відповідає? Буває. Матч не зараховується — саппорт розрулить, ти нічого не втрачаєш.' },
+  { t: 'title', ch: 'Розділ 3', nm: 'День Х', bg: V3 + 'bg-night.jpg' },
+  { t: 'line', bg: V3 + 'bg-night.jpg', emo: 'hype', text: '12 вересня. Фінал наживо: столи в ряд, гірлянди, повний двір людей.' },
+  { t: 'anim', bgs: [V3 + 'bg-cups.jpg', V3 + 'bg-bucket.jpg'], emo: 'smile', text: 'І міні-ігри: стаканчики, відро — легенди складають не тільки про чемпіонів.' },
+  { t: 'puzzle', bg: V3 + 'bg-timer.jpg', emo: 'intriga', q: 'Перевірка уважності: скільки матчів у онлайн-фазі?',
+    opts: [6, 8, 10], right: 8, win: 'Вісім! Слухав уважно — таких ми любимо.', lose: 'Нє-а. Я ж казав…' },
+  { t: 'line', bg: V3 + 'bg-boys.jpg', emo: 'wink', text: 'Наші вже тренуються лежати красиво. Двір чекає на тебе.' },
+  { t: 'evidence', bg: V3 + 'bg-night.jpg', emo: 'strict', q: 'Стоп. Предʼяви доказ, що ти готовий до Дня Х.',
+    right: 'paddle', win: 'ПРОТЕСТУ НЕМАЄ! Ракетка — пів перемоги.', lose: 'Хм. Знадобиться, але не воно…' },
+  { t: 'title', ch: 'Розділ 4', nm: 'Перевірка', bg: V3 + 'bg-front.jpg' },
+  { t: 'game', bg: V3 + 'bg-front.jpg' },
+];
+const CAST30 = [
+  { name: 'Батрайдер', img: V3 + 'cast-0.png' },
+  { name: 'Влад', img: V3 + 'cast-3.png' },
+  { name: 'Ліза', img: V3 + 'cast-6.png' },
+  { name: 'Настя', img: V3 + 'cast-4.png' },
+  { name: 'Олег', img: V3 + 'cast-1.png' },
+  { name: 'Оля', img: V3 + 'cast-5.png' },
+  { name: 'Стас', img: V3 + 'cast-7.png' },
+  { name: 'Ярема', img: V3 + 'cast-2.png' },
+];
+const EV30 = [
+  { id: 'ball', img: V3 + 'ui-ball.png', nm: 'Мʼяч' },
+  { id: 'paddle', img: '/onb/px/obj-paddle.png', nm: 'Ракетка' },
+  { id: 'bucket', img: '/onb/pxe/obj-bucket.png', nm: 'Відро' },
+];
+
+function Sort30({ onWin }: { onWin: () => void }) {
+  const [slots, setSlots] = useState<(number | null)[]>(Array(8).fill(null));
+  const [wrong, setWrong] = useState<boolean[]>(Array(8).fill(false));
+  const [msg, setMsg] = useState('');
+  const [drag, setDrag] = useState<{ idx: number; x: number; y: number } | null>(null);
+  const inPool = FG_POOL_ORDER.filter((i) => !slots.includes(i));
+  const allSet = slots.every((s) => s !== null);
+  const startDrag = (idx: number) => (e: React.PointerEvent) => { e.preventDefault(); setDrag({ idx, x: e.clientX, y: e.clientY }); };
+  useEffect(() => {
+    if (!drag) return;
+    const mv = (e: PointerEvent) => setDrag((d) => d && { ...d, x: e.clientX, y: e.clientY });
+    const up = (e: PointerEvent) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-slot]');
+      setDrag(null);
+      if (!el) return;
+      const si = Number((el as HTMLElement).dataset.slot);
+      setSlots((s) => { const ns = [...s]; const from = ns.indexOf(drag.idx); if (from >= 0) ns[from] = ns[si]; ns[si] = drag.idx; return ns; });
+      setWrong(Array(8).fill(false)); setMsg('');
+    };
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up, { once: true });
+    return () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+  }, [drag]);
+  const check = () => {
+    const sorted = [...CAST30.map((c) => c.name)].sort((a, b) => a.localeCompare(b, 'uk'));
+    const w = slots.map((s, i) => s !== null && CAST30[s].name !== sorted[i]);
+    if (w.some(Boolean)) { setWrong(w as boolean[]); setMsg('Не зовсім. Червоні — не на місцях.'); }
+    else { setMsg('Все чітко. Ти точно з Друїду! 🏓'); setTimeout(onWin, 900); }
+  };
+  return (
+    <div className="fg-wrap">
+      <div className="fg-title">ОСТАННЯ ПЕРЕВІРКА: ЧИ ТИ З ДРУЇДУ?
+        <small>Розстав завсідників за алфавітом — тягни картку в слот (1 → 8)</small></div>
+      <div className="fg-slots">
+        {slots.map((s, i) => (
+          <div key={i} data-slot={i} className={'fg-slot' + (s !== null ? ' filled' : '') + (wrong[i] ? ' wrong' : '')}>
+            <span className="num">{i + 1}</span>
+            {s !== null && (
+              <div className="fg-char small" onPointerDown={startDrag(s)}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={CAST30[s].img} alt="" draggable={false} /><b>{CAST30[s].name}</b>
+              </div>)}
+          </div>))}
+      </div>
+      <div className="fg-pool">
+        {inPool.map((i) => (drag?.idx === i ? null : (
+          <div key={i} className="fg-char" onPointerDown={startDrag(i)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={CAST30[i].img} alt="" draggable={false} /><b>{CAST30[i].name}</b>
+          </div>)))}
+      </div>
+      {drag && (
+        <div className="fg-char dragging" style={{ left: drag.x, top: drag.y }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={CAST30[drag.idx].img} alt="" draggable={false} /><b>{CAST30[drag.idx].name}</b>
+        </div>)}
+      <button className="v30-btn fg-check" disabled={!allSet} style={!allSet ? { opacity: 0.5 } : undefined} onClick={check}>Перевірити</button>
+      <div className="fg-msg">{msg}</div>
+    </div>
+  );
+}
+
+function Vn30({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [bi, setBi] = useState(0);
+  const [echo, setEcho] = useState<string | null>(null);
+  const [used, setUsed] = useState<Record<string, boolean>>({});
+  const [animF, setAnimF] = useState(0);
+  const [tRun, setTRun] = useState(false);
+  const [found, setFound] = useState(false);
+  const [pop, setPop] = useState(false);
+  const [inv, setInv] = useState<string[]>([]);
+  const [wrongPz, setWrongPz] = useState<number | null>(null);
+  const bit = B30S[bi];
+  const curBg = 'bgs' in bit ? bit.bgs[animF % bit.bgs.length] : bit.bg;
+  const ALL = Array.from(new Set(B30S.flatMap((b) => ('bgs' in b ? b.bgs : [b.bg]))));
+  const next = () => { setEcho(null); setFound(false); setWrongPz(null); setBi((i) => Math.min(i + 1, B30S.length - 1)); };
+  useEffect(() => {
+    if (bit.t === 'title') { const t = setTimeout(next, 1400); return () => clearTimeout(t); }
+    if (bit.t === 'anim') { const t = setInterval(() => setAnimF((f) => f + 1), 430); return () => clearInterval(t); }
+    if (bit.t === 'timed') { const t = setTimeout(() => setTRun(true), 60); const to = setTimeout(() => setEcho((e) => e ?? bit.a[0]), 5200); return () => { clearTimeout(t); clearTimeout(to); setTRun(false); }; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bi]);
+  const freeReacts = REACTIONS.filter((x) => !used[x.r]).slice(0, 2);
+  const emo = 'emo' in bit ? YAR[bit.emo] : YAR.smile;
+  const grab = () => { if (pop) return; setPop(true); setTimeout(() => { setInv((v) => [...v, 'ball']); setPop(false); setFound(true); }, 460); };
+
+  return (
+    <div className="v30">
+      <div className="vn2-bgs">
+        {ALL.map((b) => (
+          <div key={b} className={'ob-bg' + (b === curBg ? ' on' : '')} style={'bgs' in bit ? { transition: 'none' } : undefined}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={b} alt="" style={'bgs' in bit ? { transition: 'none', transform: 'none', filter: 'none' } : undefined} />
+          </div>))}
+      </div>
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 8 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+        <div className="ob-dots">
+          {[0, 5, 9, 15].map((m, i, arr) => <span key={i} className={'ob-dot' + (bi >= m && (i === arr.length - 1 || bi < arr[i + 1]) ? ' on' : bi >= m ? ' done' : '')} />)}
+        </div>
+      </div>
+      {inv.length > 0 && bit.t !== 'game' && (
+        <div className="px-inv" style={{ top: 'calc(52px + env(safe-area-inset-top))' }}>
+          {inv.map((o, i) => (
+            <span key={i} className="v30-slot">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={EV30.find((x) => x.id === o)?.img} alt="" />
+            </span>))}
+        </div>)}
+
+      {bit.t === 'title' && (
+        <div className="vn2-title" onClick={next}>
+          <div className="card"><div className="ch">{bit.ch}</div><div className="nm">{bit.nm}</div></div>
+        </div>)}
+
+      {bit.t === 'game' && <Sort30 onWin={onDone} />}
+
+      {bit.t === 'find' && !found && (
+        <button className={'v30-ball' + (pop ? ' got' : '')}
+          style={{ left: bit.ball.x + '%', top: bit.ball.y + '%', width: bit.ball.w }} onClick={grab} aria-label="мʼяч">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={V3 + 'ui-ball.png'} alt="" />
+        </button>)}
+
+      {bit.t !== 'title' && bit.t !== 'game' && !(bit.t === 'find' && !found) && (
+        <div className="ob-vn" style={{ zIndex: 6 }}>
+          <div className="v30-panel">
+            <span className="v30-name">ЯРЕМА</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="v30-hero" key={emo + bi + (echo ? 'e' : '')} src={emo} alt="" />
+            {bit.t === 'line' && <>{bit.text}</>}
+            {bit.t === 'anim' && <>{bit.text}</>}
+            {bit.t === 'react' && (echo ?? bit.prompt)}
+            {bit.t === 'find' && bit.found}
+            {bit.t === 'timed' && (echo ?? bit.q)}
+            {bit.t === 'puzzle' && (echo ?? bit.q)}
+            {bit.t === 'evidence' && (echo ?? bit.q)}
+          </div>
+          {(bit.t === 'line' || bit.t === 'anim' || bit.t === 'find') && (
+            <button className="v30-btn" onClick={next}>далі ▸</button>)}
+          {bit.t === 'react' && (echo
+            ? <button className="v30-btn" onClick={next}>далі ▸</button>
+            : (<div className="ob-qs">
+                {freeReacts.map((x) => (
+                  <button key={x.r} className="v30-btn dark" style={{ fontSize: 12 }}
+                    onClick={() => { setUsed((u) => ({ ...u, [x.r]: true })); setEcho(x.a); }}>{x.r}</button>))}
+                <button className="v30-btn" onClick={next}>Далі ▸</button>
+              </div>))}
+          {bit.t === 'timed' && (echo
+            ? <button className="v30-btn" onClick={next}>далі ▸</button>
+            : (<><div className="tm-bar"><i className={tRun ? 'run' : ''} /></div>
+                <div className="pz-opts">
+                  <button className="v30-btn dark" style={{ fontSize: 12 }} onClick={() => setEcho(bit.a[0])}>{bit.opts[0]}</button>
+                  <button className="v30-btn dark" style={{ fontSize: 12 }} onClick={() => setEcho(bit.a[1])}>{bit.opts[1]}</button>
+                </div></>))}
+          {bit.t === 'puzzle' && (echo
+            ? <button className="v30-btn" onClick={next}>далі ▸</button>
+            : (<><div className="pz-opts">
+                {bit.opts.map((o) => (
+                  <button key={o} className={'v30-btn dark' + (wrongPz === o ? ' no' : '')} style={{ fontSize: 18, minWidth: 74 }}
+                    onClick={() => { o === bit.right ? setEcho(bit.win) : setWrongPz(o); }}>{o}</button>))}
+              </div>
+              {wrongPz !== null && <div className="fg-msg">{bit.lose}</div>}</>))}
+          {bit.t === 'evidence' && (echo
+            ? (echo === bit.win
+                ? <button className="v30-btn" onClick={next}>далі ▸</button>
+                : <button className="v30-btn" onClick={() => setEcho(null)}>ще раз ▸</button>)
+            : (<div className="ev-cards">
+                {EV30.map((it) => (
+                  <button key={it.id} className="ev-card" onClick={() => setEcho(it.id === bit.right ? bit.win : bit.lose)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={it.img} alt="" /><b>{it.nm}</b>
+                  </button>))}
+              </div>))}
+        </div>)}
+
+      {bit.t === 'find' && !found && (
+        <div className="fd-brief">
+          <div className="v30-panel" style={{ minHeight: 0, fontSize: 14 }}>
+            <span className="v30-name">ЯРЕМА</span>{bit.intro}
+          </div>
+        </div>)}
+    </div>
+  );
+}
+
 /* ---------- Хаб ---------- */
 export default function OnbLab() {
-  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'stub'>('hub');
+  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'stub'>('hub');
   const back = () => setV('hub');
   const done = () => setV('stub');
 
@@ -1251,6 +1496,10 @@ export default function OnbLab() {
           <div className="ob-hub">
             <h1>Онбординг · тест</h1>
             <p className="sub">Q&A як RPG-діалог. Обери механіку й проклацай до кінця.</p>
+            <button className="ob-hub-btn" onClick={() => setV('n')} style={{ borderColor: '#a6e22e', boxShadow: '0 0 0 3px #a6e22e, 4px 4px 0 rgba(0,0,0,0.45)' }}>
+              <span className="n" style={{ background: '#a6e22e' }}>★</span>
+              <span><b>ОНБОРДИНГ 3.0</b><span>консистентні кадри + Ярема-оповідач з емоціями + піксель-UI</span></span>
+            </button>
             <button className="ob-hub-btn" onClick={() => setV('m')} style={{ borderColor: '#ff2e88', boxShadow: '0 0 0 3px #ff2e88, 4px 4px 0 rgba(0,0,0,0.45)' }}>
               <span className="n" style={{ background: '#ff2e88', color: '#fff' }}>★</span>
               <span><b>ФІНАЛ · PIXEL EDITION</b><span>все у fatpixel: find-object, timed, пазл, доказ, анімація, гра</span></span>
@@ -1319,6 +1568,7 @@ export default function OnbLab() {
       {v === 'k' && <IsoPath key="k" onBack={back} onDone={done} />}
       {v === 'l' && <Vn3 key="l" onBack={back} onDone={done} />}
       {v === 'm' && <VnFinal key="m" onBack={back} onDone={done} />}
+      {v === 'n' && <Vn30 key="n" onBack={back} onDone={done} />}
       {v === 'stub' && <Stub onBack={back} />}
     </div></main>
   );

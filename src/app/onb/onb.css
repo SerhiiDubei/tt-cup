@@ -472,3 +472,31 @@
 .fd-brief { position: absolute; z-index: 5; top: calc(104px + env(safe-area-inset-top));
   left: 14px; right: 14px; pointer-events: none; }
 .fd-brief .ob-vn-say { font-size: 14px; padding: 10px 13px; min-height: 0; }
+
+/* ---------- N · Онбординг 3.0: піксель-UI + спрайт-оповідач ---------- */
+.v30 * { image-rendering: pixelated; }
+.v30-panel { position: relative; border: 14px solid transparent;
+  border-image: url('/onb/v3/ui-panel.png') 60 fill stretch;
+  padding: 8px 10px; min-height: 84px;
+  font-family: 'Onest', sans-serif; font-weight: 700; font-size: 15.5px; line-height: 1.45; color: #16110d; }
+.v30-btn { display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 54px; width: 100%; border: 12px solid transparent;
+  border-image: url('/onb/v3/ui-btn.png') 55 fill stretch;
+  font-family: 'Unbounded'; font-weight: 800; font-size: 13px; text-transform: uppercase;
+  color: #16110d; cursor: pointer; padding: 6px 10px; background: none;
+  transition: transform 0.1s var(--ease); }
+.v30-btn:active { transform: translateY(2px); }
+.v30-btn.dark { border-image: url('/onb/v3/ui-btn-dark.png') 55 fill stretch; color: #fff8ec; }
+.v30-slot { width: 46px; height: 46px; border: 8px solid transparent;
+  border-image: url('/onb/v3/ui-slot.png') 40 fill stretch; display: grid; place-items: center; }
+.v30-slot img { width: 26px; height: 26px; object-fit: contain; }
+.v30-hero { position: absolute; right: 6px; bottom: 100%; margin-bottom: -12px; height: 148px; z-index: 7;
+  filter: drop-shadow(3px 4px 0 rgba(0,0,0,0.35)); animation: v30pop 0.22s var(--ease); pointer-events: none; }
+@keyframes v30pop { from { transform: translateY(8px) scale(0.96); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.v30-name { position: absolute; left: 10px; top: -14px; z-index: 8;
+  font-family: 'Unbounded'; font-weight: 800; font-size: 11px; text-transform: uppercase;
+  background: #16110d; color: #ffc619; padding: 4px 12px; border-radius: 3px; }
+.v30-ball { position: absolute; z-index: 4; cursor: pointer; background: none; border: none; padding: 0;
+  animation: pxFloat 1.8s ease-in-out infinite; }
+.v30-ball img { width: 100%; height: auto; }
+.v30-ball.got { animation: pxGot 0.5s var(--ease) forwards; pointer-events: none; }
