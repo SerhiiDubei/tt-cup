@@ -316,3 +316,68 @@
   cursor: pointer; box-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
 .ob-react button:active { transform: translate(1px, 1px); }
 .ob-react button .ar { color: var(--pink); font-weight: 900; }
+
+/* ============================================================
+   Варіанти J/K/L — ІЗОМЕТРІЯ + перемикання задника по точках
+   ============================================================ */
+.ob-hub-btn:nth-of-type(10) .n { background: #ffd7e6; }
+.ob-hub-btn:nth-of-type(11) .n { background: #b7f3ee; }
+.ob-hub-btn:nth-of-type(12) .n { background: #ffe9b3; }
+
+/* фони-задники: стек із crossfade */
+.iso-bgs { position: absolute; inset: 0; z-index: 0; }
+.iso-bgs .ob-bg { opacity: 0; transition: opacity 0.65s var(--ease); }
+.iso-bgs .ob-bg.on { opacity: 1; }
+
+/* сцена та ізо-площина */
+.iso-scene { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; overflow: hidden; }
+.iso-plane { position: relative; transform: perspective(1100px) rotateX(56deg) rotateZ(45deg);
+  transform-style: preserve-3d; }
+.iso-tile { position: absolute; width: 62px; height: 62px; border: 3px solid var(--ink);
+  border-radius: 10px; background: rgba(251, 241, 221, 0.92);
+  box-shadow: -4px 4px 0 rgba(0,0,0,0.35); }
+.iso-tile.ev { background: var(--cyan); }
+.iso-tile.done { background: var(--lime); }
+.iso-tile.fin { background: var(--pink); }
+.iso-tile.dim { opacity: 0.55; }
+/* біллборд: ставить вміст «стоячи» на площині */
+.iso-stand { position: absolute; left: 50%; top: 50%; transform-origin: 50% 100%;
+  transform: translate(-50%, -100%) rotateZ(-45deg) rotateX(-56deg); }
+.iso-node { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+  border: 3px solid var(--ink); background: #fffdf4; box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  font-family: 'Unbounded'; font-weight: 900; font-size: 15px; }
+.iso-node.now { background: var(--yellow); animation: mapPulse2 1.1s infinite; }
+.iso-node.done { background: var(--lime); }
+.iso-node.fin { background: var(--pink); color: #fff; font-size: 10px; width: 56px; height: 56px; }
+@keyframes mapPulse2 { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.iso-ball { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--ink);
+  background: radial-gradient(circle at 35% 30%, #fff 0 46%, #f0e3ca 47% 100%);
+  box-shadow: 0 10px 8px -6px rgba(0,0,0,0.5); }
+.iso-pawncell { position: absolute; width: 62px; height: 62px; transition: left 0.65s var(--ease), top 0.65s var(--ease); pointer-events: none; }
+.iso-lab { position: absolute; z-index: 3; font-weight: 800; font-size: 11px; color: #fff8ec;
+  background: rgba(22,17,13,0.72); border-radius: 99px; padding: 4px 10px; white-space: nowrap;
+  transform: translate(-50%, -50%); pointer-events: none; }
+/* назва активної точки + низ */
+.iso-cap { position: absolute; z-index: 4; top: calc(64px + env(safe-area-inset-top)); left: 50%;
+  transform: translateX(-50%); font-family: 'Unbounded'; font-weight: 800; font-size: 13px;
+  color: #fff8ec; background: rgba(22,17,13,0.72); border: 2.5px solid rgba(255,248,236,0.3);
+  border-radius: 99px; padding: 8px 16px; white-space: nowrap; }
+
+/* ---------- J · VN 2.0: чаптери зі зміною задника ---------- */
+.vn2-bgs { position: absolute; inset: 0; z-index: 0; }
+.vn2-bgs .ob-bg { opacity: 0; transition: opacity 0.7s var(--ease); }
+.vn2-bgs .ob-bg img { transform: scale(1.16); filter: blur(7px) brightness(0.8);
+  transition: transform 1.4s var(--ease), filter 1.2s var(--ease), opacity 0.7s var(--ease); }
+.vn2-bgs .ob-bg.on { opacity: 1; }
+.vn2-bgs .ob-bg.on img { transform: scale(1); filter: blur(0) brightness(1); }
+.vn2-title { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
+  background: rgba(22,17,13,0.35); animation: obIn 0.4s var(--ease); }
+.vn2-title .card { text-align: center; background: var(--ink); color: #fff8ec;
+  border: 3px solid var(--yellow); border-radius: 20px; box-shadow: 6px 6px 0 rgba(0,0,0,0.5);
+  padding: 22px 30px; transform: rotate(-2deg); animation: vn2Pop 0.55s var(--ease); }
+.vn2-title .ch { font-family: ui-monospace, monospace; font-weight: 700; font-size: 12px;
+  letter-spacing: 0.22em; color: var(--yellow); text-transform: uppercase; }
+.vn2-title .nm { font-family: 'Unbounded'; font-weight: 900; font-size: 26px; text-transform: uppercase; margin-top: 6px; }
+@keyframes vn2Pop { from { transform: rotate(-2deg) scale(0.7); opacity: 0; } to { transform: rotate(-2deg) scale(1); opacity: 1; } }
+.vn2-chdots { position: absolute; z-index: 4; top: calc(20px + env(safe-area-inset-top)); right: 16px;
+  display: flex; gap: 6px; }

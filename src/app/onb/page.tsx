@@ -570,9 +570,208 @@ function Board({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   );
 }
 
+/* ---------- J · VN 2.0 (ФІКСОВАНИЙ ПІДХІД): чаптери + зміна задника ----------
+   Кожен розділ = своя локація; перехід — титул розділу + zoom-in/розмиття
+   нового задника (голосова 2026-08-29). Всередині — VN-механіка E + вкраплення
+   одноразових реакцій. */
+type Block = { kind: 'lines'; lines: Line[] } | { kind: 'react'; prompt: string };
+type Chapter = { ch: string; nm: string; bg: string; blocks: Block[] };
+
+const CHAPTERS: Chapter[] = [
+  {
+    ch: 'Розділ 1', nm: 'Двір', bg: BG.front,
+    blocks: [
+      { kind: 'lines', lines: [
+        { who: 'ЯРЕМА', mood: 'інтрига', text: 'Бачиш цей стіл? Один. На весь двір.' },
+        { who: 'ЯРЕМА', mood: 'впевнений', text: 'Мене звати Ярема. Я тут живу.' },
+        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Скоро тут — Druid Battle Cup. Дві фази: онлайн зараз, фінал наживо.' },
+        { who: 'ДВІР', voice: true, text: 'Він каже це кожному. Але сьогодні — щиро.' },
+      ] },
+      { kind: 'react', prompt: 'Твоя реакція?' },
+    ],
+  },
+  {
+    ch: 'Розділ 2', nm: 'Стіл', bg: BG.close,
+    blocks: [
+      { kind: 'lines', lines: [
+        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Система сама збере сітку й дасть тобі вісім суперників.' },
+        { who: 'ЯРЕМА', mood: 'спокій', text: 'Нік суперника — в телеграмі. Списуєтесь і граєте, коли зручно обом.' },
+        { who: 'СТІЛ', voice: true, text: 'Минулого тижня двоє грали о пів на першу ночі. Я не проти.' },
+        { who: 'ЯРЕМА', mood: 'підбадьорює', text: 'За перемоги — очки: верхня чи нижня сітка. Але грають усі до кінця.' },
+        { who: 'ЯРЕМА', mood: 'чесно', text: 'Суперник зник? Матч не рахується, саппорт розрулить. І так — реєстрація безкоштовна.' },
+      ] },
+      { kind: 'react', prompt: 'Питання є?' },
+    ],
+  },
+  {
+    ch: 'Розділ 3', nm: 'День Х', bg: BG.terrace,
+    blocks: [
+      { kind: 'lines', lines: [
+        { who: 'ЯРЕМА', mood: 'хайп', text: '12 вересня. Тут. Столи в ряд, повний двір людей.' },
+        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Приходиш зі своєю позицією з онлайн-фази — і граєш наживо.' },
+        { who: 'ЯРЕМА', mood: 'хайп', text: 'Плюс міні-ігри: стаканчики, відро, ще купа приколів.' },
+        { who: 'ЯРЕМА', mood: 'запрошує', text: 'Твоя черга.' },
+      ] },
+    ],
+  },
+];
+
+function Vn2({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [ci, setCi] = useState(0);            // чаптер
+  const [stage, setStage] = useState<'title' | 'play'>('title');
+  const [bi, setBi] = useState(0);            // блок у чаптері
+  const [li, setLi] = useState(0);            // лінія у блоці
+  const [used, setUsed] = useState<Record<string, boolean>>({});
+  const [echo, setEcho] = useState<Line | null>(null);
+  const chap = CHAPTERS[ci];
+  const block = chap.blocks[bi];
+
+  useEffect(() => {
+    if (stage !== 'title') return;
+    const t = setTimeout(() => setStage('play'), 1500);
+    return () => clearTimeout(t);
+  }, [stage, ci]);
+
+  const nextBlock = () => {
+    setEcho(null); setLi(0);
+    if (bi < chap.blocks.length - 1) { setBi(bi + 1); return; }
+    if (ci < CHAPTERS.length - 1) { setCi(ci + 1); setBi(0); setStage('title'); return; }
+    onDone();
+  };
+  const adv = () => {
+    if (echo) { setEcho(null); nextBlock(); return; }
+    if (block.kind !== 'lines') return;
+    li < block.lines.length - 1 ? setLi(li + 1) : nextBlock();
+  };
+  const line = echo ?? (block.kind === 'lines' ? block.lines[li] : null);
+  const freeReacts = REACTIONS.filter((x) => !used[x.r]).slice(0, 2);
+  const last = ci === CHAPTERS.length - 1 && bi === chap.blocks.length - 1
+    && block.kind === 'lines' && li === block.lines.length - 1 && !echo;
+
+  return (
+    <>
+      <div className="vn2-bgs">
+        {CHAPTERS.map((c, i) => (
+          <div key={i} className={'ob-bg' + (i === ci ? ' on' : '')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={c.bg} alt="" />
+          </div>
+        ))}
+      </div>
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 6 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+        <div className="ob-dots">
+          {CHAPTERS.map((c, i) => <span key={i} className={'ob-dot' + (i === ci ? ' on' : i < ci ? ' done' : '')} />)}
+        </div>
+      </div>
+
+      {stage === 'title' && (
+        <div className="vn2-title" onClick={() => setStage('play')}>
+          <div className="card"><div className="ch">{chap.ch}</div><div className="nm">{chap.nm}</div></div>
+        </div>
+      )}
+
+      {stage === 'play' && (
+        <div className="ob-vn">
+          {line && (
+            <>
+              <div className="ob-vn-mood">
+                <b>{line.who}</b>{line.mood && <span>· {line.mood}</span>}{line.voice && <span>· голос</span>}
+              </div>
+              <div className="ob-vn-say" key={ci + '-' + bi + '-' + li + (echo ? '-e' : '')}
+                style={line.voice ? { fontStyle: 'italic', background: '#efe8ff' } : undefined}>
+                {line.text}
+              </div>
+              {last
+                ? <button className="ob-next" onClick={onDone}>Зареєструватися →</button>
+                : <button className="ob-vn-adv" onClick={adv}>далі <span className="tri">▸</span></button>}
+              {block.kind === 'lines' && !echo && (
+                <div className="ob-vn-steps">
+                  {block.lines.map((_, i) => <i key={i} className={i <= li ? 'on' : ''} />)}
+                </div>
+              )}
+            </>
+          )}
+          {!line && block.kind === 'react' && (
+            <>
+              <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· слухає</span></div>
+              <div className="ob-vn-say">{block.prompt}</div>
+              <div className="ob-qs">
+                {freeReacts.map((x) => (
+                  <button key={x.r} className="ob-q"
+                    onClick={() => { setUsed((u) => ({ ...u, [x.r]: true })); setEcho({ who: 'ЯРЕМА', text: x.a }); }}>
+                    <span className="qm">?</span>{x.r}
+                  </button>
+                ))}
+                <button className="ob-q ghost" onClick={nextBlock}>Далі →</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ---------- K · Ізо-стежка (реф Monument Valley) ----------
+   Ізометричні плитки; фішка їде точками, КОЖНА ТОЧКА ПЕРЕМИКАЄ ЗАДНИК. */
+const ISO_CELLS = [
+  { r: 0, c: 0 }, { r: 1, c: 0 }, { r: 1, c: 1 }, { r: 2, c: 1 }, { r: 3, c: 1 }, { r: 3, c: 2 },
+];
+const ISO_BGKEYS = [BG.front, BG.close, BG.terrace];
+function IsoPath({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [done, setDone] = useState(0);
+  const [open, setOpen] = useState(false);
+  const T = 72;
+  const pos = (i: number) => ({ left: ISO_CELLS[i].c * T + 'px', top: ISO_CELLS[i].r * T + 'px' });
+  const active = Math.min(done, 5);
+  return (
+    <>
+      <div className="iso-bgs">
+        {ISO_BGKEYS.map((b, i) => (
+          <div key={i} className={'ob-bg' + (i === active % 3 ? ' on' : '')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={b} alt="" />
+          </div>
+        ))}
+      </div>
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 6 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+      </div>
+      <div className="iso-cap">{done < 5 ? TOPICS[done].q : 'СТАРТ · реєстрація'}</div>
+      <div className="iso-scene">
+        <div className="iso-plane" style={{ width: 3 * T + 62, height: 4 * T + 62 }}>
+          {ISO_CELLS.map((cell, i) => (
+            <div key={i} className={'iso-tile' + (i === 5 ? ' fin' : i < done ? ' done' : i === done ? ' ev' : ' dim')}
+              style={pos(i)}>
+              <span className="iso-stand">
+                <button
+                  className={'iso-node' + (i === 5 ? ' fin' : i < done ? ' done' : i === done ? ' now' : '')}
+                  onClick={() => { if (i !== done) return; i === 5 ? onDone() : setOpen(true); }}>
+                  {i === 5 ? 'СТАРТ' : i < done ? '✓' : i + 1}
+                </button>
+              </span>
+            </div>
+          ))}
+          <div className="iso-pawncell" style={pos(active)}>
+            <span className="iso-stand" style={{ transform: 'translate(-50%,-210%) rotateZ(-45deg) rotateX(-56deg)' }}>
+              <span className="iso-ball" style={{ display: 'block' }} />
+            </span>
+          </div>
+        </div>
+      </div>
+      {open && done < 5 && (
+        <div className="ob-seq" style={{ zIndex: 7 }}>
+          <TypeSeq lines={TOPICS[done].lines} onEnd={() => { setOpen(false); setDone(done + 1); }} />
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ---------- Хаб ---------- */
 export default function OnbLab() {
-  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'stub'>('hub');
+  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'stub'>('hub');
   const back = () => setV('hub');
   const done = () => setV('stub');
 
@@ -583,7 +782,15 @@ export default function OnbLab() {
           <Bg src={BG.front} />
           <div className="ob-hub">
             <h1>Онбординг · тест</h1>
-            <p className="sub">Q&A як RPG-діалог. Три механіки — обери й проклацай до кінця.</p>
+            <p className="sub">Q&A як RPG-діалог. Обери механіку й проклацай до кінця.</p>
+            <button className="ob-hub-btn" onClick={() => setV('j')} style={{ borderColor: '#ffc619', boxShadow: '0 0 0 3px #ffc619, 4px 4px 0 rgba(0,0,0,0.45)' }}>
+              <span className="n" style={{ background: '#ffc619' }}>★</span>
+              <span><b>Новела 2.0 · чаптери</b><span>ФІКСОВАНИЙ ПІДХІД: розділи, задник міняється zoom-переходом</span></span>
+            </button>
+            <button className="ob-hub-btn" onClick={() => setV('k')}>
+              <span className="n" style={{ background: '#b7f3ee' }}>K</span>
+              <span><b>Ізо-стежка</b><span>реф Monument Valley: точки в ізометрії перемикають задник</span></span>
+            </button>
             <button className="ob-hub-btn" onClick={() => setV('a')}>
               <span className="n">A</span>
               <span><b>Один співрозмовник</b><span>класичний діалог: стейтмент → питання зникають</span></span>
@@ -632,6 +839,8 @@ export default function OnbLab() {
       {v === 'g' && <WorldMap key="g" onBack={back} onDone={done} />}
       {v === 'h' && <Fog key="h" onBack={back} onDone={done} />}
       {v === 'i' && <Board key="i" onBack={back} onDone={done} />}
+      {v === 'j' && <Vn2 key="j" onBack={back} onDone={done} />}
+      {v === 'k' && <IsoPath key="k" onBack={back} onDone={done} />}
       {v === 'stub' && <Stub onBack={back} />}
     </div></main>
   );
