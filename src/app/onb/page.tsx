@@ -1278,8 +1278,8 @@ const B30S: B30[] = [
   { t: 'line', bg: V3 + 'bg-boys.jpg', emo: 'wink', noHero: true, text: 'Наші вже тренуються лежати красиво. Двір чекає на тебе.' },
   { t: 'evidence', bg: V3 + 'bg-night.jpg', emo: 'strict', q: 'Стоп. Предʼяви доказ, що ти готовий до Дня Х.',
     right: 'paddle', win: 'ПРОТЕСТУ НЕМАЄ! Ракетка — пів перемоги.', lose: 'Хм. Знадобиться, але не воно…' },
-  { t: 'title', ch: 'Розділ 4', nm: 'Перевірка', bg: V3 + 'bg-front.jpg' },
-  { t: 'game', bg: V3 + 'bg-front.jpg' },
+  { t: 'title', ch: 'Розділ 4', nm: 'Перевірка', bg: V3 + 'bg-plain.jpg' },
+  { t: 'game', bg: V3 + 'bg-plain.jpg' },
 ];
 const CAST30 = [
   { name: 'Батрайдер', img: V3 + 'cast-0.png' },
@@ -1346,7 +1346,9 @@ function Sort30({ onWin }: { onWin: () => void }) {
         <small>Візьми людину — дізнаєшся імʼя. Розстав усіх за алфавітом (1 → 8)</small></div>
       <div className="fg-slots">
         {slots.map((s, i) => (
-          <div key={i} data-slot={i} className={'fg-slot' + (s !== null ? ' filled' : '') + (wrong[i] ? ' wrong' : '')}>
+          <div key={i} data-slot={i} className={'fg-slot pod' + (s !== null ? ' filled' : '') + (wrong[i] ? ' wrong' : '')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="pd" src={V3 + 'ui-podium.png'} alt="" draggable={false} />
             <span className="num">{i + 1}</span>
             {s !== null && (
               <div className="fg-char bare small" onPointerDown={startDrag(s)}>

@@ -535,3 +535,15 @@
   transform: translateX(-50%); font-family: 'Unbounded'; font-weight: 900; font-size: 16px;
   text-transform: uppercase; color: #fff8ec; background: #16110d; border: 3px solid var(--yellow);
   border-radius: 12px; padding: 8px 18px; animation: obIn 0.15s var(--ease); pointer-events: none; }
+
+/* гра: нейтральний фон + подіуми замість пунктирних плейсхолдерів */
+.fg-slot.pod { border: none; background: none; box-shadow: none; height: 118px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.fg-slot.pod .pd { width: 86%; height: auto; pointer-events: none;
+  filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.3)); }
+.fg-slot.pod .num { top: auto; bottom: 8px; left: 50%; transform: translateX(-50%);
+  font-family: 'Unbounded'; font-size: 12px; font-weight: 900; color: #fff8ec;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.7); }
+.fg-slot.pod .fg-char { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); }
+.fg-slot.pod.wrong .pd { filter: drop-shadow(0 0 6px #ff5a36) drop-shadow(2px 3px 0 rgba(0,0,0,0.3)); }
+.fg-slot.pod.right .pd { filter: drop-shadow(0 0 6px #a6e22e) drop-shadow(2px 3px 0 rgba(0,0,0,0.3)); }
