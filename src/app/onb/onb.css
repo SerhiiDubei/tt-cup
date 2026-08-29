@@ -467,3 +467,8 @@
   box-shadow: 3px 3px 0 rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.12s var(--ease); }
 .pz-opt:active { transform: translate(2px,2px); }
 .pz-opt.no { animation: fgShake 0.4s; background: #ffe1da; }
+
+/* find-режим: бриф компактно ЗВЕРХУ, низ кадру повністю вільний для тапів */
+.fd-brief { position: absolute; z-index: 5; top: calc(104px + env(safe-area-inset-top));
+  left: 14px; right: 14px; pointer-events: none; }
+.fd-brief .ob-vn-say { font-size: 14px; padding: 10px 13px; min-height: 0; }

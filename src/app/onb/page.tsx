@@ -908,7 +908,7 @@ const BITS: Bit[] = [
   { t: 'line', bg: PXE + 'bg-table.jpg', who: 'СТІЛ', voice: true, text: 'Суперник зник? Матч не рахується. Я все бачу, саппорт усе розрулить.' },
   { t: 'react', bg: PXE + 'bg-table.jpg', prompt: 'Твоя реакція?' },
   { t: 'title', ch: 'Розділ 2', nm: 'Розслідування', bg: PXE + 'bg-hidden.jpg' },
-  { t: 'find', bg: PXE + 'bg-hidden.jpg', zone: { x: 2, y: 70, w: 30, h: 24 }, obj: PXE + 'obj-bucket.png',
+  { t: 'find', bg: PXE + 'bg-hidden.jpg', zone: { x: 24, y: 82, w: 30, h: 17 }, obj: PXE + 'obj-bucket.png',
     intro: 'Мʼяч закотився кудись у траву. Знайди його — тапни там, де він.',
     found: 'Око — алмаз! Забирай у кишеню.', missTxt: 'НЕ ТАМ' },
   { t: 'timed', bg: PXE + 'bg-macro-paddle.jpg', q: 'Швидко! Мʼяч летить на тебе — форхенд чи бекхенд?!',
@@ -1077,7 +1077,10 @@ function VnFinal({ onBack, onDone }: { onBack: () => void; onDone: () => void })
         {PXE_BGS.map((b) => (
           <div key={b} className={'ob-bg' + (b === curBg ? ' on' : '')} style={'bgs' in bit ? { transition: 'none' } : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={b} alt="" style={'bgs' in bit ? { transition: 'none', transform: 'none', filter: 'none' } : undefined} />
+            <img src={b} alt="" style={{
+              ...(('bgs' in bit) ? { transition: 'none', transform: 'none', filter: 'none' } : null),
+              ...(b.includes('bg-hidden') ? { objectPosition: '0% 62%' } : null),
+            }} />
           </div>
         ))}
       </div>
@@ -1116,7 +1119,14 @@ function VnFinal({ onBack, onDone }: { onBack: () => void; onDone: () => void })
         </>
       )}
 
-      {bit.t !== 'title' && bit.t !== 'game' && (
+      {bit.t === 'find' && !foundObj && (
+        <div className="fd-brief">
+          <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· розслідування</span></div>
+          <div className="ob-vn-say">{bit.intro}</div>
+        </div>
+      )}
+
+      {bit.t !== 'title' && bit.t !== 'game' && !(bit.t === 'find' && !foundObj) && (
         <div className="ob-vn" style={{ zIndex: 6 }}>
           {bit.t === 'line' && (
             <>
@@ -1155,9 +1165,9 @@ function VnFinal({ onBack, onDone }: { onBack: () => void; onDone: () => void })
           )}
           {bit.t === 'find' && (
             <>
-              <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· {foundObj ? 'задоволений' : 'розслідування'}</span></div>
-              <div className="ob-vn-say" key={'f' + bi + foundObj}>{foundObj ? bit.found : bit.intro}</div>
-              {foundObj && <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>}
+              <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· задоволений</span></div>
+              <div className="ob-vn-say" key={'f' + bi}>{bit.found}</div>
+              <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
             </>
           )}
           {bit.t === 'timed' && (
