@@ -880,9 +880,273 @@ function Vn3({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   );
 }
 
+/* ---------- M · ФІНАЛ: обʼєднана новела (2.0 чаптери/діалоги/реакції +
+   2.1 хотспоти/інвентар) + гра-перевірка «чи ти з Друїду» ----------
+   Персонажі гри = states8 BAT RIDER (кислотний+сірий фон знято кеєм). */
+type FinBlock =
+  | { kind: 'lines'; lines: Line[] }
+  | { kind: 'react'; prompt: string }
+  | { kind: 'find'; obj: string; x: number; y: number; w: number; intro: string; found: string }
+  | { kind: 'game' };
+type FinChap = { ch: string; nm: string; bg: string; blocks: FinBlock[] };
+
+const FIN_CHAPTERS: FinChap[] = [
+  {
+    ch: 'Розділ 1', nm: 'Двір', bg: BG.front,
+    blocks: [
+      { kind: 'lines', lines: [
+        { who: 'ЯРЕМА', mood: 'інтрига', text: 'Бачиш цей стіл? Один. На весь двір.' },
+        { who: 'ЯРЕМА', mood: 'впевнений', text: 'Я Ярема. Скоро тут — Druid Battle Cup: онлайн-фаза зараз, фінал наживо.' },
+        { who: 'ДВІР', voice: true, text: 'Він каже це кожному. Але сьогодні — щиро.' },
+      ] },
+      { kind: 'react', prompt: 'Твоя реакція?' },
+    ],
+  },
+  {
+    ch: 'Розділ 2', nm: 'Стіл', bg: BG.close,
+    blocks: [
+      { kind: 'lines', lines: [
+        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Система збере сітку сама й дасть тобі вісім суперників.' },
+        { who: 'ЯРЕМА', mood: 'спокій', text: 'Нік суперника — в телеграмі. Граєте, коли зручно обом. Реєстрація безкоштовна.' },
+        { who: 'СТІЛ', voice: true, text: 'Суперник зник? Таких я запамʼятовую. Матч не рахується, саппорт розрулить.' },
+      ] },
+      { kind: 'find', obj: '/onb/fin/obj-ball.png', x: 24, y: 40, w: 72,
+        intro: 'О, мʼяч утік зі столу. Злови — він тобі ще знадобиться.',
+        found: 'Є! З таким контролем не пропадеш.' },
+    ],
+  },
+  {
+    ch: 'Розділ 3', nm: 'Вечір · День Х', bg: '/onb/fin/bg-evening.jpg',
+    blocks: [
+      { kind: 'lines', lines: [
+        { who: 'ЯРЕМА', mood: 'хайп', text: '12 вересня. Фінал наживо: столи в ряд, повний двір, музика.' },
+        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Приходиш зі своєю позицією з онлайн-фази. І не тільки теніс — міні-ігри.' },
+      ] },
+      { kind: 'find', obj: '/onb/fin/obj-cups.png', x: 60, y: 55, w: 92,
+        intro: 'Стаканчики вже сховались до фіналу. Знайди їх.',
+        found: 'Повний комплект. Лишилась остання перевірка…' },
+    ],
+  },
+  {
+    ch: 'Розділ 4', nm: 'Перевірка', bg: BG.front,
+    blocks: [{ kind: 'game' }],
+  },
+];
+
+/* Гра: розстав завсідників за алфавітом. Порядок пулу перемішано статично. */
+const FG_NAMES = ['Батрайдер', 'Влад', 'Ліза', 'Настя', 'Олег', 'Оля', 'Стас', 'Ярема'];
+const FG_POOL_ORDER = [4, 1, 7, 0, 5, 2, 6, 3]; // перемішка (фіксована, без Math.random)
+
+function SortGame({ onWin }: { onWin: () => void }) {
+  const [slots, setSlots] = useState<(number | null)[]>(Array(8).fill(null));
+  const [wrong, setWrong] = useState<boolean[]>(Array(8).fill(false));
+  const [msg, setMsg] = useState('');
+  const [drag, setDrag] = useState<{ idx: number; x: number; y: number } | null>(null);
+  const inPool = FG_POOL_ORDER.filter((i) => !slots.includes(i));
+  const allSet = slots.every((s) => s !== null);
+
+  const startDrag = (idx: number) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    setDrag({ idx, x: e.clientX, y: e.clientY });
+  };
+  useEffect(() => {
+    if (!drag) return;
+    const mv = (e: PointerEvent) => setDrag((d) => d && { ...d, x: e.clientX, y: e.clientY });
+    const up = (e: PointerEvent) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-slot]');
+      setDrag(null);
+      if (!el) return;
+      const si = Number((el as HTMLElement).dataset.slot);
+      setSlots((s) => {
+        const ns = [...s];
+        const from = ns.indexOf(drag.idx);
+        if (from >= 0) ns[from] = ns[si]; // свап, якщо тягнемо зі слота
+        ns[si] = drag.idx;
+        return ns;
+      });
+      setWrong(Array(8).fill(false)); setMsg('');
+    };
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up, { once: true });
+    return () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+  }, [drag]);
+
+  const check = () => {
+    const w = slots.map((s, i) => s !== null && FG_NAMES[s] !== [...FG_NAMES].sort((a, b) => a.localeCompare(b, 'uk'))[i]);
+    if (w.some(Boolean)) { setWrong(w as boolean[]); setMsg('Не зовсім. Червоні — не на своїх місцях.'); }
+    else { setMsg('Все чітко. Ти точно з Друїду! 🏓'); setTimeout(onWin, 900); }
+  };
+
+  return (
+    <div className="fg-wrap">
+      <div className="fg-title">ОСТАННЯ ПЕРЕВІРКА: ЧИ ТИ З ДРУЇДУ?
+        <small>Розстав завсідників за алфавітом — тягни картку в слот (1 → 8)</small>
+      </div>
+      <div className="fg-slots">
+        {slots.map((s, i) => (
+          <div key={i} data-slot={i}
+            className={'fg-slot' + (s !== null ? ' filled' : '') + (wrong[i] ? ' wrong' : '')}>
+            <span className="num">{i + 1}</span>
+            {s !== null && (
+              <div className="fg-char small" onPointerDown={startDrag(s)}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={'/onb/fin/char-' + s + '.png'} alt="" draggable={false} />
+                <b>{FG_NAMES[s]}</b>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="fg-pool">
+        {inPool.map((i) => (
+          drag?.idx === i ? null : (
+            <div key={i} className="fg-char" onPointerDown={startDrag(i)}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={'/onb/fin/char-' + i + '.png'} alt="" draggable={false} />
+              <b>{FG_NAMES[i]}</b>
+            </div>
+          )
+        ))}
+      </div>
+      {drag && (
+        <div className="fg-char dragging" style={{ left: drag.x, top: drag.y }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={'/onb/fin/char-' + drag.idx + '.png'} alt="" draggable={false} />
+          <b>{FG_NAMES[drag.idx]}</b>
+        </div>
+      )}
+      <button className="ob-next fg-check" disabled={!allSet} style={!allSet ? { opacity: 0.45 } : undefined} onClick={check}>
+        Перевірити
+      </button>
+      <div className="fg-msg">{msg}</div>
+    </div>
+  );
+}
+
+function VnFinal({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [ci, setCi] = useState(0);
+  const [stage, setStage] = useState<'title' | 'play'>('title');
+  const [bi, setBi] = useState(0);
+  const [li, setLi] = useState(0);
+  const [used, setUsed] = useState<Record<string, boolean>>({});
+  const [echo, setEcho] = useState<Line | null>(null);
+  const [found, setFound] = useState(false);
+  const [popping, setPopping] = useState(false);
+  const [inv, setInv] = useState<string[]>([]);
+  const chap = FIN_CHAPTERS[ci];
+  const block = chap.blocks[bi];
+
+  useEffect(() => {
+    if (stage !== 'title') return;
+    const t = setTimeout(() => setStage('play'), 1400);
+    return () => clearTimeout(t);
+  }, [stage, ci]);
+
+  const nextBlock = () => {
+    setEcho(null); setLi(0); setFound(false);
+    if (bi < chap.blocks.length - 1) { setBi(bi + 1); return; }
+    if (ci < FIN_CHAPTERS.length - 1) { setCi(ci + 1); setBi(0); setStage('title'); return; }
+    onDone();
+  };
+  const freeReacts = REACTIONS.filter((x) => !used[x.r]).slice(0, 2);
+  const line = echo ?? (block.kind === 'lines' ? block.lines[li] : null);
+  const adv = () => {
+    if (echo) { setEcho(null); nextBlock(); return; }
+    if (block.kind === 'lines') { li < block.lines.length - 1 ? setLi(li + 1) : nextBlock(); }
+    else if (block.kind === 'find' && found) nextBlock();
+  };
+  const grab = () => {
+    if (block.kind !== 'find' || popping) return;
+    setPopping(true);
+    setTimeout(() => { setInv((v) => [...v, (block as { obj: string }).obj]); setPopping(false); setFound(true); }, 460);
+  };
+
+  return (
+    <>
+      <div className="vn2-bgs">
+        {FIN_CHAPTERS.map((c, i) => (
+          <div key={i} className={'ob-bg' + (i === ci ? ' on' : '')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={c.bg} alt="" />
+          </div>
+        ))}
+      </div>
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 8 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+        <div className="ob-dots">
+          {FIN_CHAPTERS.map((c, i) => <span key={i} className={'ob-dot' + (i === ci ? ' on' : i < ci ? ' done' : '')} />)}
+        </div>
+      </div>
+      {inv.length > 0 && block.kind !== 'game' && (
+        <div className="px-inv" style={{ top: 'calc(52px + env(safe-area-inset-top))' }}>
+          {inv.map((o, i) => (
+            <span key={i} className="px-slot">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={o} alt="" />
+            </span>
+          ))}
+        </div>
+      )}
+
+      {stage === 'title' && (
+        <div className="vn2-title" onClick={() => setStage('play')}>
+          <div className="card"><div className="ch">{chap.ch}</div><div className="nm">{chap.nm}</div></div>
+        </div>
+      )}
+
+      {stage === 'play' && block.kind === 'game' && <SortGame onWin={onDone} />}
+
+      {stage === 'play' && block.kind !== 'game' && (
+        <>
+          {block.kind === 'find' && !found && (
+            <button className={'px-obj' + (popping ? ' got' : '')}
+              style={{ left: block.x + '%', top: block.y + '%', width: block.w }}
+              onClick={grab} aria-label="предмет">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={block.obj} alt="" />
+            </button>
+          )}
+          <div className="ob-vn">
+            {line && (
+              <>
+                <div className="ob-vn-mood"><b>{line.who}</b>{line.mood && <span>· {line.mood}</span>}{line.voice && <span>· голос</span>}</div>
+                <div className="ob-vn-say" key={ci + '-' + bi + '-' + li + (echo ? 'e' : '')}
+                  style={line.voice ? { fontStyle: 'italic', background: '#efe8ff' } : undefined}>{line.text}</div>
+                <button className="ob-vn-adv" onClick={adv}>далі <span className="tri">▸</span></button>
+              </>
+            )}
+            {!line && block.kind === 'react' && (
+              <>
+                <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· слухає</span></div>
+                <div className="ob-vn-say">{block.prompt}</div>
+                <div className="ob-qs">
+                  {freeReacts.map((x) => (
+                    <button key={x.r} className="ob-q"
+                      onClick={() => { setUsed((u) => ({ ...u, [x.r]: true })); setEcho({ who: 'ЯРЕМА', text: x.a }); }}>
+                      <span className="qm">?</span>{x.r}
+                    </button>
+                  ))}
+                  <button className="ob-q ghost" onClick={nextBlock}>Далі →</button>
+                </div>
+              </>
+            )}
+            {!line && block.kind === 'find' && (
+              <>
+                <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· {found ? 'задоволений' : 'шукай'}</span></div>
+                <div className="ob-vn-say" key={'f' + ci + bi + found}>{found ? block.found : block.intro}</div>
+                {found && <button className="ob-vn-adv" onClick={adv}>далі <span className="tri">▸</span></button>}
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 /* ---------- Хаб ---------- */
 export default function OnbLab() {
-  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'stub'>('hub');
+  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'stub'>('hub');
   const back = () => setV('hub');
   const done = () => setV('stub');
 
@@ -894,6 +1158,10 @@ export default function OnbLab() {
           <div className="ob-hub">
             <h1>Онбординг · тест</h1>
             <p className="sub">Q&A як RPG-діалог. Обери механіку й проклацай до кінця.</p>
+            <button className="ob-hub-btn" onClick={() => setV('m')} style={{ borderColor: '#ff2e88', boxShadow: '0 0 0 3px #ff2e88, 4px 4px 0 rgba(0,0,0,0.45)' }}>
+              <span className="n" style={{ background: '#ff2e88', color: '#fff' }}>★</span>
+              <span><b>ФІНАЛ · повна історія</b><span>2.0 + 2.1 разом + гра «чи ти з Друїду» (сортування)</span></span>
+            </button>
             <button className="ob-hub-btn" onClick={() => setV('j')} style={{ borderColor: '#ffc619', boxShadow: '0 0 0 3px #ffc619, 4px 4px 0 rgba(0,0,0,0.45)' }}>
               <span className="n" style={{ background: '#ffc619' }}>★</span>
               <span><b>Новела 2.0 · чаптери</b><span>ФІКСОВАНИЙ ПІДХІД: розділи, задник міняється zoom-переходом</span></span>
@@ -957,6 +1225,7 @@ export default function OnbLab() {
       {v === 'j' && <Vn2 key="j" onBack={back} onDone={done} />}
       {v === 'k' && <IsoPath key="k" onBack={back} onDone={done} />}
       {v === 'l' && <Vn3 key="l" onBack={back} onDone={done} />}
+      {v === 'm' && <VnFinal key="m" onBack={back} onDone={done} />}
       {v === 'stub' && <Stub onBack={back} />}
     </div></main>
   );
