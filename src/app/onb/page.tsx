@@ -880,62 +880,64 @@ function Vn3({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
   );
 }
 
-/* ---------- M · ФІНАЛ: обʼєднана новела (2.0 чаптери/діалоги/реакції +
-   2.1 хотспоти/інвентар) + гра-перевірка «чи ти з Друїду» ----------
-   Персонажі гри = states8 BAT RIDER (кислотний+сірий фон знято кеєм). */
-type FinBlock =
-  | { kind: 'lines'; lines: Line[] }
-  | { kind: 'react'; prompt: string }
-  | { kind: 'find'; obj: string; x: number; y: number; w: number; intro: string; found: string }
-  | { kind: 'game' };
-type FinChap = { ch: string; nm: string; bg: string; blocks: FinBlock[] };
+/* ---------- M · ФІНАЛ · PIXEL EDITION ----------
+   Все у fatpixel-стилі (реф states8 + таймлапс). Лінійні біти з частою зміною
+   планів і механік, узятих з реальних візуальних новел:
+   - Danganronpa: investigation/find-object (мʼяч захований у сцені, без хінта)
+   - Ace Attorney: «предʼяви доказ» з інвентаря
+   - Telltale: timed choice з таймером
+   - Professor Layton: пазл-питання між діалогами
+   + предметні макро-плани і 2-кадрова анімація ралі. */
+const PXE = '/onb/pxe/';
+type Bit =
+  | { t: 'title'; ch: string; nm: string; bg: string }
+  | { t: 'line'; bg: string; who: string; mood?: string; voice?: boolean; text: string }
+  | { t: 'anim'; bgs: string[]; text: string }
+  | { t: 'react'; bg: string; prompt: string }
+  | { t: 'find'; bg: string; zone: { x: number; y: number; w: number; h: number }; obj: string; intro: string; found: string; missTxt: string }
+  | { t: 'timed'; bg: string; q: string; opts: [string, string]; a: [string, string] }
+  | { t: 'puzzle'; bg: string; q: string; opts: number[]; right: number; win: string; lose: string }
+  | { t: 'evidence'; bg: string; q: string; right: string; win: string; lose: string }
+  | { t: 'game'; bg: string };
 
-const FIN_CHAPTERS: FinChap[] = [
-  {
-    ch: 'Розділ 1', nm: 'Двір', bg: BG.front,
-    blocks: [
-      { kind: 'lines', lines: [
-        { who: 'ЯРЕМА', mood: 'інтрига', text: 'Бачиш цей стіл? Один. На весь двір.' },
-        { who: 'ЯРЕМА', mood: 'впевнений', text: 'Я Ярема. Скоро тут — Druid Battle Cup: онлайн-фаза зараз, фінал наживо.' },
-        { who: 'ДВІР', voice: true, text: 'Він каже це кожному. Але сьогодні — щиро.' },
-      ] },
-      { kind: 'react', prompt: 'Твоя реакція?' },
-    ],
-  },
-  {
-    ch: 'Розділ 2', nm: 'Стіл', bg: BG.close,
-    blocks: [
-      { kind: 'lines', lines: [
-        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Система збере сітку сама й дасть тобі вісім суперників.' },
-        { who: 'ЯРЕМА', mood: 'спокій', text: 'Нік суперника — в телеграмі. Граєте, коли зручно обом. Реєстрація безкоштовна.' },
-        { who: 'СТІЛ', voice: true, text: 'Суперник зник? Таких я запамʼятовую. Матч не рахується, саппорт розрулить.' },
-      ] },
-      { kind: 'find', obj: '/onb/fin/obj-ball.png', x: 24, y: 40, w: 72,
-        intro: 'О, мʼяч утік зі столу. Злови — він тобі ще знадобиться.',
-        found: 'Є! З таким контролем не пропадеш.' },
-    ],
-  },
-  {
-    ch: 'Розділ 3', nm: 'Вечір · День Х', bg: '/onb/fin/bg-evening.jpg',
-    blocks: [
-      { kind: 'lines', lines: [
-        { who: 'ЯРЕМА', mood: 'хайп', text: '12 вересня. Фінал наживо: столи в ряд, повний двір, музика.' },
-        { who: 'ЯРЕМА', mood: 'пояснює', text: 'Приходиш зі своєю позицією з онлайн-фази. І не тільки теніс — міні-ігри.' },
-      ] },
-      { kind: 'find', obj: '/onb/fin/obj-cups.png', x: 60, y: 55, w: 92,
-        intro: 'Стаканчики вже сховались до фіналу. Знайди їх.',
-        found: 'Повний комплект. Лишилась остання перевірка…' },
-    ],
-  },
-  {
-    ch: 'Розділ 4', nm: 'Перевірка', bg: BG.front,
-    blocks: [{ kind: 'game' }],
-  },
+const BITS: Bit[] = [
+  { t: 'title', ch: 'Розділ 1', nm: 'Двір', bg: PXE + 'bg-yard.jpg' },
+  { t: 'line', bg: PXE + 'bg-yard.jpg', who: 'ЯРЕМА', mood: 'інтрига', text: 'Бачиш цей двір? Тут скоро буде Druid Battle Cup.' },
+  { t: 'anim', bgs: [PXE + 'bg-rally-a.jpg', PXE + 'bg-rally-b.jpg'], text: 'Онлайн-фаза вже гріється: матчі йдуть щодня, коли зручно гравцям.' },
+  { t: 'line', bg: PXE + 'bg-table.jpg', who: 'ЯРЕМА', mood: 'пояснює', text: 'Система збере сітку сама і дасть тобі вісім суперників. Нік — у телеграмі.' },
+  { t: 'line', bg: PXE + 'bg-table.jpg', who: 'СТІЛ', voice: true, text: 'Суперник зник? Матч не рахується. Я все бачу, саппорт усе розрулить.' },
+  { t: 'react', bg: PXE + 'bg-table.jpg', prompt: 'Твоя реакція?' },
+  { t: 'title', ch: 'Розділ 2', nm: 'Розслідування', bg: PXE + 'bg-hidden.jpg' },
+  { t: 'find', bg: PXE + 'bg-hidden.jpg', zone: { x: 2, y: 70, w: 30, h: 24 }, obj: PXE + 'obj-bucket.png',
+    intro: 'Мʼяч закотився кудись у траву. Знайди його — тапни там, де він.',
+    found: 'Око — алмаз! Забирай у кишеню.', missTxt: 'НЕ ТАМ' },
+  { t: 'timed', bg: PXE + 'bg-macro-paddle.jpg', q: 'Швидко! Мʼяч летить на тебе — форхенд чи бекхенд?!',
+    opts: ['Форхенд', 'Бекхенд'], a: ['Класика. Поважаю.', 'Ризиково. Але красиво.'] },
+  { t: 'title', ch: 'Розділ 3', nm: 'Вечір', bg: PXE + 'bg-evening.jpg' },
+  { t: 'line', bg: PXE + 'bg-evening.jpg', who: 'ЯРЕМА', mood: 'спокій', text: 'Онлайн-фаза триває кілька тижнів. Очки ведуть у верхню чи нижню сітку — грають усі.' },
+  { t: 'puzzle', bg: PXE + 'bg-evening.jpg', q: 'Перевірка уважності: скільки матчів у тебе в онлайн-фазі?',
+    opts: [6, 8, 10], right: 8, win: 'Вісім! Слухав уважно — таких ми любимо.', lose: 'Нє-а. Я ж казав…' },
+  { t: 'title', ch: 'Розділ 4', nm: 'День Х', bg: PXE + 'bg-night.jpg' },
+  { t: 'line', bg: PXE + 'bg-night.jpg', who: 'ЯРЕМА', mood: 'хайп', text: '12 вересня. Фінал наживо: столи в ряд, гірлянди, повний двір людей.' },
+  { t: 'anim', bgs: [PXE + 'bg-macro-cups.jpg', PXE + 'bg-night.jpg'], text: 'І міні-ігри: стаканчики, відро — легенди складають не тільки про чемпіонів.' },
+  { t: 'evidence', bg: PXE + 'bg-night.jpg', q: 'Стоп! Предʼяви доказ, що ти готовий до Дня Х.',
+    right: 'paddle', win: 'ПРОТЕСТУ НЕМАЄ! Ракетка — це вже пів перемоги.', lose: 'Хм. Це знадобиться, але не воно…' },
+  { t: 'title', ch: 'Розділ 5', nm: 'Перевірка', bg: PXE + 'bg-yard.jpg' },
+  { t: 'game', bg: PXE + 'bg-yard.jpg' },
 ];
 
-/* Гра: розстав завсідників за алфавітом. Порядок пулу перемішано статично. */
-const FG_NAMES = ['Батрайдер', 'Влад', 'Ліза', 'Настя', 'Олег', 'Оля', 'Стас', 'Ярема'];
-const FG_POOL_ORDER = [4, 1, 7, 0, 5, 2, 6, 3]; // перемішка (фіксована, без Math.random)
+/* Гра-сортування: 8 РІЗНИХ згенерованих персонажів (fatpixel). */
+const FG_CHARS = [
+  { name: 'Батрайдер', img: PXE + 'ch-batrider.png' },
+  { name: 'Влад', img: PXE + 'ch-vlad.png' },
+  { name: 'Ліза', img: PXE + 'ch-liza.png' },
+  { name: 'Настя', img: PXE + 'ch-nastia.png' },
+  { name: 'Олег', img: PXE + 'ch-oleg.png' },
+  { name: 'Оля', img: PXE + 'ch-olia.png' },
+  { name: 'Стас', img: PXE + 'ch-stas.png' },
+  { name: 'Ярема', img: PXE + 'ch-yarema.png' },
+];
+const FG_POOL_ORDER = [4, 1, 7, 0, 5, 2, 6, 3];
 
 function SortGame({ onWin }: { onWin: () => void }) {
   const [slots, setSlots] = useState<(number | null)[]>(Array(8).fill(null));
@@ -960,7 +962,7 @@ function SortGame({ onWin }: { onWin: () => void }) {
       setSlots((s) => {
         const ns = [...s];
         const from = ns.indexOf(drag.idx);
-        if (from >= 0) ns[from] = ns[si]; // свап, якщо тягнемо зі слота
+        if (from >= 0) ns[from] = ns[si];
         ns[si] = drag.idx;
         return ns;
       });
@@ -972,7 +974,8 @@ function SortGame({ onWin }: { onWin: () => void }) {
   }, [drag]);
 
   const check = () => {
-    const w = slots.map((s, i) => s !== null && FG_NAMES[s] !== [...FG_NAMES].sort((a, b) => a.localeCompare(b, 'uk'))[i]);
+    const sorted = [...FG_CHARS.map((c) => c.name)].sort((a, b) => a.localeCompare(b, 'uk'));
+    const w = slots.map((s, i) => s !== null && FG_CHARS[s].name !== sorted[i]);
     if (w.some(Boolean)) { setWrong(w as boolean[]); setMsg('Не зовсім. Червоні — не на своїх місцях.'); }
     else { setMsg('Все чітко. Ти точно з Друїду! 🏓'); setTimeout(onWin, 900); }
   };
@@ -990,8 +993,8 @@ function SortGame({ onWin }: { onWin: () => void }) {
             {s !== null && (
               <div className="fg-char small" onPointerDown={startDrag(s)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={'/onb/fin/char-' + s + '.png'} alt="" draggable={false} />
-                <b>{FG_NAMES[s]}</b>
+                <img src={FG_CHARS[s].img} alt="" draggable={false} />
+                <b>{FG_CHARS[s].name}</b>
               </div>
             )}
           </div>
@@ -1002,8 +1005,8 @@ function SortGame({ onWin }: { onWin: () => void }) {
           drag?.idx === i ? null : (
             <div key={i} className="fg-char" onPointerDown={startDrag(i)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={'/onb/fin/char-' + i + '.png'} alt="" draggable={false} />
-              <b>{FG_NAMES[i]}</b>
+              <img src={FG_CHARS[i].img} alt="" draggable={false} />
+              <b>{FG_CHARS[i].name}</b>
             </div>
           )
         ))}
@@ -1011,8 +1014,8 @@ function SortGame({ onWin }: { onWin: () => void }) {
       {drag && (
         <div className="fg-char dragging" style={{ left: drag.x, top: drag.y }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={'/onb/fin/char-' + drag.idx + '.png'} alt="" draggable={false} />
-          <b>{FG_NAMES[drag.idx]}</b>
+          <img src={FG_CHARS[drag.idx].img} alt="" draggable={false} />
+          <b>{FG_CHARS[drag.idx].name}</b>
         </div>
       )}
       <button className="ob-next fg-check" disabled={!allSet} style={!allSet ? { opacity: 0.45 } : undefined} onClick={check}>
@@ -1023,122 +1026,202 @@ function SortGame({ onWin }: { onWin: () => void }) {
   );
 }
 
+const PXE_BGS = Array.from(new Set(BITS.flatMap((b) => ('bgs' in b ? b.bgs : [b.bg]))));
+const EVIDENCE_ITEMS = [
+  { id: 'ball', img: '/onb/px/obj-ball.png', nm: 'Мʼяч' },
+  { id: 'paddle', img: '/onb/px/obj-paddle.png', nm: 'Ракетка' },
+  { id: 'bucket', img: PXE + 'obj-bucket.png', nm: 'Відро' },
+];
+
 function VnFinal({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
-  const [ci, setCi] = useState(0);
-  const [stage, setStage] = useState<'title' | 'play'>('title');
   const [bi, setBi] = useState(0);
-  const [li, setLi] = useState(0);
+  const [misses, setMisses] = useState<{ x: number; y: number; n: number }[]>([]);
+  const [foundObj, setFoundObj] = useState(false);
+  const [echo, setEcho] = useState<string | null>(null);
   const [used, setUsed] = useState<Record<string, boolean>>({});
-  const [echo, setEcho] = useState<Line | null>(null);
-  const [found, setFound] = useState(false);
-  const [popping, setPopping] = useState(false);
+  const [animFrame, setAnimFrame] = useState(0);
+  const [timerRun, setTimerRun] = useState(false);
   const [inv, setInv] = useState<string[]>([]);
-  const chap = FIN_CHAPTERS[ci];
-  const block = chap.blocks[bi];
+  const [wrongPz, setWrongPz] = useState<number | null>(null);
+  const bit = BITS[bi];
+  const curBg = 'bgs' in bit ? bit.bgs[animFrame % bit.bgs.length] : bit.bg;
 
+  const next = () => { setEcho(null); setMisses([]); setFoundObj(false); setWrongPz(null); setBi((i) => Math.min(i + 1, BITS.length - 1)); };
+
+  /* титул сам гортається; анімація ралі — перемикання кадрів */
   useEffect(() => {
-    if (stage !== 'title') return;
-    const t = setTimeout(() => setStage('play'), 1400);
-    return () => clearTimeout(t);
-  }, [stage, ci]);
+    if (bit.t === 'title') { const t = setTimeout(next, 1400); return () => clearTimeout(t); }
+    if (bit.t === 'anim') { const t = setInterval(() => setAnimFrame((f) => f + 1), 420); return () => clearInterval(t); }
+    if (bit.t === 'timed') { const t = setTimeout(() => setTimerRun(true), 60); const to = setTimeout(() => setEcho((e) => e ?? bit.a[0]), 5200); return () => { clearTimeout(t); clearTimeout(to); setTimerRun(false); }; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bi]);
 
-  const nextBlock = () => {
-    setEcho(null); setLi(0); setFound(false);
-    if (bi < chap.blocks.length - 1) { setBi(bi + 1); return; }
-    if (ci < FIN_CHAPTERS.length - 1) { setCi(ci + 1); setBi(0); setStage('title'); return; }
-    onDone();
-  };
   const freeReacts = REACTIONS.filter((x) => !used[x.r]).slice(0, 2);
-  const line = echo ?? (block.kind === 'lines' ? block.lines[li] : null);
-  const adv = () => {
-    if (echo) { setEcho(null); nextBlock(); return; }
-    if (block.kind === 'lines') { li < block.lines.length - 1 ? setLi(li + 1) : nextBlock(); }
-    else if (block.kind === 'find' && found) nextBlock();
-  };
-  const grab = () => {
-    if (block.kind !== 'find' || popping) return;
-    setPopping(true);
-    setTimeout(() => { setInv((v) => [...v, (block as { obj: string }).obj]); setPopping(false); setFound(true); }, 460);
+
+  const tapFind = (e: React.MouseEvent<HTMLElement>) => {
+    if (bit.t !== 'find' || foundObj) return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * 100;
+    const py = ((e.clientY - r.top) / r.height) * 100;
+    const z = bit.zone;
+    if (px >= z.x && px <= z.x + z.w && py >= z.y && py <= z.y + z.h) {
+      setFoundObj(true); setInv((v) => [...v, 'ball']);
+    } else {
+      setMisses((m) => [...m.slice(-3), { x: px, y: py, n: Date.now() }]);
+    }
   };
 
   return (
     <>
       <div className="vn2-bgs">
-        {FIN_CHAPTERS.map((c, i) => (
-          <div key={i} className={'ob-bg' + (i === ci ? ' on' : '')}>
+        {PXE_BGS.map((b) => (
+          <div key={b} className={'ob-bg' + (b === curBg ? ' on' : '')} style={'bgs' in bit ? { transition: 'none' } : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={c.bg} alt="" />
+            <img src={b} alt="" style={'bgs' in bit ? { transition: 'none', transform: 'none', filter: 'none' } : undefined} />
           </div>
         ))}
       </div>
       <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 8 }}>
         <button className="ob-back" onClick={onBack}>← вихід</button>
         <div className="ob-dots">
-          {FIN_CHAPTERS.map((c, i) => <span key={i} className={'ob-dot' + (i === ci ? ' on' : i < ci ? ' done' : '')} />)}
+          {[0, 6, 9, 12, 16].map((m, i) => <span key={i} className={'ob-dot' + (bi >= m && (i === 4 || bi < [0, 6, 9, 12, 16][i + 1]) ? ' on' : bi >= m ? ' done' : '')} />)}
         </div>
       </div>
-      {inv.length > 0 && block.kind !== 'game' && (
+      {inv.length > 0 && bit.t !== 'game' && (
         <div className="px-inv" style={{ top: 'calc(52px + env(safe-area-inset-top))' }}>
           {inv.map((o, i) => (
             <span key={i} className="px-slot">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={o} alt="" />
+              <img src={EVIDENCE_ITEMS.find((x) => x.id === o)?.img} alt="" />
             </span>
           ))}
         </div>
       )}
 
-      {stage === 'title' && (
-        <div className="vn2-title" onClick={() => setStage('play')}>
-          <div className="card"><div className="ch">{chap.ch}</div><div className="nm">{chap.nm}</div></div>
+      {bit.t === 'title' && (
+        <div className="vn2-title" onClick={next}>
+          <div className="card"><div className="ch">{bit.ch}</div><div className="nm">{bit.nm}</div></div>
         </div>
       )}
 
-      {stage === 'play' && block.kind === 'game' && <SortGame onWin={onDone} />}
+      {bit.t === 'game' && <SortGame onWin={onDone} />}
 
-      {stage === 'play' && block.kind !== 'game' && (
+      {bit.t === 'find' && (
         <>
-          {block.kind === 'find' && !found && (
-            <button className={'px-obj' + (popping ? ' got' : '')}
-              style={{ left: block.x + '%', top: block.y + '%', width: block.w }}
-              onClick={grab} aria-label="предмет">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={block.obj} alt="" />
-            </button>
+          <button className="fd-zone" onClick={tapFind} aria-label="шукати" />
+          {misses.length >= 2 && !foundObj && (
+            <span className="fd-hint" style={{ left: bit.zone.x + '%', top: bit.zone.y + '%', width: bit.zone.w + '%', height: bit.zone.h + '%' }} />
           )}
-          <div className="ob-vn">
-            {line && (
+          {misses.map((m) => <span key={m.n} className="fd-miss" style={{ left: m.x + '%', top: m.y + '%' }}>{bit.missTxt}</span>)}
+        </>
+      )}
+
+      {bit.t !== 'title' && bit.t !== 'game' && (
+        <div className="ob-vn" style={{ zIndex: 6 }}>
+          {bit.t === 'line' && (
+            <>
+              <div className="ob-vn-mood"><b>{bit.who}</b>{bit.mood && <span>· {bit.mood}</span>}{bit.voice && <span>· голос</span>}</div>
+              <div className="ob-vn-say" key={bi} style={bit.voice ? { fontStyle: 'italic', background: '#efe8ff' } : undefined}>{bit.text}</div>
+              <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
+            </>
+          )}
+          {bit.t === 'anim' && (
+            <>
+              <div className="ob-vn-say" key={bi}>{bit.text}</div>
+              <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
+            </>
+          )}
+          {bit.t === 'react' && (
+            echo ? (
               <>
-                <div className="ob-vn-mood"><b>{line.who}</b>{line.mood && <span>· {line.mood}</span>}{line.voice && <span>· голос</span>}</div>
-                <div className="ob-vn-say" key={ci + '-' + bi + '-' + li + (echo ? 'e' : '')}
-                  style={line.voice ? { fontStyle: 'italic', background: '#efe8ff' } : undefined}>{line.text}</div>
-                <button className="ob-vn-adv" onClick={adv}>далі <span className="tri">▸</span></button>
+                <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· відповідає</span></div>
+                <div className="ob-vn-say" key={'e' + bi}>{echo}</div>
+                <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
               </>
-            )}
-            {!line && block.kind === 'react' && (
+            ) : (
               <>
                 <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· слухає</span></div>
-                <div className="ob-vn-say">{block.prompt}</div>
+                <div className="ob-vn-say">{bit.prompt}</div>
                 <div className="ob-qs">
                   {freeReacts.map((x) => (
-                    <button key={x.r} className="ob-q"
-                      onClick={() => { setUsed((u) => ({ ...u, [x.r]: true })); setEcho({ who: 'ЯРЕМА', text: x.a }); }}>
+                    <button key={x.r} className="ob-q" onClick={() => { setUsed((u) => ({ ...u, [x.r]: true })); setEcho(x.a); }}>
                       <span className="qm">?</span>{x.r}
                     </button>
                   ))}
-                  <button className="ob-q ghost" onClick={nextBlock}>Далі →</button>
+                  <button className="ob-q ghost" onClick={next}>Далі →</button>
                 </div>
               </>
-            )}
-            {!line && block.kind === 'find' && (
+            )
+          )}
+          {bit.t === 'find' && (
+            <>
+              <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· {foundObj ? 'задоволений' : 'розслідування'}</span></div>
+              <div className="ob-vn-say" key={'f' + bi + foundObj}>{foundObj ? bit.found : bit.intro}</div>
+              {foundObj && <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>}
+            </>
+          )}
+          {bit.t === 'timed' && (
+            echo ? (
               <>
-                <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· {found ? 'задоволений' : 'шукай'}</span></div>
-                <div className="ob-vn-say" key={'f' + ci + bi + found}>{found ? block.found : block.intro}</div>
-                {found && <button className="ob-vn-adv" onClick={adv}>далі <span className="tri">▸</span></button>}
+                <div className="ob-vn-say" key={'te' + bi}>{echo}</div>
+                <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
               </>
-            )}
-          </div>
-        </>
+            ) : (
+              <>
+                <div className="tm-bar"><i className={timerRun ? 'run' : ''} /></div>
+                <div className="ob-vn-say">{bit.q}</div>
+                <div className="pz-opts">
+                  <button className="pz-opt" style={{ fontSize: 14 }} onClick={() => setEcho(bit.a[0])}>{bit.opts[0]}</button>
+                  <button className="pz-opt" style={{ fontSize: 14 }} onClick={() => setEcho(bit.a[1])}>{bit.opts[1]}</button>
+                </div>
+              </>
+            )
+          )}
+          {bit.t === 'puzzle' && (
+            echo ? (
+              <>
+                <div className="ob-vn-say" key={'pe' + bi}>{echo}</div>
+                <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
+              </>
+            ) : (
+              <>
+                <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· хитро</span></div>
+                <div className="ob-vn-say">{bit.q}</div>
+                <div className="pz-opts">
+                  {bit.opts.map((o) => (
+                    <button key={o} className={'pz-opt' + (wrongPz === o ? ' no' : '')}
+                      onClick={() => { o === bit.right ? setEcho(bit.win) : (setWrongPz(o), setEcho(null)); }}>
+                      {o}
+                    </button>
+                  ))}
+                </div>
+                {wrongPz !== null && <div className="fg-msg">{bit.lose}</div>}
+              </>
+            )
+          )}
+          {bit.t === 'evidence' && (
+            echo ? (
+              <>
+                <div className="ob-vn-say" key={'ee' + bi}>{echo}</div>
+                {echo === bit.win && <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>}
+                {echo !== bit.win && <button className="ob-vn-adv" onClick={() => setEcho(null)}>ще раз <span className="tri">▸</span></button>}
+              </>
+            ) : (
+              <>
+                <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· суворо</span></div>
+                <div className="ob-vn-say">{bit.q}</div>
+                <div className="ev-cards">
+                  {EVIDENCE_ITEMS.map((it) => (
+                    <button key={it.id} className="ev-card" onClick={() => setEcho(it.id === bit.right ? bit.win : bit.lose)}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={it.img} alt="" /><b>{it.nm}</b>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )
+          )}
+        </div>
       )}
     </>
   );
@@ -1160,7 +1243,7 @@ export default function OnbLab() {
             <p className="sub">Q&A як RPG-діалог. Обери механіку й проклацай до кінця.</p>
             <button className="ob-hub-btn" onClick={() => setV('m')} style={{ borderColor: '#ff2e88', boxShadow: '0 0 0 3px #ff2e88, 4px 4px 0 rgba(0,0,0,0.45)' }}>
               <span className="n" style={{ background: '#ff2e88', color: '#fff' }}>★</span>
-              <span><b>ФІНАЛ · повна історія</b><span>2.0 + 2.1 разом + гра «чи ти з Друїду» (сортування)</span></span>
+              <span><b>ФІНАЛ · PIXEL EDITION</b><span>все у fatpixel: find-object, timed, пазл, доказ, анімація, гра</span></span>
             </button>
             <button className="ob-hub-btn" onClick={() => setV('j')} style={{ borderColor: '#ffc619', boxShadow: '0 0 0 3px #ffc619, 4px 4px 0 rgba(0,0,0,0.45)' }}>
               <span className="n" style={{ background: '#ffc619' }}>★</span>
