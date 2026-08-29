@@ -769,9 +769,120 @@ function IsoPath({ onBack, onDone }: { onBack: () => void; onDone: () => void })
   );
 }
 
+/* ---------- L · Новела 2.1: хотспоти-предмети (тап по предмету в кадрі) ----------
+   Задники = піксель-таймлапс монумента зі STORYBOARD/90_experiments (стиль юзера,
+   ранок→день→вечір), предмети = згенеровані PNG у тому ж fatpixel-стилі
+   (білий фон знято в альфу), полароїд-вставки = кольорові кадри 80_output. */
+type PxChap = {
+  ch: string; nm: string; bg: string; photo: string; cap: string;
+  obj: { img: string; x: number; y: number; w: number };
+  intro: string; found: string;
+};
+const PX_CHAPTERS: PxChap[] = [
+  {
+    ch: 'Ранок', nm: 'Розминка', bg: '/onb/px/px-morning.jpg', photo: '/onb/px/ph-drink.jpg', cap: 'двір прокидається',
+    obj: { img: '/onb/px/obj-paddle.png', x: 62, y: 30, w: 96 },
+    intro: 'Ранок. Хтось лишив ракетку просто в кадрі. Бачиш? Тапни її.',
+    found: 'Тримай. Це тепер твоя. Перший предмет у кишені гравця.',
+  },
+  {
+    ch: 'День', nm: 'Матчі', bg: '/onb/px/px-noon.jpg', photo: '/onb/px/ph-strike.jpg', cap: 'онлайн-фаза',
+    obj: { img: '/onb/px/obj-ball.png', x: 20, y: 36, w: 74 },
+    intro: 'День. Вісім матчів, суперники в телеграмі, граєш коли зручно. Мʼяч утік — злови його.',
+    found: 'Є! З таким контролем нижня сітка тобі не загрожує. Ну, майже.',
+  },
+  {
+    ch: 'Вечір', nm: 'День Х', bg: '/onb/px/px-dusk.jpg', photo: '/onb/px/ph-win.jpg', cap: '12 вересня · фінал',
+    obj: { img: '/onb/px/obj-cups.png', x: 58, y: 52, w: 104 },
+    intro: '12 вересня — фінал наживо: столи, люди, міні-ігри. Стаканчики вже сховались — знайди.',
+    found: 'Повний комплект. Лишилось одне — твоє імʼя в сітці.',
+  },
+];
+
+function Vn3({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+  const [ci, setCi] = useState(0);
+  const [stage, setStage] = useState<'title' | 'seek' | 'found'>('title');
+  const [got, setGot] = useState<boolean[]>([false, false, false]);
+  const [popping, setPopping] = useState(false);
+  const chap = PX_CHAPTERS[ci];
+  const isLast = ci === PX_CHAPTERS.length - 1;
+
+  useEffect(() => {
+    if (stage !== 'title') return;
+    const t = setTimeout(() => setStage('seek'), 1400);
+    return () => clearTimeout(t);
+  }, [stage, ci]);
+
+  const grab = () => {
+    if (popping) return;
+    setPopping(true);
+    setTimeout(() => {
+      setGot((g) => g.map((v, i) => (i === ci ? true : v)));
+      setPopping(false); setStage('found');
+    }, 480);
+  };
+  const next = () => { isLast ? onDone() : (setCi(ci + 1), setStage('title')); };
+
+  return (
+    <>
+      <div className="vn2-bgs">
+        {PX_CHAPTERS.map((c, i) => (
+          <div key={i} className={'ob-bg' + (i === ci ? ' on' : '')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={c.bg} alt="" />
+          </div>
+        ))}
+      </div>
+      <div className="ob-top" style={{ position: 'absolute', width: '100%', zIndex: 6 }}>
+        <button className="ob-back" onClick={onBack}>← вихід</button>
+      </div>
+      <div className="px-inv">
+        {PX_CHAPTERS.map((c, i) => (
+          <span key={i} className={'px-slot' + (got[i] ? '' : ' empty')}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {got[i] && <img src={c.obj.img} alt="" />}
+          </span>
+        ))}
+      </div>
+
+      {stage === 'title' && (
+        <div className="vn2-title" onClick={() => setStage('seek')}>
+          <div className="card"><div className="ch">{chap.ch}</div><div className="nm">{chap.nm}</div></div>
+        </div>
+      )}
+
+      {stage !== 'title' && (
+        <>
+          {stage === 'seek' && (
+            <button className={'px-obj' + (popping ? ' got' : '')}
+              style={{ left: chap.obj.x + '%', top: chap.obj.y + '%', width: chap.obj.w }}
+              onClick={grab} aria-label="предмет">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={chap.obj.img} alt="" />
+            </button>
+          )}
+          <div className="px-photo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={chap.photo} alt="" /><span>{chap.cap}</span>
+          </div>
+          <div className="ob-vn" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, minHeight: 0, zIndex: 5 }}>
+            <div className="ob-vn-mood"><b>ЯРЕМА</b><span>· {stage === 'seek' ? 'шукай' : 'задоволений'}</span></div>
+            <div className="ob-vn-say" key={ci + stage}>{stage === 'seek' ? chap.intro : chap.found}</div>
+            {stage === 'found' && (
+              isLast
+                ? <button className="ob-next" onClick={onDone}>Зареєструватися →</button>
+                : <button className="ob-vn-adv" onClick={next}>далі <span className="tri">▸</span></button>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 /* ---------- Хаб ---------- */
 export default function OnbLab() {
-  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'stub'>('hub');
+  const [v, setV] = useState<'hub' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'stub'>('hub');
   const back = () => setV('hub');
   const done = () => setV('stub');
 
@@ -786,6 +897,10 @@ export default function OnbLab() {
             <button className="ob-hub-btn" onClick={() => setV('j')} style={{ borderColor: '#ffc619', boxShadow: '0 0 0 3px #ffc619, 4px 4px 0 rgba(0,0,0,0.45)' }}>
               <span className="n" style={{ background: '#ffc619' }}>★</span>
               <span><b>Новела 2.0 · чаптери</b><span>ФІКСОВАНИЙ ПІДХІД: розділи, задник міняється zoom-переходом</span></span>
+            </button>
+            <button className="ob-hub-btn" onClick={() => setV('l')} style={{ borderColor: '#ffc619', boxShadow: '0 0 0 3px #ffc619, 4px 4px 0 rgba(0,0,0,0.45)' }}>
+              <span className="n" style={{ background: '#ffc619' }}>★</span>
+              <span><b>Новела 2.1 · предмети</b><span>тапни предмет у кадрі: піксель-стиль зі STORYBOARD + інвентар</span></span>
             </button>
             <button className="ob-hub-btn" onClick={() => setV('k')}>
               <span className="n" style={{ background: '#b7f3ee' }}>K</span>
@@ -841,6 +956,7 @@ export default function OnbLab() {
       {v === 'i' && <Board key="i" onBack={back} onDone={done} />}
       {v === 'j' && <Vn2 key="j" onBack={back} onDone={done} />}
       {v === 'k' && <IsoPath key="k" onBack={back} onDone={done} />}
+      {v === 'l' && <Vn3 key="l" onBack={back} onDone={done} />}
       {v === 'stub' && <Stub onBack={back} />}
     </div></main>
   );

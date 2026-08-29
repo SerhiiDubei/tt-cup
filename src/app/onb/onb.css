@@ -381,3 +381,29 @@
 @keyframes vn2Pop { from { transform: rotate(-2deg) scale(0.7); opacity: 0; } to { transform: rotate(-2deg) scale(1); opacity: 1; } }
 .vn2-chdots { position: absolute; z-index: 4; top: calc(20px + env(safe-area-inset-top)); right: 16px;
   display: flex; gap: 6px; }
+
+/* ---------- L · Новела 2.1: хотспоти-предмети + інвентар ---------- */
+.px-obj { position: absolute; z-index: 4; padding: 0; border: none; background: none; cursor: pointer;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.45)); animation: pxFloat 1.6s ease-in-out infinite; }
+.px-obj img { width: 100%; height: auto; display: block; }
+.px-obj::after { content: ''; position: absolute; inset: -12px; border: 3px dashed rgba(255,255,255,0.65);
+  border-radius: 18px; animation: pxHint 1.2s infinite; }
+@keyframes pxFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes pxHint { 0%,100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.05); } }
+.px-obj.got { animation: pxGot 0.5s var(--ease) forwards; pointer-events: none; }
+.px-obj.got::after { display: none; }
+@keyframes pxGot { to { transform: translateY(-40px) scale(0.15); opacity: 0; } }
+.px-inv { position: absolute; z-index: 6; top: calc(14px + env(safe-area-inset-top)); right: 14px;
+  display: flex; gap: 7px; }
+.px-slot { width: 44px; height: 44px; border-radius: 12px; border: 3px solid var(--ink);
+  background: rgba(251,241,221,0.9); box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+  display: grid; place-items: center; }
+.px-slot img { width: 32px; height: 32px; object-fit: contain; animation: obIn 0.4s var(--ease); }
+.px-slot.empty { background: rgba(22,17,13,0.45); border-style: dashed; border-color: rgba(255,248,236,0.5); }
+.px-photo { position: absolute; z-index: 4; left: 14px; bottom: 218px; width: 108px;
+  background: #fffdf4; border: 3px solid var(--ink); border-radius: 6px;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.45); padding: 5px 5px 16px; transform: rotate(-5deg);
+  animation: obIn 0.5s var(--ease); }
+.px-photo img { width: 100%; display: block; border-radius: 3px; }
+.px-photo span { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center;
+  font-family: ui-monospace, monospace; font-size: 9px; font-weight: 700; color: #5b5148; }
