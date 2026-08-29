@@ -500,3 +500,38 @@
   animation: pxFloat 1.8s ease-in-out infinite; }
 .v30-ball img { width: 100%; height: auto; }
 .v30-ball.got { animation: pxGot 0.5s var(--ease) forwards; pointer-events: none; }
+
+/* ---------- 3.0 правки за голосовим рев'ю 29.08 ---------- */
+.vn2-title.deep { background: rgba(10, 8, 6, 0.62); }
+/* Кен Бернс на статичних кадрах — легкий рух кадра */
+.v30 .ob-bg.on.kb img { animation: v30kb 7s var(--ease) forwards; }
+@keyframes v30kb { from { transform: scale(1.06); } to { transform: scale(1); } }
+/* спрайт: ПОЗАДУ панелі, не налазить; позиція чергується */
+.v30-hero { z-index: 5; margin-bottom: 2px; }
+.v30-hero.left { right: auto; left: 6px; }
+.v30-panel { z-index: 6; }
+/* поява панелі: виростає */
+.v30-panel.vgrow { animation: v30grow 0.28s var(--ease); transform-origin: 50% 100%; }
+@keyframes v30grow { from { transform: scaleY(0.2) scaleX(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+/* курсор друку */
+.v30-cur { display: inline-block; width: 9px; height: 15px; background: #16110d; margin-left: 2px;
+  vertical-align: -2px; animation: pkCur 0.6s infinite alternate; }
+/* кнопки: зʼявляються тільки після тексту, з підстрибом; реакції — ЖОВТІ (контраст) */
+.v30-in { animation: v30btn 0.3s var(--ease) backwards; }
+.v30-in:nth-child(2) { animation-delay: 0.08s; } .v30-in:nth-child(3) { animation-delay: 0.16s; }
+@keyframes v30btn { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+.v30-btn.wiggle { animation: v30btn 0.3s var(--ease) backwards, v30wig 2.2s 1.2s ease-in-out infinite; }
+@keyframes v30wig { 0%,100% { transform: none; } 84% { transform: none; } 88% { transform: translateY(-3px) rotate(-0.6deg); } 92% { transform: translateY(1px) rotate(0.5deg); } 96% { transform: none; } }
+/* find: мʼяч без пульсу і в тоні; ледь помітний */
+.v30-ball.subtle { animation: none; opacity: 0.94; }
+/* анімаційний біт: спершу чиста сцена */
+.v30-animfree { position: absolute; inset: 0; z-index: 3; }
+/* гра: чисті PNG без плейсхолдерів, імʼя — бейджем зверху при взятті */
+.fg-char.bare { background: none; border: none; box-shadow: none; padding: 0; }
+.fg-char.bare img { height: 84px; filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.35)); }
+.fg-char.bare.small img { height: 72px; }
+.fg-char.bare b { display: none; }
+.fg-nametag { position: fixed; z-index: 60; left: 50%; top: calc(64px + env(safe-area-inset-top));
+  transform: translateX(-50%); font-family: 'Unbounded'; font-weight: 900; font-size: 16px;
+  text-transform: uppercase; color: #fff8ec; background: #16110d; border: 3px solid var(--yellow);
+  border-radius: 12px; padding: 8px 18px; animation: obIn 0.15s var(--ease); pointer-events: none; }
