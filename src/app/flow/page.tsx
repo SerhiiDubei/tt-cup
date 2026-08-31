@@ -30,6 +30,7 @@ const DEEP = [
   { id: 1, name: 'Небо', img: '/onb/deep/deepx-1.jpg' },
   { id: 2, name: 'Двір згори', img: '/onb/deep/deepx-2.jpg' },
   { id: 3, name: 'Стіна', img: '/onb/deep/deepx-3.jpg' },
+  { id: 4, name: 'Двоє біля столу', img: '/onb/deep/deepx-4.jpg' },
 ];
 
 export default function FlowV3() {
