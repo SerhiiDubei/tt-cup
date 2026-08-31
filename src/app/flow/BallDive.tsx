@@ -43,6 +43,22 @@ export default function BallDive({
     let parts: P[] = [];
     const plankFar = Array.from({ length: 40 }, (_, i) => ({ x: (i * 41) % W, y: SURF + 12 + ((i * 61) % 760), s: 0.3 + ((i * 17) % 7) / 30 }));
     const plankNear = Array.from({ length: 26 }, (_, i) => ({ x: (i * 53) % W, y: SURF + 22 + ((i * 47) % 760), s: 0.9 + ((i * 23) % 8) / 14 }));
+    /* рибки: два паралакс-шари, різні глибини й напрямки */
+    const fishes = Array.from({ length: 10 }, (_, i) => ({
+      x: (i * 47) % W,
+      y: SURF + 34 + ((i * 89) % 540),
+      v: (0.3 + ((i * 13) % 8) / 18) * (i % 2 ? 1 : -1),
+      size: 2 + (i % 3),
+      ph: i * 1.7,
+      layer: i % 2,
+    }));
+    /* хмаринки: розкидані по висоті стартового неба, кожна зі своїм паралаксом */
+    const CLOUDS = [
+      { x0: 10, y: 6, f: 0.10, spd: 2.0, s: 1.0, a: 0.92 },
+      { x0: 95, y: 30, f: 0.16, spd: 1.3, s: 0.72, a: 0.78 },
+      { x0: 48, y: 64, f: 0.22, spd: 2.7, s: 1.25, a: 0.85 },
+      { x0: 130, y: 100, f: 0.30, spd: 1.6, s: 0.58, a: 0.68 },
+    ];
     let t = 0;
     let t0 = -1, tPrev = 0;             // реальний час: не залежить від фреймрейту (120Hz/фон)
     let raf = 0;
@@ -128,16 +144,27 @@ export default function BallDive({
         }
         ctx.fillStyle = '#fff9e6'; ctx.beginPath(); ctx.arc(sunX, sunY, 4, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#fffdf4'; ctx.beginPath(); ctx.arc(sunX - 0.5, sunY - 0.5, 2, 0, Math.PI * 2); ctx.fill();
-        /* хмарка + птахи */
-        const cx = ((t * 2.0) % (W + 60)) - 30;
-        const cloudY = -par(0.22), birdY = -par(0.3);
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fillRect(Math.round(cx), Math.round(8 + cloudY), 26, 4);
-        ctx.fillRect(Math.round(cx) + 5, Math.round(5 + cloudY), 14, 3);
-        ctx.fillRect(Math.round(cx) + 4, Math.round(12 + cloudY), 18, 3);
-        ctx.fillStyle = 'rgba(60,84,96,0.5)';
-        ctx.fillRect(Math.round(100 + Math.sin(t * 0.7) * 8), Math.round(16 + birdY), 3, 1);
-        ctx.fillRect(Math.round(116 + Math.sin(t * 0.7) * 8), Math.round(20 + birdY), 3, 1);
+        /* хмаринки: кілька шарів, свій темп і паралакс у кожної */
+        for (const c of CLOUDS) {
+          const cxx = ((t * c.spd + c.x0) % (W + 70)) - 35;
+          const cy = c.y - par(c.f);
+          if (cy > horizonS - 4) continue;
+          ctx.fillStyle = `rgba(255,255,255,${c.a})`;
+          ctx.fillRect(Math.round(cxx), Math.round(cy), Math.round(26 * c.s), 4);
+          ctx.fillRect(Math.round(cxx + 5 * c.s), Math.round(cy) - 3, Math.round(14 * c.s), 3);
+          ctx.fillRect(Math.round(cxx + 4 * c.s), Math.round(cy) + 4, Math.round(18 * c.s), 3);
+        }
+        /* птахи: троє, махають крилами */
+        const birdY = -par(0.3);
+        ctx.fillStyle = 'rgba(60,84,96,0.55)';
+        for (const [bx0, by0, phb] of [[100, 16, 0], [116, 20, 1.5], [88, 24, 3.1]]) {
+          const bx = Math.round(bx0 + Math.sin(t * 0.7 + phb) * 8);
+          const by = Math.round(by0 + birdY + Math.sin(t * 0.9 + phb) * 1.5);
+          const up = Math.sin(t * 7 + phb) > 0 ? -1 : 0;
+          ctx.fillRect(bx - 2, by + up, 2, 1);
+          ctx.fillRect(bx, by, 1, 1);
+          ctx.fillRect(bx + 1, by + up, 2, 1);
+        }
 
         /* ---- горизонт: делікатна кромка ---- */
         for (let x = 0; x < W; x += 1) {
@@ -163,6 +190,14 @@ export default function BallDive({
               ctx.fillStyle = `rgba(255,250,225,${0.2 - y * 0.0038})`;
               ctx.fillRect(Math.round(gx), Math.round(ys), 2, 1);
             }
+          }
+        }
+        /* сонячні блищики на кромці води під сонцем */
+        for (let i = 0; i < 7; i++) {
+          const gx = sunX - 14 + i * 4.5 + Math.sin(t * 2.5 + i * 2.1) * 2;
+          if (Math.sin(t * 3.4 + i * 1.7) > 0.35) {
+            ctx.fillStyle = 'rgba(255,250,225,0.8)';
+            ctx.fillRect(Math.round(gx), Math.round(surfWave(gx) - camY) - 1, 2, 1);
           }
         }
       }
@@ -206,6 +241,31 @@ export default function BallDive({
       ctx.fillStyle = 'rgba(220,245,255,0.30)';
       for (const p of plankNear) { const ys = p.y - camY; if (ys > -2 && ys < H) ctx.fillRect(Math.round((p.x + t * 5 * p.s) % W), Math.round(ys + Math.sin(t * 0.8 + p.x) * 2.5), 1, 1); }
 
+      /* ---- рибки: пливуть собі, сахаються від мʼяча ---- */
+      for (const f of fishes) {
+        const flee = show ? Math.max(0, 1 - Math.hypot(f.x - ballW.x, f.y - ballW.y) / 30) : 0;
+        if (flee > 0) {
+          const dx = Math.sign(f.x - ballW.x || 1);
+          f.x += dx * flee * 1.4 * fk;
+          f.y += Math.sign(f.y - ballW.y || 1) * flee * 0.7 * fk;
+          f.v = Math.max(-1.2, Math.min(1.2, f.v + dx * flee * 0.02 * fk));
+        }
+        f.x += f.v * fk;
+        if (f.x < -8) f.x += W + 16; else if (f.x > W + 8) f.x -= W + 16;
+        const fy = f.y + Math.sin(t * 1.3 + f.ph) * 2;
+        const ys = fy - camY * (f.layer ? 1 : 0.85);
+        if (ys < -4 || ys > H + 4 || fy < SURF + 10) continue;
+        const dir = f.v >= 0 ? 1 : -1;
+        ctx.fillStyle = `rgba(10,36,50,${f.layer ? 0.5 : 0.32})`;
+        ctx.fillRect(Math.round(f.x - f.size), Math.round(ys) - 1, f.size * 2, 2);
+        ctx.fillRect(Math.round(f.x - dir * (f.size + 1)), Math.round(ys) - 2, 1, 4);
+        if (f.size > 2) ctx.fillRect(Math.round(f.x + dir * f.size), Math.round(ys) - 1, 1, 1);
+      }
+      /* висхідні бульбашки в глибині: підкреслюють рух камери вниз */
+      if (camY > 20 && Math.random() < 0.10 * fk) {
+        parts.push({ x: Math.random() * W, y: camY + H + 4, vx: 0, vy: -(0.35 + Math.random() * 0.4), r: 1, life: 1.4 });
+      }
+
       /* ---- сплеск + бульбашки (світові) ---- */
       if (t >= T_HIT - 0.02 && t < T_HIT + 0.06 && parts.filter((p) => p.splash).length === 0) {
         for (let i = 0; i < 16; i++) parts.push({ x: W / 2, y: SURF, vx: (Math.random() - 0.5) * 2.6, vy: -(1.2 + Math.random() * 2.4), r: Math.random() < 0.4 ? 2 : 1, life: 1, splash: true });
@@ -218,6 +278,16 @@ export default function BallDive({
           const hx = W / 2 + dir * rr;
           ctx.fillStyle = `rgba(240,253,255,${hitPulse * 0.8})`;
           ctx.fillRect(Math.round(hx) - 1, Math.round(surfWave(hx) - camY) - 1, 3, 1);
+        }
+      }
+      /* піна на місці падіння: розпливається і тане */
+      const foam = t > T_HIT && t < T_HIT + 2.4 ? 1 - (t - T_HIT) / 2.4 : 0;
+      if (foam > 0 && horizonS > -6) {
+        const fw = 10 + (1 - foam) * 26;
+        ctx.fillStyle = `rgba(240,252,255,${0.55 * foam})`;
+        for (let i = 0; i < 8; i++) {
+          const fx = W / 2 + (i - 3.5) * (fw / 7) + Math.sin(i * 2.3 + t * 1.8) * 2;
+          ctx.fillRect(Math.round(fx), Math.round(surfWave(fx) - camY), 2, 1);
         }
       }
       if (show && t > T_HIT && Math.random() < 0.35 * fk) {
