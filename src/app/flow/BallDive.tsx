@@ -15,19 +15,28 @@ export type AccentVariant = 'caps' | 'stamp' | 'neon' | 'glitch' | 'invert';
 
 const NARR_FONT = "'Press Start 2P', 'Courier New', monospace";
 
-/* розмітка: *слово* = акцент */
-const DEFAULT_LINES = [
-  'Все почалося з одного *мʼяча*…',
-  'Він упав — і світ *стих*.',
-  'Так зникає звичайний вечір.',
-  'Повільно. Непомітно. *Назавжди*.',
-  'Але на дні кожної тиші…',
-  '…щось *чекає*.',
-  '*Двір. Стіл.* Дві ракетки.',
-  'І питання — хто *король*.',
-  '*12 вересня* все вирішиться.',
-  '*DRUID BATTLE CUP*. Пірнаємо?',
+/* рядок наративу: t — текст (розмітка: *слово* = акцент; префікс '~' = тихий
+   рядок, '!' = панч-рядок), d — пауза перед рядком у секундах (темп розповіді) */
+export type NarrLine = { t: string; d: number };
+
+const DEFAULT_LINES: NarrLine[] = [
+  { t: '~Все почалося з одного мʼяча…', d: 0 },
+  { t: 'Він упав — і світ *стих*.', d: 2.8 },
+  { t: '~Так зникає звичайний вечір.', d: 2.2 },
+  { t: 'Повільно. Непомітно. *Назавжди*.', d: 3.4 },
+  { t: '~Але на дні кожної тиші…', d: 3.0 },
+  { t: '…щось чекає.', d: 1.6 },
+  { t: '*Двір. Стіл.* Дві ракетки.', d: 3.2 },
+  { t: 'І питання — хто *король*.', d: 2.4 },
+  { t: '!*12 вересня*', d: 3.8 },
+  { t: '!*DRUID BATTLE CUP*. Пірнаємо?', d: 2.6 },
 ];
+
+/* рівень рядка за префіксом + чистий текст */
+const lineLevel = (t: string): { level: 'quiet' | 'base' | 'hero'; text: string } =>
+  t.startsWith('~') ? { level: 'quiet', text: t.slice(1) }
+  : t.startsWith('!') ? { level: 'hero', text: t.slice(1) }
+  : { level: 'base', text: t };
 
 /* сегменти рядка: непарні частини після split('*') — акцентні */
 const parseLine = (ln: string) => ln.split('*').map((text, i) => ({ text, acc: i % 2 === 1 }));
@@ -38,10 +47,11 @@ export default function BallDive({
   hitWord = 'бульк!',
   lines = DEFAULT_LINES,
   onLinesDone,
-}: { mode?: 'follow' | 'dolly'; variant?: AccentVariant; hitWord?: string; lines?: string[]; onLinesDone?: () => void }) {
+}: { mode?: 'follow' | 'dolly'; variant?: AccentVariant; hitWord?: string; lines?: NarrLine[]; onLinesDone?: () => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
+  const turbRef = useRef<SVGFETurbulenceElement>(null);
   const onDoneRef = useRef(onLinesDone);
   onDoneRef.current = onLinesDone;
 
@@ -69,12 +79,14 @@ export default function BallDive({
     let parts: P[] = [];
     const plankFar = Array.from({ length: 40 }, (_, i) => ({ x: (i * 41) % W, y: SURF + 12 + ((i * 61) % 760), s: 0.3 + ((i * 17) % 7) / 30 }));
     const plankNear = Array.from({ length: 26 }, (_, i) => ({ x: (i * 53) % W, y: SURF + 22 + ((i * 47) % 760), s: 0.9 + ((i * 23) % 8) / 14 }));
-    /* рибки: два паралакс-шари, різні глибини й напрямки */
-    const fishes = Array.from({ length: 10 }, (_, i) => ({
+    /* рибки: різнокольорові, від мальків до великих, два паралакс-шари */
+    const FISH_PAL = ['rgba(226,122,92,', 'rgba(238,196,88,', 'rgba(118,200,168,', 'rgba(148,168,232,', 'rgba(228,140,188,', 'rgba(186,222,240,'];
+    const fishes = Array.from({ length: 12 }, (_, i) => ({
       x: (i * 47) % W,
-      y: SURF + 34 + ((i * 89) % 540),
-      v: (0.3 + ((i * 13) % 8) / 18) * (i % 2 ? 1 : -1),
-      size: 2 + (i % 3),
+      y: SURF + 34 + ((i * 83) % 540),
+      v: (0.25 + ((i * 13) % 8) / 20) * (i % 2 ? 1 : -1),
+      size: 1.5 + ((i * 7) % 10) * 0.38,          // 1.5 … ~5
+      col: FISH_PAL[i % FISH_PAL.length],
       ph: i * 1.7,
       layer: i % 2,
     }));
@@ -90,8 +102,9 @@ export default function BallDive({
     let raf = 0;
     let camY = CAM0;
     let ballW = { x: W / 2, y: -20 };   // світові координати мʼяча
-    /* стрічка наративу: 10 рядків, на екрані живуть 3-4 */
-    const LINE_DT = 2.6, ROW_H = 46;
+    /* стрічка наративу: на екрані живуть 3-4 рядки; темп нерівномірний (d) */
+    const borns: number[] = [];
+    { let acc = 0; lines.forEach((ln, i) => { if (i) acc += ln.d; borns.push(acc); }); }
     let lineStart = -1;                 // момент появи першого рядка (фіксується раз)
     let offsetF = 0;                    // плавний зсув стека вгору
     let doneFired = false;              // стрічка дограла → сигнал нагору (показ кнопки)
@@ -165,14 +178,6 @@ export default function BallDive({
 
       /* ---- небесні елементи (тільки поки небо в кадрі) ---- */
       if (horizonS > -6) {
-        /* сонце: дуже мʼякий ореол, без хреста */
-        const sunX = 28, sunY = 13 - par(0.10);
-        for (const [rr, aa] of [[16, 0.025], [12, 0.05], [9, 0.10], [7, 0.18], [5.5, 0.3]] as [number, number][]) {
-          ctx.fillStyle = `rgba(255,246,214,${aa})`;
-          ctx.beginPath(); ctx.arc(sunX, sunY, rr, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.fillStyle = '#fff9e6'; ctx.beginPath(); ctx.arc(sunX, sunY, 4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fffdf4'; ctx.beginPath(); ctx.arc(sunX - 0.5, sunY - 0.5, 2, 0, Math.PI * 2); ctx.fill();
         /* хмаринки: кілька шарів, свій темп і паралакс у кожної */
         for (const c of CLOUDS) {
           const cxx = ((t * c.spd + c.x0) % (W + 70)) - 35;
@@ -206,27 +211,6 @@ export default function BallDive({
           ctx.fillStyle = 'rgba(110,190,215,0.18)'; ctx.fillRect(x, Math.round(sy) + 4, 1, 3);
           if (Math.sin(x * 1.7 + t * 2.2) * Math.sin(x * 0.31 - t * 1.1) > 0.985) {
             ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x, Math.round(sy) - 1, 1, 1);
-          }
-        }
-        /* сонячна доріжка під поверхнею */
-        for (let y = 3; y < 46; y += 2) {
-          const ys = SURF + y - camY;
-          if (ys < horizonS || ys > H) continue;
-          const spread = 4 + y * 0.55;
-          for (let i = 0; i < 2; i++) {
-            const gx = 28 + Math.sin(y * 1.7 + t * (3 + i)) * spread;
-            if (Math.sin(y * 2.3 + t * 4 + i * 2) > 0.2) {
-              ctx.fillStyle = `rgba(255,250,225,${0.2 - y * 0.0038})`;
-              ctx.fillRect(Math.round(gx), Math.round(ys), 2, 1);
-            }
-          }
-        }
-        /* сонячні блищики на кромці води під сонцем */
-        for (let i = 0; i < 7; i++) {
-          const gx = sunX - 14 + i * 4.5 + Math.sin(t * 2.5 + i * 2.1) * 2;
-          if (Math.sin(t * 3.4 + i * 1.7) > 0.35) {
-            ctx.fillStyle = 'rgba(255,250,225,0.8)';
-            ctx.fillRect(Math.round(gx), Math.round(surfWave(gx) - camY) - 1, 2, 1);
           }
         }
       }
@@ -283,12 +267,22 @@ export default function BallDive({
         if (f.x < -8) f.x += W + 16; else if (f.x > W + 8) f.x -= W + 16;
         const fy = f.y + Math.sin(t * 1.3 + f.ph) * 2;
         const ys = fy - camY * (f.layer ? 1 : 0.85);
-        if (ys < -4 || ys > H + 4 || fy < SURF + 10) continue;
+        if (ys < -6 || ys > H + 6 || fy < SURF + 10) continue;
         const dir = f.v >= 0 ? 1 : -1;
-        ctx.fillStyle = `rgba(10,36,50,${f.layer ? 0.5 : 0.32})`;
-        ctx.fillRect(Math.round(f.x - f.size), Math.round(ys) - 1, f.size * 2, 2);
-        ctx.fillRect(Math.round(f.x - dir * (f.size + 1)), Math.round(ys) - 2, 1, 4);
-        if (f.size > 2) ctx.fillRect(Math.round(f.x + dir * f.size), Math.round(ys) - 1, 1, 1);
+        const bh = Math.max(2, Math.round(f.size * 0.8));      // висота тіла
+        const a = f.layer ? 0.8 : 0.5;
+        ctx.fillStyle = f.col + a + ')';
+        ctx.fillRect(Math.round(f.x - f.size), Math.round(ys - bh / 2), Math.round(f.size * 2), bh);
+        const tl = Math.max(2, Math.round(f.size * 0.9));      // хвіст-трикутник
+        for (let q = 0; q < tl; q++) {
+          ctx.fillRect(Math.round(f.x - dir * (f.size + 1 + q)), Math.round(ys - (q + 1) / 2), 1, q + 1);
+        }
+        if (f.size > 3) {                                       // око + плавник у великих
+          ctx.fillStyle = `rgba(255,255,255,${a})`;
+          ctx.fillRect(Math.round(f.x + dir * (f.size - 1)), Math.round(ys - 1), 1, 1);
+          ctx.fillStyle = f.col + a * 0.7 + ')';
+          ctx.fillRect(Math.round(f.x - 1), Math.round(ys - bh / 2 - 1), 2, 1);
+        }
       }
       /* висхідні бульбашки в глибині: підкреслюють рух камери вниз */
       if (camY > 20 && Math.random() < 0.10 * fk) {
@@ -297,16 +291,30 @@ export default function BallDive({
 
       /* ---- сплеск + бульбашки (світові) ---- */
       if (t >= T_HIT - 0.02 && t < T_HIT + 0.06 && parts.filter((p) => p.splash).length === 0) {
-        for (let i = 0; i < 16; i++) parts.push({ x: W / 2, y: SURF, vx: (Math.random() - 0.5) * 2.6, vy: -(1.2 + Math.random() * 2.4), r: Math.random() < 0.4 ? 2 : 1, life: 1, splash: true });
-        for (let i = 0; i < 10; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 8, y: SURF + 4, vx: (Math.random() - 0.5) * 0.5, vy: 0.6 + Math.random() * 1.2, r: 1, life: 1 });
+        /* віяло бризок — щедре */
+        for (let i = 0; i < 30; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 3, y: SURF, vx: (Math.random() - 0.5) * 3.4, vy: -(1.4 + Math.random() * 3.2), r: Math.random() < 0.3 ? 2 : 1, life: 1, splash: true });
+        /* центральний водяний стовп */
+        for (let i = 0; i < 7; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 3, y: SURF + 2, vx: (Math.random() - 0.5) * 0.5, vy: -(3.4 + Math.random() * 1.6), r: 2, life: 1, splash: true });
+        for (let i = 0; i < 12; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 9, y: SURF + 4, vx: (Math.random() - 0.5) * 0.6, vy: 0.6 + Math.random() * 1.4, r: 1, life: 1 });
       }
-      const hitPulse = t > T_HIT && t < T_HIT + 1.1 ? (1 - (t - T_HIT) / 1.1) : 0;
+      /* короткий білий флеш у точці удару */
+      const flash = t > T_HIT && t < T_HIT + 0.14 ? 1 - (t - T_HIT) / 0.14 : 0;
+      if (flash > 0 && horizonS > -6) {
+        ctx.fillStyle = `rgba(255,255,255,${(flash * 0.9).toFixed(2)})`;
+        ctx.fillRect(Math.round(W / 2 - 9), Math.round(surfWave(W / 2) - camY) - 2, 18, 3);
+        ctx.fillStyle = `rgba(255,255,255,${(flash * 0.5).toFixed(2)})`;
+        ctx.fillRect(Math.round(W / 2 - 16), Math.round(surfWave(W / 2) - camY) - 1, 32, 2);
+      }
+      const hitPulse = t > T_HIT && t < T_HIT + 1.3 ? (1 - (t - T_HIT) / 1.3) : 0;
       if (hitPulse > 0 && horizonS > -6) {
         for (const dir of [-1, 1]) {
-          const rr = (1 - hitPulse) * 40 + 6;
-          const hx = W / 2 + dir * rr;
-          ctx.fillStyle = `rgba(240,253,255,${hitPulse * 0.8})`;
-          ctx.fillRect(Math.round(hx) - 1, Math.round(surfWave(hx) - camY) - 1, 3, 1);
+          /* подвійне кільце, що розбігається */
+          for (const [spd, len, aa] of [[46, 4, 0.9], [30, 3, 0.55]] as [number, number, number][]) {
+            const rr = (1 - hitPulse) * spd + 5;
+            const hx = W / 2 + dir * rr;
+            ctx.fillStyle = `rgba(240,253,255,${(hitPulse * aa).toFixed(2)})`;
+            ctx.fillRect(Math.round(hx) - 1, Math.round(surfWave(hx) - camY) - 1, len, 1);
+          }
         }
       }
       /* піна на місці падіння: розпливається і тане */
@@ -379,27 +387,38 @@ export default function BallDive({
       if (stackRef.current) {                              // стрічка наративу під час занурення
         /* стартує, коли горизонт піднявся достатньо — текст завжди на воді */
         if (lineStart < 0 && t > T_DIVE && (SURF - camY) / H < 0.30) lineStart = t;
-        const shown = lineStart < 0 ? 0 : Math.min(lines.length, 1 + Math.floor((t - lineStart) / LINE_DT));
-        if (!doneFired && lineStart >= 0 && t > lineStart + (lines.length - 1) * LINE_DT + 1.2) {
+        const tl = lineStart < 0 ? -1 : t - lineStart;     // час стрічки
+        let shown = 0;
+        while (shown < lines.length && tl >= borns[shown]) shown++;
+        if (!doneFired && tl > borns[lines.length - 1] + 1.4) {
           doneFired = true;
           onDoneRef.current?.();
         }
+        /* «розтікання» у воді: стоп-моушн зміна зерна турбулентності (~8 к/с) */
+        if (turbRef.current) turbRef.current.setAttribute('seed', String(1 + (Math.floor(t * 8) % 60)));
         const hiddenN = Math.max(0, shown - 4);
         offsetF += (hiddenN - offsetF) * Math.min(1, dt * 3.5);
-        stackRef.current.style.transform = `translateY(${(-offsetF * ROW_H).toFixed(1)}px)`;
         const rows = stackRef.current.children;
+        /* зсув стека = сума фактичних висот прихованих рядків (рядки різних рівнів) */
+        let shift = 0, rem = offsetF;
+        for (let i = 0; i < rows.length && rem > 0; i++) {
+          shift += Math.min(1, rem) * (rows[i] as HTMLElement).offsetHeight;
+          rem -= 1;
+        }
+        stackRef.current.style.transform = `translateY(${(-shift).toFixed(1)}px)`;
         for (let i = 0; i < rows.length; i++) {
           const el = rows[i] as HTMLElement;
-          const born = lineStart + i * LINE_DT;
+          const born = lineStart + borns[i];
           if (lineStart < 0 || t < born) { el.style.opacity = '0'; continue; }
           const ap = Math.min(1, (t - born) / 0.9);
           const dp = i + 4 < lines.length
-            ? Math.max(0, Math.min(1, (t - (lineStart + (i + 4) * LINE_DT)) / 1.4))
+            ? Math.max(0, Math.min(1, (t - (lineStart + borns[i + 4])) / 1.4))
             : 0;                                           // фінальні 3-4 рядки лишаються
-          /* базовий моушен рядка: спливає знизу, тане вгору */
+          /* базовий моушен: спливає знизу, ледь плаває на воді, тане вгору */
           const eo = 1 - Math.pow(1 - ap, 3);
+          const bob = Math.sin(t * 0.7 + i * 1.4) * 0.9;
           el.style.opacity = (ap * (1 - dp)).toFixed(2);
-          el.style.transform = `translateY(${(16 * (1 - eo) - 10 * dp).toFixed(1)}px)`;
+          el.style.transform = `translateY(${(16 * (1 - eo) - 10 * dp + bob).toFixed(1)}px)`;
 
           /* акценти: 5 режимів підсвітки ключових слів */
           const accs = el.getElementsByClassName('bd-acc') as HTMLCollectionOf<HTMLElement>;
@@ -459,35 +478,48 @@ export default function BallDive({
           <span key={i} style={{ display: 'inline-block', opacity: 0 }}>{ch}</span>
         ))}
       </div>
+      {/* фільтр «розтікання у воді»: легкий displacement, зерно міняє rAF */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+        <filter id="bdwater" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence ref={turbRef} type="fractalNoise" baseFrequency="0.008 0.045" numOctaves="1" seed="1" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
       <div ref={stackRef} style={{
-        position: 'absolute', left: 0, right: 0, top: '34%', padding: '0 16px',
-        pointerEvents: 'none', textAlign: 'center',
+        position: 'absolute', left: 0, right: 0, top: '32%', padding: '0 14px',
+        pointerEvents: 'none', textAlign: 'center', filter: 'url(#bdwater)',
       }}>
-        {lines.map((ln, i) => (
-          <div key={i} style={{
-            opacity: 0, minHeight: 46, display: 'flex', flexWrap: 'wrap',
-            alignItems: 'center', justifyContent: 'center', columnGap: 0,
-            fontFamily: NARR_FONT, fontSize: 9, lineHeight: 1.9,
-            color: 'rgba(255,255,255,0.97)', textShadow: '0 2px 10px rgba(0,0,0,0.75)',
-          }}>
-            {parseLine(ln).map((seg, j) => seg.acc ? (
-              <span key={j} className="bd-acc" style={{
-                display: 'inline-block', whiteSpace: 'pre',
-                ...(variant === 'caps' && { textTransform: 'uppercase' as const, fontSize: '1.55em', color: '#ffffff' }),
-                ...(variant === 'stamp' && { textTransform: 'uppercase' as const, fontSize: '1.3em', color: '#ffc619', opacity: 0 }),
-                ...(variant === 'neon' && { fontSize: '1.15em' }),
-                ...(variant === 'glitch' && { textTransform: 'uppercase' as const, fontSize: '1.15em', color: '#ffffff' }),
-                ...(variant === 'invert' && {
-                  fontSize: '1.1em', padding: '3px 5px',
-                  backgroundImage: 'linear-gradient(#ffc619,#ffc619)',
-                  backgroundRepeat: 'no-repeat', backgroundSize: '0% 100%',
-                }),
-              }}>{seg.text}</span>
-            ) : (
-              <span key={j} style={{ whiteSpace: 'pre' }}>{seg.text}</span>
-            ))}
-          </div>
-        ))}
+        {lines.map((ln, i) => {
+          const { level, text } = lineLevel(ln.t);
+          return (
+            <div key={i} style={{
+              opacity: 0, display: 'flex', flexWrap: 'wrap',
+              alignItems: 'center', justifyContent: 'center', columnGap: 0,
+              fontFamily: NARR_FONT, lineHeight: 1.8,
+              minHeight: level === 'hero' ? 64 : level === 'quiet' ? 42 : 52,
+              fontSize: level === 'hero' ? 17 : level === 'quiet' ? 10 : 12,
+              color: level === 'quiet' ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.97)',
+              textShadow: '0 2px 10px rgba(0,0,0,0.75)',
+            }}>
+              {parseLine(text).map((seg, j) => seg.acc ? (
+                <span key={j} className="bd-acc" style={{
+                  display: 'inline-block', whiteSpace: 'pre',
+                  ...(variant === 'caps' && { textTransform: 'uppercase' as const, fontSize: '1.25em', color: '#ffffff' }),
+                  ...(variant === 'stamp' && { textTransform: 'uppercase' as const, fontSize: '1.2em', color: '#ffc619', opacity: 0 }),
+                  ...(variant === 'neon' && { fontSize: '1.1em' }),
+                  ...(variant === 'glitch' && { textTransform: 'uppercase' as const, fontSize: '1.1em', color: '#ffffff' }),
+                  ...(variant === 'invert' && {
+                    fontSize: '1.05em', padding: '3px 5px',
+                    backgroundImage: 'linear-gradient(#ffc619,#ffc619)',
+                    backgroundRepeat: 'no-repeat', backgroundSize: '0% 100%',
+                  }),
+                }}>{seg.text}</span>
+              ) : (
+                <span key={j} style={{ whiteSpace: 'pre' }}>{seg.text}</span>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
