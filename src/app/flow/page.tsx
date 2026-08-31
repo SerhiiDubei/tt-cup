@@ -43,7 +43,7 @@ export default function FlowV3() {
   const frame = DEEP[vr - 1];
 
   useEffect(() => {
-    if (stage === 'zoom') { whoosh(); const t = setTimeout(() => setStage('reveal'), 1400); return () => clearTimeout(t); }
+    if (stage === 'zoom') { whoosh(); const t = setTimeout(() => setStage('dive'), 1400); return () => clearTimeout(t); }
     if (stage === 'reveal') {
       setShowNext(false);
       const el = revealRef.current;
@@ -75,52 +75,8 @@ export default function FlowV3() {
         </div>
       )}
 
-      {(stage === 'reveal' || stage === 'dive' || stage === 'end') && (
+      {(stage === 'dive' || stage === 'end') && (
         <>
-          {/* перемикач варіантів: рестарт з інтро */}
-          <div style={{ position: 'absolute', zIndex: 9, top: 'calc(12px + env(safe-area-inset-top))', right: 12, display: 'flex', gap: 5 }}>
-            {DEEP.map((d) => (
-              <button key={d.id} onClick={() => restartWith(d.id)} style={{
-                font: "800 12px 'Unbounded'", width: 32, height: 32, borderRadius: 9, cursor: 'pointer',
-                border: '2.5px solid #16110d',
-                background: d.id === vr ? '#ffc619' : 'rgba(251,241,221,0.85)',
-              }}>{d.id}</button>
-            ))}
-          </div>
-
-          <div ref={revealRef} className="fl-reveal" style={{ position: 'absolute', inset: 0, zIndex: 1, overflow: 'hidden' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={frame.img} alt="" />
-            <div className="fl-flash" />
-            <style>{`
-              .fl-reveal img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-                image-rendering: pixelated;
-                transform: scale(0.55) translateY(5%); filter: blur(9px); opacity: 0.6; }
-              /* НАСУВАННЯ: кадр прилітає з глибини з пружним овершутом,
-                 далі живе повільним дрейфом */
-              .fl-reveal.go img {
-                animation:
-                  flFly 1.5s cubic-bezier(0.22, 1.35, 0.36, 1) forwards,
-                  flDrift 14s 1.5s ease-in-out infinite alternate;
-                filter: blur(0); opacity: 1;
-                transition: filter 0.9s ease, opacity 0.6s ease; }
-              @keyframes flFly {
-                from { transform: scale(0.55) translateY(5%); }
-                to { transform: scale(1) translateY(0); } }
-              @keyframes flDrift {
-                from { transform: scale(1); }
-                to { transform: scale(1.055) translateY(-1.2%); } }
-              .fl-reveal .fl-flash { position: absolute; inset: 0; background: #fff8ec; opacity: 1; }
-              .fl-reveal.go .fl-flash { opacity: 0; transition: opacity 1s ease; }
-            `}</style>
-          </div>
-
-          {stage === 'reveal' && showNext && (
-            <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>
-              <button className="v30-btn v30-in" onClick={() => setStage('dive')}>далі ▸</button>
-            </div>
-          )}
-
           {stage === 'dive' && (
             <>
               <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
@@ -146,13 +102,6 @@ export default function FlowV3() {
                   Кожна кнопка нижче програє флоу З ПОЧАТКУ (інтро → транзішен → кадр).
                 </p>
                 <div style={{ display: 'grid', gap: 7 }}>
-                  <div style={{ fontFamily: 'Unbounded', fontSize: 11, color: '#ffc619', textAlign: 'left' }}>КАДР 1</div>
-                  {DEEP.map((d) => (
-                    <button key={d.id} className="v30-btn" style={{ opacity: d.id === vr ? 0.55 : 1, fontSize: 11 }}
-                      onClick={() => restartWith(d.id)}>
-                      {d.id === vr ? '↻' : '▶'} {d.id} · {d.name}
-                    </button>
-                  ))}
                 </div>
               </div>
             </div>
