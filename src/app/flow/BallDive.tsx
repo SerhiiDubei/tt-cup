@@ -34,19 +34,41 @@ export default function BallDive() {
     function frame() {
       t += 1 / 60;
 
-      /* ---- НЕБО ---- */
+      /* ---- НЕБО: насичене вгорі → світле біля горизонту (атмосферна перспектива) ---- */
       for (let y = 0; y < SKY + 4; y += 1) {
-        const k = y / SKY;
-        ctx.fillStyle = `rgb(${Math.round(150 - 42 * k)},${Math.round(214 - 44 * k)},${Math.round(238 - 34 * k)})`;
+        const k = Math.min(1, y / SKY);
+        const kk = Math.pow(k, 1.4);
+        ctx.fillStyle = `rgb(${Math.round(96 + 104 * kk)},${Math.round(170 + 66 * kk)},${Math.round(215 + 33 * kk)})`;
         ctx.fillRect(0, y, W, 1);
       }
-      ctx.fillStyle = 'rgba(255,246,216,0.35)'; ctx.beginPath(); ctx.arc(28, 14, 9, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff6d8'; ctx.beginPath(); ctx.arc(28, 14, 6, 0, Math.PI * 2); ctx.fill();
+      /* мʼяке сонце: багатошаровий ореол + делікатний глер */
+      const sunX = 28, sunY = 13;
+      for (const [rr, aa] of [[13, 0.05], [10, 0.09], [8, 0.16], [6.5, 0.3]] as [number, number][]) {
+        ctx.fillStyle = `rgba(255,244,208,${aa})`;
+        ctx.beginPath(); ctx.arc(sunX, sunY, rr, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.arc(sunX, sunY, 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fffdf2'; ctx.beginPath(); ctx.arc(sunX - 1, sunY - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+      const gl = 0.10 + 0.05 * Math.sin(t * 1.7);
+      ctx.fillStyle = `rgba(255,248,220,${gl})`;
+      ctx.fillRect(sunX - 12, sunY, 24, 1); ctx.fillRect(sunX, sunY - 12, 1, 24);
+      /* хмарка */
       const cx = ((t * 2.0) % (W + 60)) - 30;
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
-      ctx.fillRect(Math.round(cx), 10, 26, 4); ctx.fillRect(Math.round(cx) + 5, 7, 14, 3); ctx.fillRect(Math.round(cx) + 4, 14, 18, 3);
-      ctx.fillStyle = 'rgba(40,60,70,0.65)';
-      ctx.fillRect(Math.round(96 + Math.sin(t * 0.7) * 8), 20, 3, 1); ctx.fillRect(Math.round(112 + Math.sin(t * 0.7) * 8), 24, 3, 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillRect(Math.round(cx), 8, 26, 4); ctx.fillRect(Math.round(cx) + 5, 5, 14, 3); ctx.fillRect(Math.round(cx) + 4, 12, 18, 3);
+      /* птахи */
+      ctx.fillStyle = 'rgba(60,84,96,0.5)';
+      ctx.fillRect(Math.round(100 + Math.sin(t * 0.7) * 8), 16, 3, 1); ctx.fillRect(Math.round(116 + Math.sin(t * 0.7) * 8), 20, 3, 1);
+      /* далекий острів: блідий силует біля горизонту + пара дерев */
+      const isX = 116;
+      for (let ix = -18; ix <= 18; ix++) {
+        const hgt = Math.max(0, 6 * Math.cos((ix / 19) * Math.PI / 2));
+        ctx.fillStyle = 'rgba(122,168,196,0.85)';
+        ctx.fillRect(isX + ix, Math.round(SKY - hgt), 1, Math.round(hgt) + 1);
+      }
+      ctx.fillStyle = 'rgba(96,142,170,0.9)';
+      ctx.fillRect(isX - 6, SKY - 8, 1, 3); ctx.fillRect(isX - 8, SKY - 7, 5, 1);
+      ctx.fillRect(isX + 4, SKY - 9, 1, 4); ctx.fillRect(isX + 2, SKY - 8, 5, 1);
 
       /* ---- ВОДА: глибинний градієнт у темно-синє ---- */
       for (let y = SKY - 4; y < H; y += 1) {
@@ -62,19 +84,31 @@ export default function BallDive() {
         ctx.fillRect(0, y, W, 2);
       }
 
-      /* ---- ГОРИЗОНТ: тонка кромка + піна + доріжка сонця ---- */
+      /* ---- ГОРИЗОНТ: делікатна кромка, мілина, відбиття острова ---- */
       for (let x = 0; x < W; x += 1) {
         const sy = surfY(x);
-        ctx.fillStyle = '#9fd2ea';
+        /* небо просвічує до кромки (світле — стик мʼякий) */
+        ctx.fillStyle = '#c8e6f4';
         ctx.fillRect(x, SKY - 4, 1, Math.max(0, Math.round(sy) - (SKY - 4)));
-        ctx.fillStyle = 'rgba(235,251,255,0.95)';
+        /* градуйована кромка: блік → світло → мілина */
+        ctx.fillStyle = 'rgba(246,253,255,0.9)';
         ctx.fillRect(x, Math.round(sy), 1, 1);
-        ctx.fillStyle = 'rgba(190,232,248,0.5)';
+        ctx.fillStyle = 'rgba(196,236,250,0.6)';
         ctx.fillRect(x, Math.round(sy) + 1, 1, 1);
-        ctx.fillStyle = 'rgba(150,210,236,0.22)';
+        ctx.fillStyle = 'rgba(140,210,232,0.35)';
         ctx.fillRect(x, Math.round(sy) + 2, 1, 2);
-        /* піна: рідкі яскраві цятки на гребенях */
-        if (Math.sin(x * 0.9 + t * 2.6) > 0.93) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x, Math.round(sy) - 1, 1, 1); }
+        ctx.fillStyle = 'rgba(110,190,215,0.18)';
+        ctx.fillRect(x, Math.round(sy) + 4, 1, 3);
+        /* піна: поодинокі дрібні іскри, рідко */
+        if (Math.sin(x * 1.7 + t * 2.2) * Math.sin(x * 0.31 - t * 1.1) > 0.985) {
+          ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x, Math.round(sy) - 1, 1, 1);
+        }
+      }
+      /* відбиття острова: тремкі штрихи під кромкою */
+      for (let i = 0; i < 5; i++) {
+        const rx = 116 + Math.sin(t * 1.3 + i * 2) * 3;
+        ctx.fillStyle = `rgba(122,168,196,${0.22 - i * 0.035})`;
+        ctx.fillRect(Math.round(rx - 10 + i), Math.round(surfY(116) + 3 + i * 2), 20 - i * 3, 1);
       }
       /* сонячна доріжка під поверхнею: мерехтливі штрихи вузьким конусом від сонця */
       for (let y = SKY + 3; y < SKY + 46; y += 2) {
