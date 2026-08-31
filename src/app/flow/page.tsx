@@ -27,11 +27,9 @@ function whoosh() {
 }
 
 const DEEP = [
-  { id: 1, name: 'Небо і сліди', img: '/onb/deep/deep-1.jpg' },
-  { id: 2, name: 'Погляд згори', img: '/onb/deep/deep-2.jpg' },
-  { id: 3, name: 'Нічна гірлянда', img: '/onb/deep/deep-3.jpg' },
-  { id: 4, name: 'Мʼяч-місяць', img: '/onb/deep/deep-4.jpg' },
-  { id: 5, name: 'Стіна і очікування', img: '/onb/deep/deep-5.jpg' },
+  { id: 1, name: 'Небо', img: '/onb/deep/deepx-1.jpg' },
+  { id: 2, name: 'Двір згори', img: '/onb/deep/deepx-2.jpg' },
+  { id: 3, name: 'Стіна', img: '/onb/deep/deepx-3.jpg' },
 ];
 
 export default function FlowV3() {
@@ -48,7 +46,7 @@ export default function FlowV3() {
       setShowNext(false);
       const el = revealRef.current;
       if (el) requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('go')));
-      const t = setTimeout(() => setShowNext(true), 3400);
+      const t = setTimeout(() => setShowNext(true), 2600);
       return () => clearTimeout(t);
     }
   }, [stage]);
@@ -93,11 +91,24 @@ export default function FlowV3() {
             <div className="fl-flash" />
             <style>{`
               .fl-reveal img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-                transform: scale(1.2); filter: blur(12px); }
-              .fl-reveal.go img { transform: scale(1); filter: blur(0);
-                transition: transform 5s cubic-bezier(0.16, 1, 0.3, 1), filter 2.2s ease; }
+                image-rendering: pixelated;
+                transform: scale(0.55) translateY(5%); filter: blur(9px); opacity: 0.6; }
+              /* НАСУВАННЯ: кадр прилітає з глибини з пружним овершутом,
+                 далі живе повільним дрейфом */
+              .fl-reveal.go img {
+                animation:
+                  flFly 1.5s cubic-bezier(0.22, 1.35, 0.36, 1) forwards,
+                  flDrift 14s 1.5s ease-in-out infinite alternate;
+                filter: blur(0); opacity: 1;
+                transition: filter 0.9s ease, opacity 0.6s ease; }
+              @keyframes flFly {
+                from { transform: scale(0.55) translateY(5%); }
+                to { transform: scale(1) translateY(0); } }
+              @keyframes flDrift {
+                from { transform: scale(1); }
+                to { transform: scale(1.055) translateY(-1.2%); } }
               .fl-reveal .fl-flash { position: absolute; inset: 0; background: #fff8ec; opacity: 1; }
-              .fl-reveal.go .fl-flash { opacity: 0; transition: opacity 1.5s ease; }
+              .fl-reveal.go .fl-flash { opacity: 0; transition: opacity 1s ease; }
             `}</style>
           </div>
 
