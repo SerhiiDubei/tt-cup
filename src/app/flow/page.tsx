@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Prologue from '@/components/intro/Prologue';
 import BallDive from './BallDive';
+import Transition, { type TransKind } from './Transition';
 import '../v2/v2.css';
 import '../onb/onb.css';
 
@@ -49,18 +50,33 @@ const ACCS = [
 ];
 type AccId = (typeof ACCS)[number]['id'];
 
+/* 5 транзішнів «інтро → вода» (GSAP timeline) */
+const TRANS = [
+  { id: 'tiles' as const, name: 'П1 · пікс-розсип' },
+  { id: 'iris' as const, name: 'П2 · іріс' },
+  { id: 'strips' as const, name: 'П3 · стрічки' },
+  { id: 'wave' as const, name: 'П4 · хвиля' },
+  { id: 'glitch' as const, name: 'П5 · глітч-кат' },
+];
+
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
   const [cam, setCam] = useState<'follow' | 'dolly'>('follow');
   const [txt, setTxt] = useState<AccId>('caps');
-  const [stage, setStage] = useState<'intro' | 'zoom' | 'reveal' | 'dive' | 'end'>('intro');
+  const [tr, setTr] = useState<TransKind>('tiles');
+  const [stage, setStage] = useState<'intro' | 'trans' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
   const revealRef = useRef<HTMLDivElement>(null);
   const frame = DEEP[vr - 1];
 
   useEffect(() => {
-    if (stage === 'zoom') { whoosh(); const t = setTimeout(() => setStage('dive'), 1400); return () => clearTimeout(t); }
+    if (stage === 'trans') {
+      whoosh();
+      /* страховка: якщо gsap не дограв (прихована вкладка, фриз) — не застрягаємо */
+      const t = setTimeout(() => setStage('dive'), 2600);
+      return () => clearTimeout(t);
+    }
     if (stage === 'reveal') {
       setShowNext(false);
       const el = revealRef.current;
@@ -74,6 +90,7 @@ export default function FlowV3() {
   const restartWith = (v: number) => { setVr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
   const restartCam = (c: 'follow' | 'dolly') => { setCam(c); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
   const restartTxt = (v: AccId) => { setTxt(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const restartTr = (v: TransKind) => { setTr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
 
 
   return (
@@ -82,28 +99,20 @@ export default function FlowV3() {
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
       <div className="ob-stage" style={{ background: '#16110d' }} key={runKey}>
 
-      {(stage === 'intro' || stage === 'zoom') && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 3, background: '#16110d',
-          /* двофазний наїзд: мʼякий старт → різке прискорення */
-          transition: 'transform 1.4s cubic-bezier(0.75, 0, 0.95, 0.4), filter 1.3s cubic-bezier(0.8, 0, 1, 1), opacity 1.4s ease',
-          transform: stage === 'zoom' ? 'scale(19)' : 'none',
-          filter: stage === 'zoom' ? 'blur(18px) brightness(3.6)' : 'none',
-          opacity: stage === 'zoom' ? 0 : 1,
-          transformOrigin: '50% 44%',
-          pointerEvents: stage === 'zoom' ? 'none' : 'auto',
-        }}>
-          <Prologue onEnter={() => setStage('zoom')} sub="" hint="тапни" />
+      {stage === 'intro' && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: '#16110d' }}>
+          <Prologue onEnter={() => setStage('trans')} sub="" hint="тапни" />
         </div>
       )}
 
-      {(stage === 'dive' || stage === 'end') && (
+      {(stage === 'trans' || stage === 'dive' || stage === 'end') && (
         <>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
+            <BallDive key={cam + txt} mode={cam} variant={txt} onLinesDone={() => setShowNext(true)} />
+          </div>
+          {stage === 'trans' && <Transition kind={tr} onDone={() => setStage('dive')} />}
           {stage === 'dive' && (
             <>
-              <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
-                <BallDive key={cam + txt} mode={cam} variant={txt} onLinesDone={() => setShowNext(true)} />
-              </div>
               {/* перемикачі варіацій: вибір = повний рестарт з інтро */}
               <div style={{ position: 'absolute', zIndex: 6, top: 'calc(10px + env(safe-area-inset-top))', right: 10, display: 'grid', gap: 5, justifyItems: 'end' }}>
                 {CAMS.map((c) => (
@@ -123,6 +132,16 @@ export default function FlowV3() {
                     border: '1px solid rgba(255,255,255,0.25)',
                     background: txt === v.id ? 'rgba(122,220,255,0.92)' : 'rgba(10,24,34,0.55)',
                     color: txt === v.id ? '#0b2230' : 'rgba(255,248,236,0.85)',
+                  }}>{v.name}</button>
+                ))}
+                <div style={{ height: 4 }} />
+                {TRANS.map((v) => (
+                  <button key={v.id} onClick={() => restartTr(v.id)} style={{
+                    fontFamily: 'Unbounded', fontWeight: 800, fontSize: 8.5, textTransform: 'uppercase',
+                    letterSpacing: '0.04em', padding: '6px 9px', borderRadius: 3, cursor: 'pointer',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    background: tr === v.id ? 'rgba(255,140,102,0.92)' : 'rgba(10,24,34,0.55)',
+                    color: tr === v.id ? '#2a130a' : 'rgba(255,248,236,0.85)',
                   }}>{v.name}</button>
                 ))}
               </div>
