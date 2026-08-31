@@ -50,20 +50,18 @@ const ACCS = [
 ];
 type AccId = (typeof ACCS)[number]['id'];
 
-/* 5 транзішнів «інтро → вода» (GSAP timeline) */
+/* хвиля зафіксована як транзішн; 3 покращені варіанти (GSAP timeline) */
 const TRANS = [
-  { id: 'tiles' as const, name: 'П1 · пікс-розсип' },
-  { id: 'iris' as const, name: 'П2 · іріс' },
-  { id: 'strips' as const, name: 'П3 · стрічки' },
-  { id: 'wave' as const, name: 'П4 · хвиля' },
-  { id: 'glitch' as const, name: 'П5 · глітч-кат' },
+  { id: 'wave1' as const, name: 'W1 · шторм-шари' },
+  { id: 'wave2' as const, name: 'W2 · жива хвиля' },
+  { id: 'wave3' as const, name: 'W3 · подвійний прибій' },
 ];
 
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
   const [cam, setCam] = useState<'follow' | 'dolly'>('follow');
   const [txt, setTxt] = useState<AccId>('caps');
-  const [tr, setTr] = useState<TransKind>('tiles');
+  const [tr, setTr] = useState<TransKind>('wave1');
   const [stage, setStage] = useState<'intro' | 'trans' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
@@ -74,7 +72,7 @@ export default function FlowV3() {
     if (stage === 'trans') {
       whoosh();
       /* страховка: якщо gsap не дограв (прихована вкладка, фриз) — не застрягаємо */
-      const t = setTimeout(() => setStage('dive'), 2600);
+      const t = setTimeout(() => setStage('dive'), 4400);
       return () => clearTimeout(t);
     }
     if (stage === 'reveal') {

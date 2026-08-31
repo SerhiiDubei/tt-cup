@@ -12,7 +12,7 @@ gsap.ticker.lagSmoothing(0);
  * Оверлей стартує суцільним кольором інтро (#16110d) — стик безшовний,
  * під ним уже живе BallDive; по завершенні onDone знімає оверлей.
  */
-export type TransKind = 'tiles' | 'iris' | 'strips' | 'wave' | 'glitch';
+export type TransKind = 'tiles' | 'iris' | 'strips' | 'wave' | 'glitch' | 'wave1' | 'wave2' | 'wave3';
 
 const DARK = '#16110d';
 
@@ -95,6 +95,80 @@ export default function Transition({ kind, onDone }: { kind: TransKind; onDone: 
         .set(base, { opacity: 0 })
         .to(front, { top: '102%', duration: 0.75, ease: 'power2.inOut' }, '+=0.08')
         .to(back, { top: '102%', duration: 0.75, ease: 'power2.inOut' }, '<0.09');
+    } else if (kind === 'wave1' || kind === 'wave2' || kind === 'wave3') {
+      /* W1-W3: покращена хвиля — повільніша, багатошарова, з піною */
+      const base = el(`inset:0;background:${DARK};`);
+      const child = (parent: HTMLElement, css: string) => {
+        const d = document.createElement('div');
+        d.style.cssText = 'position:absolute;' + css;
+        parent.append(d);
+        return d;
+      };
+      /* передній шар — обгортка: тіло + рвана піна на гребені */
+      const mkFront = (bodyColor: string) => {
+        const wrap = el('left:-2%;width:104%;top:100%;height:132%;');
+        child(wrap, `left:0;width:100%;top:3%;height:100%;background:${bodyColor};clip-path:${jaggedTop(18, 6)};`);
+        child(wrap, `left:0;width:100%;top:0;height:5.5%;background:#e8f6fb;clip-path:${jaggedTop(24, 70)};`);
+        return wrap;
+      };
+      const mkBack = (color: string, steps: number, maxH: number) =>
+        el(`left:-2%;width:104%;top:100%;height:132%;background:${color};clip-path:${jaggedTop(steps, maxH)};`);
+
+      if (kind === 'wave1') {
+        /* W1: шторм — 4 шари від світлого до темного + бризки перед фронтом */
+        const b1 = mkBack('#2f7292', 11, 9);
+        const b2 = mkBack('#1d5674', 14, 8);
+        const b3 = mkBack('#164861', 17, 7);
+        const front = mkFront('#0d3346');
+        const drops = Array.from({ length: 9 }, (_, i) =>
+          el(`width:3px;height:3px;background:#eef8ff;left:${4 + i * 11}%;top:58%;opacity:0;`));
+        tl.to(b1, { top: '-16%', duration: 1.35, ease: 'power2.inOut' }, 0)
+          .to(b2, { top: '-13%', duration: 1.3, ease: 'power2.inOut' }, 0.14)
+          .to(b3, { top: '-10%', duration: 1.25, ease: 'power2.inOut' }, 0.28)
+          .to(front, { top: '-8%', duration: 1.2, ease: 'power2.inOut' }, 0.42)
+          .to(drops, { top: '20%', opacity: 1, duration: 0.45, ease: 'power1.out', stagger: 0.045 }, 0.95)
+          .to(drops, { top: '10%', opacity: 0, duration: 0.4, ease: 'power1.in', stagger: 0.045 }, 1.4)
+          .set(base, { opacity: 0 }, 1.65)
+          .to(front, { top: '104%', duration: 1.15, ease: 'power2.inOut' }, 1.8)
+          .to(b3, { top: '104%', duration: 1.15, ease: 'power2.inOut' }, 1.9)
+          .to(b2, { top: '104%', duration: 1.1, ease: 'power2.inOut' }, 2.0)
+          .to(b1, { top: '104%', duration: 1.05, ease: 'power2.inOut' }, 2.1);
+      } else if (kind === 'wave2') {
+        /* W2: жива хвиля — у товщі пливуть рибки і здіймаються бульбашки */
+        const b1 = mkBack('#2a6a8a', 12, 9);
+        const b2 = mkBack('#1a4f6c', 15, 7);
+        const front = mkFront('#0f3a52');
+        const fishCols = ['#e27a5c', '#eec458', '#76c8a8', '#94a8e8', '#e08cbc'];
+        const fish = fishCols.map((c, i) => child(front,
+          `left:${8 + i * 19}%;top:${22 + (i % 3) * 21}%;width:15px;height:6px;background:${c};opacity:0.9;` +
+          `clip-path:polygon(100% 50%, 55% 0, 0 28%, 0 72%, 55% 100%);` +
+          (i % 2 ? 'transform:scaleX(-1);' : '')));
+        const bubs = Array.from({ length: 8 }, (_, i) => child(front,
+          `left:${10 + i * 11}%;top:${70 + (i % 3) * 8}%;width:2px;height:2px;background:rgba(238,248,255,0.85);border-radius:50%;`));
+        fish.forEach((f, i) => tl.to(f, { x: (i % 2 ? -1 : 1) * 26, duration: 1.4, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 0.2 + i * 0.1));
+        bubs.forEach((b, i) => tl.to(b, { top: '6%', opacity: 0, duration: 1.6, ease: 'sine.in' }, 0.6 + i * 0.14));
+        tl.to(b1, { top: '-15%', duration: 1.4, ease: 'power2.inOut' }, 0)
+          .to(b2, { top: '-12%', duration: 1.35, ease: 'power2.inOut' }, 0.16)
+          .to(front, { top: '-8%', duration: 1.3, ease: 'power2.inOut' }, 0.32)
+          .set(base, { opacity: 0 }, 1.65)
+          .to(front, { top: '104%', duration: 1.2, ease: 'power2.inOut' }, 1.85)
+          .to(b2, { top: '104%', duration: 1.15, ease: 'power2.inOut' }, 1.95)
+          .to(b1, { top: '104%', duration: 1.1, ease: 'power2.inOut' }, 2.05);
+      } else {
+        /* W3: подвійний прибій — короткий замах, відкат, повний прохід */
+        const b1 = mkBack('#2a6a8a', 12, 9);
+        const b2 = mkBack('#1a4f6c', 16, 7);
+        const front = mkFront('#0d3346');
+        tl.to(front, { top: '46%', duration: 0.75, ease: 'power2.out' }, 0)      // замах
+          .to(front, { top: '82%', duration: 0.6, ease: 'power2.in' }, 0.78)     // відкат
+          .to(b1, { top: '-15%', duration: 1.0, ease: 'power2.inOut' }, 1.15)    // повний прохід
+          .to(b2, { top: '-12%', duration: 0.95, ease: 'power2.inOut' }, 1.28)
+          .to(front, { top: '-8%', duration: 0.9, ease: 'power2.inOut' }, 1.42)
+          .set(base, { opacity: 0 }, 2.35)
+          .to(front, { top: '104%', duration: 1.1, ease: 'power2.inOut' }, 2.5)
+          .to(b2, { top: '104%', duration: 1.05, ease: 'power2.inOut' }, 2.6)
+          .to(b1, { top: '104%', duration: 1.0, ease: 'power2.inOut' }, 2.7);
+      }
     } else {
       /* П5: глітч-кат — смикання, кольорові смуги, флеш, різкий монтаж */
       const cover = el(`inset:0;background:${DARK};`);
