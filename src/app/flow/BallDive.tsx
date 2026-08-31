@@ -10,35 +10,35 @@ import { useEffect, useRef } from 'react';
  * mode 'follow' (V1): камера мʼяко тримає мʼяч у верхній третині.
  * mode 'dolly'  (V2): рівномірний кіно-рух; мʼяч повільно сповзає нижче.
  */
-export type TextVariant = 'log' | 'hand' | 'deep';
+/* 5 варіантів акцентів на ключову інфу (шрифт наративу: Press Start 2P) */
+export type AccentVariant = 'caps' | 'stamp' | 'neon' | 'glitch' | 'invert';
 
-/* морські шрифти (Google Fonts, повна кирилиця) під кожен варіант моушену */
-const FONT: Record<TextVariant, { family: string; style: string; size: number }> = {
-  log: { family: "'Old Standard TT', 'Times New Roman', serif", style: 'italic', size: 18 },   // бортовий журнал
-  hand: { family: "'Neucha', 'Comic Sans MS', cursive", style: 'normal', size: 20 },           // рукопис
-  deep: { family: "'EB Garamond', Georgia, serif", style: 'normal', size: 18 },                // класика глибини
-};
+const NARR_FONT = "'Press Start 2P', 'Courier New', monospace";
 
+/* розмітка: *слово* = акцент */
 const DEFAULT_LINES = [
-  'Все почалося з одного мʼяча…',
-  'Він упав — і світ навколо стих.',
+  'Все почалося з одного *мʼяча*…',
+  'Він упав — і світ *стих*.',
   'Так зникає звичайний вечір.',
-  'Повільно. Непомітно. Назавжди.',
+  'Повільно. Непомітно. *Назавжди*.',
   'Але на дні кожної тиші…',
-  '…щось чекає.',
-  'Двір. Стіл. Дві ракетки.',
-  'І питання — хто сьогодні король.',
-  '12 вересня все вирішиться.',
-  'DRUID BATTLE CUP. Пірнаємо?',
+  '…щось *чекає*.',
+  '*Двір. Стіл.* Дві ракетки.',
+  'І питання — хто *король*.',
+  '*12 вересня* все вирішиться.',
+  '*DRUID BATTLE CUP*. Пірнаємо?',
 ];
+
+/* сегменти рядка: непарні частини після split('*') — акцентні */
+const parseLine = (ln: string) => ln.split('*').map((text, i) => ({ text, acc: i % 2 === 1 }));
 
 export default function BallDive({
   mode = 'follow',
-  variant = 'log',
+  variant = 'caps',
   hitWord = 'бульк!',
   lines = DEFAULT_LINES,
   onLinesDone,
-}: { mode?: 'follow' | 'dolly'; variant?: TextVariant; hitWord?: string; lines?: string[]; onLinesDone?: () => void }) {
+}: { mode?: 'follow' | 'dolly'; variant?: AccentVariant; hitWord?: string; lines?: string[]; onLinesDone?: () => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
@@ -91,7 +91,7 @@ export default function BallDive({
     let camY = CAM0;
     let ballW = { x: W / 2, y: -20 };   // світові координати мʼяча
     /* стрічка наративу: 10 рядків, на екрані живуть 3-4 */
-    const LINE_DT = 2.6, ROW_H = 38;
+    const LINE_DT = 2.6, ROW_H = 46;
     let lineStart = -1;                 // момент появи першого рядка (фіксується раз)
     let offsetF = 0;                    // плавний зсув стека вгору
     let doneFired = false;              // стрічка дограла → сигнал нагору (показ кнопки)
@@ -386,10 +386,7 @@ export default function BallDive({
         }
         const hiddenN = Math.max(0, shown - 4);
         offsetF += (hiddenN - offsetF) * Math.min(1, dt * 3.5);
-        const drift = variant === 'deep' && lineStart >= 0 ? (t - lineStart) * 2 : 0;   // повільне спливання
-        const rock = variant === 'log' ? Math.sin(t * 0.5) * 1.0 : 0;                   // гойдання палуби
-        stackRef.current.style.transform =
-          `translateY(${(-offsetF * ROW_H - drift).toFixed(1)}px) rotate(${rock.toFixed(2)}deg)`;
+        stackRef.current.style.transform = `translateY(${(-offsetF * ROW_H).toFixed(1)}px)`;
         const rows = stackRef.current.children;
         for (let i = 0; i < rows.length; i++) {
           const el = rows[i] as HTMLElement;
@@ -399,30 +396,42 @@ export default function BallDive({
           const dp = i + 4 < lines.length
             ? Math.max(0, Math.min(1, (t - (lineStart + (i + 4) * LINE_DT)) / 1.4))
             : 0;                                           // фінальні 3-4 рядки лишаються
-          if (variant === 'log') {
-            /* журнал: рядок спливає знизу, тане з нахилом угору */
-            const eo = 1 - Math.pow(1 - ap, 3);
-            el.style.opacity = (ap * (1 - dp)).toFixed(2);
-            el.style.transform = `translateY(${(18 * (1 - eo) - 12 * dp).toFixed(1)}px)`;
-          } else if (variant === 'hand') {
-            /* рукопис: слова проявляються по черзі, рядок гойдається на хвилі */
-            el.style.opacity = (1 - dp).toFixed(2);
-            el.style.transform =
-              `translateY(${(Math.sin(t * 0.6 + i * 1.3) * 1.5).toFixed(1)}px) ` +
-              `translateX(${(14 * dp).toFixed(1)}px) rotate(${(Math.sin(t * 0.8 + i) * 0.8).toFixed(2)}deg)`;
-            const ws = el.children;
-            for (let j = 0; j < ws.length; j++) {
-              const wp = Math.max(0, Math.min(1, (t - born - j * 0.12) / 0.3));
-              (ws[j] as HTMLElement).style.opacity = wp.toFixed(2);
-              (ws[j] as HTMLElement).style.transform = `translateY(${(6 * (1 - wp)).toFixed(1)}px)`;
+          /* базовий моушен рядка: спливає знизу, тане вгору */
+          const eo = 1 - Math.pow(1 - ap, 3);
+          el.style.opacity = (ap * (1 - dp)).toFixed(2);
+          el.style.transform = `translateY(${(16 * (1 - eo) - 10 * dp).toFixed(1)}px)`;
+
+          /* акценти: 5 режимів підсвітки ключових слів */
+          const accs = el.getElementsByClassName('bd-acc') as HTMLCollectionOf<HTMLElement>;
+          for (let k = 0; k < accs.length; k++) {
+            const a = accs[k];
+            if (variant === 'stamp') {
+              /* жовтий удар: слово «штампується» зверху (back.out) із запізненням */
+              const sp = Math.max(0, Math.min(1, (t - born - 0.35) / 0.4));
+              const eb = 1 - Math.pow(1 - sp, 3);
+              a.style.opacity = sp === 0 ? '0' : Math.min(1, sp * 3).toFixed(2);
+              a.style.transform = `scale(${(2.2 - 1.2 * eb).toFixed(3)})`;
+            } else if (variant === 'neon') {
+              /* hotline: колір тече по колу + неоновий ореол + мікро-дрож */
+              const hue = Math.round((t * 70 + k * 60 + i * 35) % 360);
+              a.style.color = `hsl(${hue} 100% 66%)`;
+              a.style.textShadow = `0 0 6px hsl(${hue} 100% 55% / 0.9), 0 0 16px hsl(${hue} 100% 50% / 0.5)`;
+              a.style.transform = `translate(${((Math.random() - 0.5) * 1.2).toFixed(2)}px, ${((Math.random() - 0.5) * 1.2).toFixed(2)}px)`;
+            } else if (variant === 'glitch') {
+              /* rgb-спліт: короткий глітч-сплеск раз на ~1.8с, у кожного слова своя фаза */
+              const cyc = (t * 0.55 + i * 0.37 + k * 0.21) % 1;
+              if (cyc < 0.09) {
+                const g = Math.sin((cyc / 0.09) * Math.PI);
+                a.style.textShadow = `${(2.5 * g).toFixed(1)}px 0 #ff2ba6, ${(-2.5 * g).toFixed(1)}px 0 #00e5ff`;
+                a.style.transform = `translateX(${((Math.random() - 0.5) * 3 * g).toFixed(1)}px)`;
+              } else { a.style.textShadow = 'none'; a.style.transform = 'none'; }
+            } else if (variant === 'invert') {
+              /* плашка: жовтий блок замальовує слово wipe-ом зліва направо */
+              const sp = Math.max(0, Math.min(1, (t - born - 0.35) / 0.35));
+              a.style.backgroundSize = `${(sp * 100).toFixed(0)}% 100%`;
+              a.style.color = sp > 0.5 ? '#16110d' : 'rgba(255,255,255,0.97)';
             }
-          } else {
-            /* глибина: виринає з розфокусу, дрейфує вгору, тане в каламуть */
-            const eo = 1 - Math.pow(1 - ap, 2);
-            el.style.opacity = (eo * (1 - dp)).toFixed(2);
-            el.style.transform =
-              `translateY(${(10 * (1 - eo) - 8 * dp).toFixed(1)}px) scale(${(0.95 + 0.05 * eo).toFixed(3)})`;
-            el.style.filter = `blur(${(5 * (1 - eo) + 4 * dp).toFixed(1)}px)`;
+            /* caps: статичний — капс + масштаб, задано стилями в JSX */
           }
         }
       }
@@ -442,27 +451,40 @@ export default function BallDive({
       <div ref={wordRef} style={{
         position: 'absolute', left: '50%', top: '11%', transform: 'translate(-50%,-100%)',
         opacity: 0, pointerEvents: 'none', whiteSpace: 'nowrap',
-        fontFamily: 'Unbounded', fontWeight: 900, fontSize: 'clamp(26px, 8.5vw, 42px)',
+        fontFamily: NARR_FONT, fontSize: 'clamp(18px, 6vw, 30px)',
         textTransform: 'uppercase', letterSpacing: '0.02em', color: '#ffffff',
-        textShadow: '3px 3px 0 rgba(8,28,42,0.5)',
+        textShadow: '3px 3px 0 rgba(8,28,42,0.55)',
       }}>
         {hitWord.split('').map((ch, i) => (
           <span key={i} style={{ display: 'inline-block', opacity: 0 }}>{ch}</span>
         ))}
       </div>
       <div ref={stackRef} style={{
-        position: 'absolute', left: 0, right: 0, top: '36%', padding: '0 24px',
+        position: 'absolute', left: 0, right: 0, top: '34%', padding: '0 16px',
         pointerEvents: 'none', textAlign: 'center',
       }}>
         {lines.map((ln, i) => (
           <div key={i} style={{
-            opacity: 0, height: 38, lineHeight: '38px', whiteSpace: 'nowrap',
-            fontFamily: FONT[variant].family, fontStyle: FONT[variant].style,
-            fontSize: FONT[variant].size, color: 'rgba(255,255,255,0.97)',
-            textShadow: '0 2px 14px rgba(0,0,0,0.7)',
+            opacity: 0, minHeight: 46, display: 'flex', flexWrap: 'wrap',
+            alignItems: 'center', justifyContent: 'center', columnGap: 0,
+            fontFamily: NARR_FONT, fontSize: 9, lineHeight: 1.9,
+            color: 'rgba(255,255,255,0.97)', textShadow: '0 2px 10px rgba(0,0,0,0.75)',
           }}>
-            {ln.split(' ').map((w, j) => (
-              <span key={j} style={{ display: 'inline-block', marginRight: '0.3em' }}>{w}</span>
+            {parseLine(ln).map((seg, j) => seg.acc ? (
+              <span key={j} className="bd-acc" style={{
+                display: 'inline-block', whiteSpace: 'pre',
+                ...(variant === 'caps' && { textTransform: 'uppercase' as const, fontSize: '1.55em', color: '#ffffff' }),
+                ...(variant === 'stamp' && { textTransform: 'uppercase' as const, fontSize: '1.3em', color: '#ffc619', opacity: 0 }),
+                ...(variant === 'neon' && { fontSize: '1.15em' }),
+                ...(variant === 'glitch' && { textTransform: 'uppercase' as const, fontSize: '1.15em', color: '#ffffff' }),
+                ...(variant === 'invert' && {
+                  fontSize: '1.1em', padding: '3px 5px',
+                  backgroundImage: 'linear-gradient(#ffc619,#ffc619)',
+                  backgroundRepeat: 'no-repeat', backgroundSize: '0% 100%',
+                }),
+              }}>{seg.text}</span>
+            ) : (
+              <span key={j} style={{ whiteSpace: 'pre' }}>{seg.text}</span>
             ))}
           </div>
         ))}

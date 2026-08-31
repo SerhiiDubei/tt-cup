@@ -39,17 +39,20 @@ const CAMS = [
   { id: 'dolly' as const, name: 'V2 · рівний кіно-рух' },
 ];
 
-/* 3 варіанти шрифту+моушену наративу (референс — «The Boat», SBS) */
-const TXTS = [
-  { id: 'log' as const, name: 'Т1 · журнал' },
-  { id: 'hand' as const, name: 'Т2 · рукопис' },
-  { id: 'deep' as const, name: 'Т3 · глибина' },
+/* 5 варіантів акцентів на ключову інфу (шрифт: Press Start 2P) */
+const ACCS = [
+  { id: 'caps' as const, name: 'А1 · капс+масштаб' },
+  { id: 'stamp' as const, name: 'А2 · жовтий удар' },
+  { id: 'neon' as const, name: 'А3 · неон hotline' },
+  { id: 'glitch' as const, name: 'А4 · глітч' },
+  { id: 'invert' as const, name: 'А5 · плашка' },
 ];
+type AccId = (typeof ACCS)[number]['id'];
 
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
   const [cam, setCam] = useState<'follow' | 'dolly'>('follow');
-  const [txt, setTxt] = useState<'log' | 'hand' | 'deep'>('log');
+  const [txt, setTxt] = useState<AccId>('caps');
   const [stage, setStage] = useState<'intro' | 'zoom' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
@@ -70,13 +73,13 @@ export default function FlowV3() {
   /* вибір варіанта = ПОВНИЙ рестарт з інтро */
   const restartWith = (v: number) => { setVr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
   const restartCam = (c: 'follow' | 'dolly') => { setCam(c); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
-  const restartTxt = (v: 'log' | 'hand' | 'deep') => { setTxt(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const restartTxt = (v: AccId) => { setTxt(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
 
 
   return (
     <main className="ob-root v30">
-      {/* морські шрифти наративу (повна кирилиця) */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&family=Neucha&family=Old+Standard+TT:ital@0;1&display=swap" />
+      {/* шрифт наративу: Press Start 2P (повна кирилиця) */}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" />
       <div className="ob-stage" style={{ background: '#16110d' }} key={runKey}>
 
       {(stage === 'intro' || stage === 'zoom') && (
@@ -113,7 +116,7 @@ export default function FlowV3() {
                   }}>{c.name}</button>
                 ))}
                 <div style={{ height: 4 }} />
-                {TXTS.map((v) => (
+                {ACCS.map((v) => (
                   <button key={v.id} onClick={() => restartTxt(v.id)} style={{
                     fontFamily: 'Unbounded', fontWeight: 800, fontSize: 8.5, textTransform: 'uppercase',
                     letterSpacing: '0.04em', padding: '6px 9px', borderRadius: 3, cursor: 'pointer',
