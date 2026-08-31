@@ -30,8 +30,15 @@ export default function BallDive({
 
     const SURF = 46;                    // світова Y поверхні
     const CAM0 = -(H - 64);             // старт камери: небо на весь екран, вода — смужка внизу
-    const T_DESC = 3.0;                 // перші 3с — камера опускається до води
-    const T_DROP = 2.4, T_HIT = T_DROP + 0.6;
+    const CAM_PAUSE = -140;             // зупинка: небо 2/3 кадру, вода — нижня третина
+    const T_DESC = 6.0;                 // повільне опускання камери (удвічі довше)
+    const T_DROP = 6.2, T_HIT = 7.4;    // мʼяч летить з верху екрана крізь усе небо
+    const T_DIVE = 7.6;                 // після сплеску камера пірнає за мʼячем
+    const camAt = (tt: number) => {     // аналітична позиція камери у фазі опускання
+      const p = Math.min(1, tt / T_DESC);
+      return CAM0 + (CAM_PAUSE - CAM0) * p * p * (3 - 2 * p);
+    };
+    const BALL_Y0 = CAM_PAUSE - 10;     // старт падіння: над верхнім краєм видимого кадру
     type P = { x: number; y: number; vx: number; vy: number; r: number; life: number; splash?: boolean };
     let parts: P[] = [];
     const plankFar = Array.from({ length: 40 }, (_, i) => ({ x: (i * 41) % W, y: SURF + 12 + ((i * 61) % 760), s: 0.3 + ((i * 17) % 7) / 30 }));
@@ -65,7 +72,7 @@ export default function BallDive({
       if (t >= T_DROP && t < T_HIT) {
         show = true;
         const p = (t - T_DROP) / (T_HIT - T_DROP);
-        ballW.y = -8 + p * p * (SURF + 8);
+        ballW.y = BALL_Y0 + p * (0.25 + 0.75 * p) * (SURF - BALL_Y0);
       } else if (t >= T_HIT) {
         show = true;
         const d = t - T_HIT;
@@ -76,16 +83,21 @@ export default function BallDive({
       }
 
       /* ---- камера (аналітична — стійка до фризів/тротлінгу) ----
-         3с опускання з неба до води → рух углиб */
+         повільне опускання → пауза (мʼяч летить) → занурення В ТЕМПІ МʼЯЧА */
       if (t < T_DESC) {
-        const p = t / T_DESC;
-        camY = CAM0 * (1 - p * p * (3 - 2 * p));           // smoothstep-опускання
+        camY = camAt(t);                                   // smoothstep-опускання
+      } else if (t < T_DIVE) {
+        camY = CAM_PAUSE;                                  // кадр стоїть: падіння + сплеск
       } else if (mode === 'follow') {
-        const target = Math.max(0, ballW.y - H * 0.34);    // мʼяч у верхній третині
-        const e = Math.min(1, (t - T_DESC) / 1.6);
-        camY = target * (e * e * (3 - 2 * e));
+        /* smoothstep-бленд до жорсткої зчіпки з мʼячем: на виході переходу
+           швидкість камери = швидкості мʼяча, далі рух точно однаковий */
+        const e = Math.min(1, (t - T_DIVE) / 2.2);
+        const E = e * e * (3 - 2 * e);
+        camY = CAM_PAUSE + (ballW.y - H * 0.34 - CAM_PAUSE) * E;
       } else {
-        camY = 11 * (t - T_DESC);                          // рівний dolly, повільніший за мʼяч
+        /* рівний dolly: плавний розгін до 13 px/s — асимптотичний темп мʼяча */
+        const td = t - T_DIVE;
+        camY = CAM_PAUSE + 13 * (td - 0.6 * (1 - Math.exp(-td / 0.6)));
       }
       const darkness = Math.min(0.85, Math.max(0, camY) / 330); // чим нижче — тим темніше
       /* далеке небо рухається повільніше за світ, поки камера над водою */
@@ -245,18 +257,30 @@ export default function BallDive({
 
       /* ---- текстовий шар ---- */
       if (wordRef.current) {
-        const w = (t - T_HIT) / 1.5;                       // слово-звук у момент удару
+        const w = (t - T_HIT) / 1.9;                       // слово-звук у момент удару
         if (w > 0 && w < 1) {
-          const appear = Math.min(1, w * 8);
-          const scale = 1 + (1 - appear) * 0.8;
-          const fade = w > 0.65 ? 1 - (w - 0.65) / 0.35 : 1;
-          wordRef.current.style.opacity = fade.toFixed(2);
-          wordRef.current.style.transform = `translate(-50%,-100%) scale(${scale.toFixed(3)})`;
+          wordRef.current.style.opacity = '1';
           wordRef.current.style.top = `${((SURF - camY) / H * 100 - 5).toFixed(1)}%`;
+          const gone = w > 0.7 ? (w - 0.7) / 0.3 : 0;      // фінальний розліт угору
+          const letters = wordRef.current.children;
+          for (let i = 0; i < letters.length; i++) {
+            const el = letters[i] as HTMLElement;
+            const li = (t - T_HIT - i * 0.07) / 0.3;       // пружинна поява по черзі
+            if (li <= 0) { el.style.opacity = '0'; continue; }
+            const p = Math.min(1, li);
+            const back = 1 + 2.7 * Math.pow(p - 1, 3) + 1.7 * Math.pow(p - 1, 2); // easeOutBack
+            const bob = p >= 1 ? Math.sin(t * 5.5 + i * 1.1) * 2.2 : 0;           // погойдування
+            const rot = p >= 1 ? Math.sin(t * 6 + i * 1.4) * 5 : (1 - back) * 24;
+            const y = (1 - back) * 34 + bob - gone * (26 + i * 5);
+            el.style.opacity = (Math.min(1, p * 2.5) * (1 - gone)).toFixed(2);
+            el.style.transform = `translateY(${y.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${(0.6 + back * 0.4).toFixed(3)})`;
+          }
         } else wordRef.current.style.opacity = '0';
       }
       if (lineRef.current) {                               // білий текст під час занурення
-        const a = Math.max(0, Math.min(1, (t - (T_HIT + 3.2)) / 1.6));
+        /* проявляється, коли горизонт піднявся достатньо високо — текст завжди на воді */
+        const hFrac = (SURF - camY) / H;
+        const a = Math.max(0, Math.min(1, (0.30 - hFrac) / 0.12));
         lineRef.current.style.opacity = a.toFixed(2);
       }
 
@@ -278,7 +302,11 @@ export default function BallDive({
         fontFamily: 'Unbounded', fontWeight: 900, fontSize: 'clamp(26px, 8.5vw, 42px)',
         textTransform: 'uppercase', letterSpacing: '0.02em', color: '#ffffff',
         textShadow: '3px 3px 0 rgba(8,28,42,0.5)',
-      }}>{hitWord}</div>
+      }}>
+        {hitWord.split('').map((ch, i) => (
+          <span key={i} style={{ display: 'inline-block', opacity: 0 }}>{ch}</span>
+        ))}
+      </div>
       <div ref={lineRef} style={{
         position: 'absolute', left: 0, right: 0, top: '42%', padding: '0 28px',
         opacity: 0, pointerEvents: 'none', textAlign: 'center',
