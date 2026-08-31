@@ -12,7 +12,7 @@ gsap.ticker.lagSmoothing(0);
  * Оверлей стартує суцільним кольором інтро (#16110d) — стик безшовний,
  * під ним уже живе BallDive; по завершенні onDone знімає оверлей.
  */
-export type TransKind = 'tiles' | 'iris' | 'strips' | 'wave' | 'glitch' | 'wave1' | 'wave2' | 'wave3';
+export type TransKind = 'tiles' | 'iris' | 'strips' | 'wave' | 'glitch' | 'wave1' | 'wave2' | 'wave3' | 'wavec';
 
 const DARK = '#16110d';
 
@@ -37,12 +37,101 @@ export default function Transition({ kind, onDone }: { kind: TransKind; onDone: 
     const root = rootRef.current;
     if (!root) return;
     const tl = gsap.timeline({ onComplete: () => doneRef.current() });
+    let rafW = 0;
     const el = (css: string) => {
       const d = document.createElement('div');
       d.style.cssText = 'position:absolute;' + css;
       root.append(d);
       return d;
     };
+
+    if (kind === 'wavec') {
+      /* КАНВАСНА хвиля: модель гострих гребенів (Герстнер-профіль
+         1−2|sin(φ/2)|^1.35 — гострий гребінь, полога западина) + друга
+         гармоніка + рябь; 3 шари з паралаксом, дизеринг межі, шумова піна,
+         бризки-частинки. Піксель-рендер 160×285, real-time. */
+      tl.kill();
+      const base = el(`inset:0;background:${DARK};`);
+      const cv = document.createElement('canvas');
+      cv.width = 160; cv.height = 285;
+      cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;display:block;';
+      root.append(cv);
+      const g = cv.getContext('2d');
+      if (!g) { doneRef.current(); return; }
+      const W = 160, HH = 285;
+      const RISE = 1.5, HOLD = 0.25, FALL = 1.35;
+      const ease = (x: number) => x * x * (3 - 2 * x);
+      const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+      const hash = (n: number) => { const s = Math.sin(n) * 43758.5453; return s - Math.floor(s); };
+      /* рівень шару: старт нижче екрана → повне покриття → назад униз */
+      const lvl = (tt: number, off: number, lag: number) => {
+        const up = ease(clamp01((tt - lag) / RISE));
+        const dn = ease(clamp01((tt - RISE - HOLD - lag * 0.6) / FALL));
+        return (HH + 30) - (HH + 72 - off) * (up - dn);
+      };
+      const LAYERS = [
+        { col: '#2f7292', A1: 5.0, A2: 2.4, k1: 0.100, k2: 0.23, w1: 1.6, w2: 2.6, off: -16, lag: 0 },
+        { col: '#1a4f6c', A1: 6.2, A2: 3.0, k1: 0.085, k2: 0.19, w1: -1.3, w2: 2.2, off: -8, lag: 0.14 },
+        { col: '#0d3346', A1: 7.6, A2: 3.4, k1: 0.075, k2: 0.17, w1: 1.1, w2: -1.9, off: 0, lag: 0.28 },
+      ];
+      type L = (typeof LAYERS)[number];
+      const surfL = (L: L, x: number, tt: number) => {
+        const phi = L.k1 * x - L.w1 * tt;
+        const peaked = 1 - 2 * Math.pow(Math.abs(Math.sin(phi / 2)), 1.35);
+        return lvl(tt, L.off, L.lag)
+          - (L.A1 * peaked + L.A2 * Math.sin(L.k2 * x + L.w2 * tt) + 1.2 * Math.sin(x * 0.45 - tt * 3.1));
+      };
+      type P = { x: number; y: number; vx: number; vy: number; life: number };
+      let parts: P[] = [];
+      let t0 = -1;
+      const F = LAYERS[2];
+      const frameW = (now: number) => {
+        if (t0 < 0) t0 = now;
+        const tt = (now - t0) / 1000;
+        g.clearRect(0, 0, W, HH);
+        /* шари: задній → передній, з дизерингом кромки */
+        for (const L of LAYERS) {
+          g.fillStyle = L.col;
+          for (let x = 0; x < W; x++) {
+            const yi = Math.round(surfL(L, x, tt));
+            if (yi < HH) {
+              g.fillRect(x, Math.max(0, yi), 1, HH - Math.max(0, yi));
+              if ((x + yi) % 2 === 0 && yi > 0) g.fillRect(x, yi - 1, 1, 1);
+            }
+          }
+        }
+        /* піна фронту: густіша й вища на гребенях, рвана (шум по x і часу) */
+        const seed = Math.floor(tt * 9);
+        for (let x = 0; x < W; x++) {
+          const sy = Math.round(surfL(F, x, tt));
+          if (sy >= HH + 4 || sy < -8) continue;
+          const n = hash(x * 12.9898 + seed * 78.233);
+          const crest = Math.pow(Math.abs(Math.cos((F.k1 * x - F.w1 * tt) / 2)), 3);
+          const th = 1 + Math.round(crest * 2 + n * 1.4);
+          g.fillStyle = 'rgba(238,248,255,0.95)';
+          g.fillRect(x, sy - (n > 0.5 ? 1 : 0), 1, th);
+          if (crest > 0.7 && n > 0.78) g.fillRect(x, sy - 2 - Math.round(n * 2), 1, 1);
+        }
+        /* бризки: народжуються на гребенях у фазі підйому */
+        if (tt < RISE + HOLD + 0.3 && Math.random() < 0.55) {
+          const x = Math.random() * W;
+          if (Math.abs(Math.sin((F.k1 * x - F.w1 * tt) / 2)) < 0.25) {
+            parts.push({ x, y: surfL(F, x, tt), vx: (Math.random() - 0.5) * 1.6, vy: -(1.3 + Math.random() * 1.9), life: 1 });
+          }
+        }
+        parts = parts.filter((p) => p.life > 0);
+        for (const p of parts) {
+          p.vy += 0.12; p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+          g.fillStyle = `rgba(238,248,255,${(0.9 * p.life).toFixed(2)})`;
+          g.fillRect(Math.round(p.x), Math.round(p.y), p.life > 0.6 ? 2 : 1, 1);
+        }
+        if (tt > RISE + 0.4) base.style.opacity = '0';
+        if (tt >= RISE + HOLD + FALL + 0.45) { doneRef.current(); return; }
+        rafW = requestAnimationFrame(frameW);
+      };
+      rafW = requestAnimationFrame(frameW);
+      return () => { cancelAnimationFrame(rafW); root.replaceChildren(); };
+    }
 
     if (kind === 'tiles') {
       /* П1: екран розсипається на піксель-тайли (stagger from random) */

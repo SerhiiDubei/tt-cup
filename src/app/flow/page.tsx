@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Prologue from '@/components/intro/Prologue';
-import BallDive from './BallDive';
-import Transition, { type TransKind } from './Transition';
+import BallDive, { type NarrLine } from './BallDive';
+import Transition from './Transition';
 import '../v2/v2.css';
 import '../onb/onb.css';
 
@@ -50,18 +50,61 @@ const ACCS = [
 ];
 type AccId = (typeof ACCS)[number]['id'];
 
-/* хвиля зафіксована як транзішн; 3 покращені варіанти (GSAP timeline) */
-const TRANS = [
-  { id: 'wave1' as const, name: 'W1 · шторм-шари' },
-  { id: 'wave2' as const, name: 'W2 · жива хвиля' },
-  { id: 'wave3' as const, name: 'W3 · подвійний прибій' },
+/* наратив: внутрішня рефлексія про кінець літа — 3 настрої (tone of voice) */
+const MOODS = [
+  { id: 'bradbury' as const, name: 'Н1 · кульбабове (Бредбері)' },
+  { id: 'murakami' as const, name: 'Н2 · тихе (Муракамі)' },
+  { id: 'zhadan' as const, name: 'Н3 · дворове (Жадан)' },
 ];
+type MoodId = (typeof MOODS)[number]['id'];
+
+const MOOD_LINES: Record<MoodId, NarrLine[]> = {
+  /* Н1: тепла ностальгія дитинства, сенсорні деталі — «Кульбабове вино» */
+  bradbury: [
+    { t: '~Літо закінчилось якось раптом.', d: 0 },
+    { t: 'Ще вчора воно було всюди —', d: 2.6 },
+    { t: '~на розпеченому асфальті,', d: 1.9 },
+    { t: '~у липких пальцях від морозива,', d: 1.9 },
+    { t: 'у вечорах, яким не було кінця.', d: 2.6 },
+    { t: 'А сьогодні — *тихо*.', d: 3.2 },
+    { t: '~Тільки десь у дворі', d: 2.8 },
+    { t: 'ще стукає мʼячик об стіл.', d: 2.2 },
+    { t: '!*Останній звук літа.*', d: 3.6 },
+    { t: '!І я йду на нього.', d: 2.8 },
+  ],
+  /* Н2: рівна відсторонена меланхолія, проста точність — Муракамі */
+  murakami: [
+    { t: '~Літо пішло без попередження.', d: 0 },
+    { t: 'Одного ранку повітря стало іншим.', d: 2.8 },
+    { t: '~Я довго дивився у вікно.', d: 2.4 },
+    { t: 'Куди дівається літо, коли закінчується?', d: 3.0 },
+    { t: '~Можливо, воно опускається на дно.', d: 2.8 },
+    { t: 'Разом з усім, що ми *не встигли*.', d: 2.6 },
+    { t: '~Але на дні щось є.', d: 3.2 },
+    { t: 'Щось чекає, поки я пірну.', d: 2.2 },
+    { t: '!*Один мʼяч. Один стіл.*', d: 3.6 },
+    { t: '!Останній матч літа.', d: 2.8 },
+  ],
+  /* Н3: українська дворова поетика, щем і теплота — Жадан */
+  zhadan: [
+    { t: '~Ось і все, літо.', d: 0 },
+    { t: 'Ти пахло нагрітим бетоном і дощем.', d: 2.8 },
+    { t: '~Ти було довше за наші плани.', d: 2.4 },
+    { t: 'І коротше, ніж ми домовлялись.', d: 2.4 },
+    { t: '~Двори порожніють, як кишені.', d: 3.0 },
+    { t: 'Але щось лишається *завжди*.', d: 2.6 },
+    { t: '~Білий мʼяч на дні вечора.', d: 3.0 },
+    { t: 'Стіл, що памʼятає наші поразки.', d: 2.4 },
+    { t: '!*Вересень. Останній сет.*', d: 3.6 },
+    { t: '!Заходь — зіграємо.', d: 2.8 },
+  ],
+};
 
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
   const [cam, setCam] = useState<'follow' | 'dolly'>('follow');
   const [txt, setTxt] = useState<AccId>('caps');
-  const [tr, setTr] = useState<TransKind>('wave1');
+  const [mood, setMood] = useState<MoodId>('bradbury');
   const [stage, setStage] = useState<'intro' | 'trans' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
@@ -88,7 +131,7 @@ export default function FlowV3() {
   const restartWith = (v: number) => { setVr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
   const restartCam = (c: 'follow' | 'dolly') => { setCam(c); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
   const restartTxt = (v: AccId) => { setTxt(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
-  const restartTr = (v: TransKind) => { setTr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const restartMood = (v: MoodId) => { setMood(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
 
 
   return (
@@ -106,9 +149,9 @@ export default function FlowV3() {
       {(stage === 'trans' || stage === 'dive' || stage === 'end') && (
         <>
           <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
-            <BallDive key={cam + txt} mode={cam} variant={txt} onLinesDone={() => setShowNext(true)} />
+            <BallDive key={cam + txt + mood} mode={cam} variant={txt} lines={MOOD_LINES[mood]} onLinesDone={() => setShowNext(true)} />
           </div>
-          {stage === 'trans' && <Transition kind={tr} onDone={() => setStage('dive')} />}
+          {stage === 'trans' && <Transition kind="wavec" onDone={() => setStage('dive')} />}
           {stage === 'dive' && (
             <>
               {/* перемикачі варіацій: вибір = повний рестарт з інтро */}
@@ -133,13 +176,13 @@ export default function FlowV3() {
                   }}>{v.name}</button>
                 ))}
                 <div style={{ height: 4 }} />
-                {TRANS.map((v) => (
-                  <button key={v.id} onClick={() => restartTr(v.id)} style={{
+                {MOODS.map((v) => (
+                  <button key={v.id} onClick={() => restartMood(v.id)} style={{
                     fontFamily: 'Unbounded', fontWeight: 800, fontSize: 8.5, textTransform: 'uppercase',
                     letterSpacing: '0.04em', padding: '6px 9px', borderRadius: 3, cursor: 'pointer',
                     border: '1px solid rgba(255,255,255,0.25)',
-                    background: tr === v.id ? 'rgba(255,140,102,0.92)' : 'rgba(10,24,34,0.55)',
-                    color: tr === v.id ? '#2a130a' : 'rgba(255,248,236,0.85)',
+                    background: mood === v.id ? 'rgba(255,140,102,0.92)' : 'rgba(10,24,34,0.55)',
+                    color: mood === v.id ? '#2a130a' : 'rgba(255,248,236,0.85)',
                   }}>{v.name}</button>
                 ))}
               </div>
