@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Prologue from '@/components/intro/Prologue';
+import BallDive from './BallDive';
 import '../v2/v2.css';
 import '../onb/onb.css';
 
@@ -26,6 +27,15 @@ function whoosh() {
   } catch { /* тиша */ }
 }
 
+/* Шматок 2 «Занурення»: реф — людина пірнає під воду; у нас — мʼяч.
+   P1/P2 процедурні (canvas), R1/R2 — відео kling (Replicate). */
+const DIVE = [
+  { id: 'P1', name: 'Процедурна · камера статична', kind: 'proc', mode: 'locked' as const },
+  { id: 'P2', name: 'Процедурна · камера пливе за мʼячем', kind: 'proc', mode: 'follow' as const },
+  { id: 'R1', name: 'Відео · воронка з поверхні', kind: 'video', src: '/onb/deep/ball-uw-1.mp4' },
+  { id: 'R2', name: 'Відео · глибина і промені', kind: 'video', src: '/onb/deep/ball-uw-2.mp4' },
+];
+
 const DEEP = [
   { id: 1, name: 'Небо', img: '/onb/deep/deepx-1.jpg' },
   { id: 2, name: 'Двір згори', img: '/onb/deep/deepx-2.jpg' },
@@ -35,7 +45,8 @@ const DEEP = [
 
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
-  const [stage, setStage] = useState<'intro' | 'zoom' | 'reveal' | 'end'>('intro');
+  const [dv, setDv] = useState('P1');
+  const [stage, setStage] = useState<'intro' | 'zoom' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
   const revealRef = useRef<HTMLDivElement>(null);
@@ -54,6 +65,8 @@ export default function FlowV3() {
 
   /* вибір варіанта = ПОВНИЙ рестарт з інтро */
   const restartWith = (v: number) => { setVr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const restartDive = (id: string) => { setDv(id); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const dive = DIVE.find((d) => d.id === dv)!;
 
   return (
     <main className="ob-root v30"><div className="ob-stage" style={{ background: '#16110d' }} key={runKey}>
@@ -73,7 +86,7 @@ export default function FlowV3() {
         </div>
       )}
 
-      {(stage === 'reveal' || stage === 'end') && (
+      {(stage === 'reveal' || stage === 'dive' || stage === 'end') && (
         <>
           {/* перемикач варіантів: рестарт з інтро */}
           <div style={{ position: 'absolute', zIndex: 9, top: 'calc(12px + env(safe-area-inset-top))', right: 12, display: 'flex', gap: 5 }}>
@@ -115,8 +128,31 @@ export default function FlowV3() {
 
           {stage === 'reveal' && showNext && (
             <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>
-              <button className="v30-btn v30-in" onClick={() => setStage('end')}>далі ▸</button>
+              <button className="v30-btn v30-in" onClick={() => setStage('dive')}>далі ▸</button>
             </div>
+          )}
+
+          {stage === 'dive' && (
+            <>
+              <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
+                {dive.kind === 'proc'
+                  ? <BallDive mode={dive.mode!} />
+                  : <video src={dive.src} autoPlay loop muted playsInline
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+              </div>
+              <div style={{ position: 'absolute', zIndex: 9, top: 'calc(12px + env(safe-area-inset-top))', left: 12, display: 'flex', gap: 5 }}>
+                {DIVE.map((d) => (
+                  <button key={d.id} onClick={() => restartDive(d.id)} style={{
+                    font: "800 10px 'Unbounded'", padding: '8px 9px', borderRadius: 9, cursor: 'pointer',
+                    border: '2.5px solid #16110d',
+                    background: d.id === dv ? '#00cfc1' : 'rgba(251,241,221,0.85)',
+                  }}>{d.id}</button>
+                ))}
+              </div>
+              <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>
+                <button className="v30-btn v30-in" onClick={() => setStage('end')}>далі ▸</button>
+              </div>
+            </>
           )}
 
           {stage === 'end' && (
@@ -133,10 +169,18 @@ export default function FlowV3() {
                   Кожна кнопка нижче програє флоу З ПОЧАТКУ (інтро → транзішен → кадр).
                 </p>
                 <div style={{ display: 'grid', gap: 7 }}>
+                  <div style={{ fontFamily: 'Unbounded', fontSize: 11, color: '#ffc619', textAlign: 'left' }}>КАДР 1</div>
                   {DEEP.map((d) => (
-                    <button key={d.id} className="v30-btn" style={{ opacity: d.id === vr ? 0.55 : 1, fontSize: 12 }}
+                    <button key={d.id} className="v30-btn" style={{ opacity: d.id === vr ? 0.55 : 1, fontSize: 11 }}
                       onClick={() => restartWith(d.id)}>
                       {d.id === vr ? '↻' : '▶'} {d.id} · {d.name}
+                    </button>
+                  ))}
+                  <div style={{ fontFamily: 'Unbounded', fontSize: 11, color: '#00cfc1', textAlign: 'left', marginTop: 6 }}>ЗАНУРЕННЯ МʼЯЧА</div>
+                  {DIVE.map((d) => (
+                    <button key={d.id} className="v30-btn" style={{ opacity: d.id === dv ? 0.55 : 1, fontSize: 11 }}
+                      onClick={() => restartDive(d.id)}>
+                      {d.id === dv ? '↻' : '▶'} {d.id} · {d.name}
                     </button>
                   ))}
                 </div>
