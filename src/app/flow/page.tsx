@@ -99,7 +99,7 @@ export default function FlowV3() {
           {stage === 'dive' && (
             <>
               <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
-                <BallDive key={cam + txt} mode={cam} variant={txt} />
+                <BallDive key={cam + txt} mode={cam} variant={txt} onLinesDone={() => setShowNext(true)} />
               </div>
               {/* перемикачі варіацій: вибір = повний рестарт з інтро */}
               <div style={{ position: 'absolute', zIndex: 6, top: 'calc(10px + env(safe-area-inset-top))', right: 10, display: 'grid', gap: 5, justifyItems: 'end' }}>
@@ -123,9 +123,11 @@ export default function FlowV3() {
                   }}>{v.name}</button>
                 ))}
               </div>
-              <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>
-                <button className="v30-btn v30-in" onClick={() => setStage('end')}>далі ▸</button>
-              </div>
+              {showNext && (
+                <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>
+                  <button className="v30-btn v30-in" onClick={() => setStage('end')}>далі ▸</button>
+                </div>
+              )}
             </>
           )}
 

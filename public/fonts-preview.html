@@ -1,0 +1,214 @@
+<title>Шрифт глибини</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Golos+Text:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital@0;1&family=EB+Garamond:ital@0;1&family=Cormorant+Garamond&family=Cormorant+Infant&family=Playfair+Display:ital@0;1&family=Literata:ital@0;1&family=Lora:ital@0;1&family=PT+Serif:ital@0;1&family=Noto+Serif&family=Source+Serif+4&family=IBM+Plex+Serif&family=Vollkorn&family=Alegreya:ital@0;1&family=Bitter&family=Piazzolla&family=Prata&family=Alice&family=Oranienbaum&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Yeseva+One&family=Philosopher&family=Poiret+One&family=Tenor+Sans&family=El+Messiri&family=Neucha&family=Marck+Script&family=Caveat&family=Bad+Script&family=Amatic+SC&family=Pacifico&family=Lobster&family=Shantell+Sans&family=Underdog&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Handjet:wght@500&family=Tektur&family=Russo+One&family=Play&family=Golos+Text&family=Inter&family=Manrope&family=Rubik&family=Montserrat&family=Jost&family=Comfortaa&family=Raleway&family=Fira+Sans&family=Cuprum&family=Yanone+Kaffeesatz&family=Podkova&display=swap">
+<style>
+  :root {
+    --ground: #061620;
+    --panel: #0b2836;
+    --deep: #04121d;
+    --ink: #eaf6fb;
+    --muted: #7fa8ba;
+    --line: #12384a;
+    --accent: #ffc619;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'Golos Text', system-ui, sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header { margin-bottom: 14px; }
+  .kicker {
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  h1 {
+    font-family: 'Unbounded', sans-serif; font-weight: 800;
+    font-size: clamp(26px, 4.5vw, 44px); text-transform: uppercase;
+    line-height: 1.05; text-wrap: balance;
+  }
+  .lede { color: var(--muted); max-width: 62ch; margin-top: 12px; font-size: 15px; line-height: 1.65; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .toolbar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin: 22px 0 8px; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 6px; background: rgba(11,40,54,0.5);
+  }
+  .toolbar label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+  .toolbar input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+  .toolbar .hint { font-size: 12px; color: var(--muted); opacity: 0.75; margin-left: auto; }
+
+  h2 {
+    font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent);
+    margin: 40px 0 4px; display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .count { font-family: 'Golos Text', sans-serif; font-weight: 400; color: var(--muted); font-size: 12px; letter-spacing: 0; }
+  .cat-note { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 16px; }
+
+  .card {
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+    background: var(--panel); cursor: pointer; position: relative;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .card:hover { transform: translateY(-2px); border-color: #1e5a74; }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+
+  /* мініатюра кадру глибини */
+  .frame {
+    position: relative; height: 236px; padding: 46px 16px 0; text-align: center;
+    background:
+      radial-gradient(140px 90px at 22% -8%, rgba(150,220,250,0.14), transparent 70%),
+      radial-gradient(120px 200px at 70% 0%, rgba(140,210,240,0.07), transparent 75%),
+      linear-gradient(180deg, #0d3346 0%, #082636 42%, #04141f 78%, #030d16 100%);
+    box-shadow: inset 0 -50px 60px -30px rgba(0, 4, 10, 0.75);
+    overflow: hidden;
+  }
+  /* мʼяч + ореол */
+  .frame::before {
+    content: ''; position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #f2fafd; box-shadow: 0 0 10px 3px rgba(200, 235, 250, 0.35);
+  }
+  /* бульбашки над мʼячем + планктон */
+  .frame::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 51% 6%, rgba(228,249,255,0.8), transparent 100%),
+      radial-gradient(1px 1px at 48% 11%, rgba(228,249,255,0.55), transparent 100%),
+      radial-gradient(1.5px 1.5px at 53% 15%, rgba(228,249,255,0.4), transparent 100%),
+      radial-gradient(1px 1px at 12% 55%, rgba(200,232,246,0.35), transparent 100%),
+      radial-gradient(1px 1px at 85% 40%, rgba(200,232,246,0.3), transparent 100%),
+      radial-gradient(1px 1px at 30% 80%, rgba(200,232,246,0.25), transparent 100%);
+  }
+  .frame p {
+    position: relative; z-index: 1; color: rgba(255,255,255,0.97);
+    text-shadow: 0 2px 14px rgba(0,0,0,0.7); font-size: 16px; line-height: 2.1;
+  }
+  .frame .tester {
+    position: absolute; z-index: 1; left: 0; right: 0; bottom: 10px;
+    font-size: 11px; color: rgba(255,255,255,0.5); text-shadow: none; line-height: 1.4;
+  }
+  .italic-mode .frame p { font-style: italic; }
+
+  .meta {
+    display: flex; align-items: baseline; gap: 8px; padding: 10px 12px;
+    border-top: 1px solid var(--line); background: rgba(4, 18, 29, 0.6);
+  }
+  .num { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .name { font-weight: 600; font-size: 14px; }
+  .copied {
+    margin-left: auto; font-size: 11px; color: var(--accent); opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .card.done .copied { opacity: 1; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">DRUID BATTLE CUP · кадр 2 «Глибина»</div>
+    <h1>Шрифт глибини</h1>
+    <p class="lede">50 шрифтів із повною кирилицею — кожен на статичному кадрі занурення, з рядками
+    нашого наративу. Дрібний рядок унизу кадру — тестер українських літер: якщо там
+    <b>квадратики або чужі форми</b> — шрифт не тягне мову, минаємо. Клік по картці —
+    <b>копіює назву шрифту</b>: просто скажи мені номер або назву.</p>
+  </header>
+
+  <div class="toolbar">
+    <label><input type="checkbox" id="it"> показати курсивом (як у варіанті «журнал»)</label>
+    <span class="hint">частина шрифтів без справжнього курсиву — браузер нахиляє сам</span>
+  </div>
+
+  <div id="cats"></div>
+</div>
+
+<script>
+  const LINES = ['Але на дні кожної тиші…', '…щось чекає.', '12 вересня все вирішиться.'];
+  const TESTER = 'Їжак ґавʼя єнот Щастя Юрій — 0123456789';
+  const CATS = [
+    ['Класика · серіф', 'Бортовий журнал, стара книга, морська література.', [
+      ['Old Standard TT'], ['EB Garamond'], ['Cormorant Garamond'], ['Cormorant Infant'],
+      ['Playfair Display'], ['Literata'], ['Lora'], ['PT Serif'], ['Noto Serif'],
+      ['Source Serif 4'], ['IBM Plex Serif'], ['Vollkorn'], ['Alegreya'], ['Bitter'],
+      ['Piazzolla'], ['Prata'], ['Alice'], ['Oranienbaum'],
+    ]],
+    ['Дисплей-класика', 'Характерні заголовкові — з норовом, але читні.', [
+      ['Forum'], ['Yeseva One'], ['Philosopher'], ['Poiret One'], ['Tenor Sans'], ['El Messiri'],
+    ]],
+    ['Рукописні', 'Жива рука — лист, щоденник, записка.', [
+      ['Neucha'], ['Marck Script', 19], ['Caveat', 20], ['Bad Script', 18], ['Amatic SC', 21],
+      ['Pacifico', 17], ['Lobster', 17], ['Shantell Sans'], ['Underdog'],
+    ]],
+    ['Піксель і техно', 'Під піксельний стиль сцени.', [
+      ['Press Start 2P', 10], ['Handjet', 20], ['Tektur'], ['Russo One'], ['Play'],
+    ]],
+    ['Гротески · сучасні', 'Нейтральна база — якщо хочеться тихого тексту.', [
+      ['Golos Text'], ['Inter'], ['Manrope'], ['Rubik'], ['Montserrat'], ['Jost'],
+      ['Comfortaa'], ['Raleway'], ['Fira Sans'], ['Cuprum'], ['Yanone Kaffeesatz', 19], ['Podkova'],
+    ]],
+  ];
+
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+
+  let n = 0;
+  const root = document.getElementById('cats');
+  for (const [cat, note, fonts] of CATS) {
+    const h = el('h2', null, cat + ' ');
+    h.append(el('span', 'count', String(fonts.length)));
+    const grid = el('div', 'grid');
+    for (const [name, size] of fonts) {
+      n++;
+      const card = el('div', 'card');
+      card.tabIndex = 0;
+
+      const frame = el('div', 'frame');
+      const p = el('p');
+      p.style.fontFamily = "'" + name + "'";
+      if (size) p.style.fontSize = size + 'px';
+      LINES.forEach((ln, i) => {
+        if (i) p.append(document.createElement('br'));
+        p.append(ln);
+      });
+      const tester = el('div', 'tester', TESTER);
+      tester.style.fontFamily = "'" + name + "'";
+      frame.append(p, tester);
+
+      const meta = el('div', 'meta');
+      meta.append(
+        el('span', 'num', String(n).padStart(2, '0')),
+        el('span', 'name', name),
+        el('span', 'copied', 'скопійовано ✓'),
+      );
+
+      card.append(frame, meta);
+      const pick = () => {
+        if (navigator.clipboard) navigator.clipboard.writeText(name);
+        document.querySelectorAll('.card.done').forEach((c) => c.classList.remove('done'));
+        card.classList.add('done');
+      };
+      card.addEventListener('click', pick);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+      });
+      grid.append(card);
+    }
+    root.append(h, el('p', 'cat-note', note), grid);
+  }
+  document.getElementById('it').addEventListener('change', (e) => {
+    document.body.classList.toggle('italic-mode', e.target.checked);
+  });
+</script>

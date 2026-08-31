@@ -37,10 +37,13 @@ export default function BallDive({
   variant = 'log',
   hitWord = 'бульк!',
   lines = DEFAULT_LINES,
-}: { mode?: 'follow' | 'dolly'; variant?: TextVariant; hitWord?: string; lines?: string[] }) {
+  onLinesDone,
+}: { mode?: 'follow' | 'dolly'; variant?: TextVariant; hitWord?: string; lines?: string[]; onLinesDone?: () => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
+  const onDoneRef = useRef(onLinesDone);
+  onDoneRef.current = onLinesDone;
 
   useEffect(() => {
     const cv = ref.current;
@@ -91,6 +94,7 @@ export default function BallDive({
     const LINE_DT = 2.6, ROW_H = 38;
     let lineStart = -1;                 // момент появи першого рядка (фіксується раз)
     let offsetF = 0;                    // плавний зсув стека вгору
+    let doneFired = false;              // стрічка дограла → сигнал нагору (показ кнопки)
 
     const surfWave = (x: number) =>
       SURF + Math.sin(x * 0.22 + t * 2.1) * 1.4 + Math.sin(x * 0.07 - t * 1.3) * 1.0 + Math.sin(x * 0.45 + t * 3.2) * 0.4;
@@ -376,6 +380,10 @@ export default function BallDive({
         /* стартує, коли горизонт піднявся достатньо — текст завжди на воді */
         if (lineStart < 0 && t > T_DIVE && (SURF - camY) / H < 0.30) lineStart = t;
         const shown = lineStart < 0 ? 0 : Math.min(lines.length, 1 + Math.floor((t - lineStart) / LINE_DT));
+        if (!doneFired && lineStart >= 0 && t > lineStart + (lines.length - 1) * LINE_DT + 1.2) {
+          doneFired = true;
+          onDoneRef.current?.();
+        }
         const hiddenN = Math.max(0, shown - 4);
         offsetF += (hiddenN - offsetF) * Math.min(1, dt * 3.5);
         const drift = variant === 'deep' && lineStart >= 0 ? (t - lineStart) * 2 : 0;   // повільне спливання
