@@ -34,8 +34,14 @@ const DEEP = [
   { id: 4, name: 'Двоє біля столу', img: '/onb/deep/deepx-4.jpg' },
 ];
 
+const CAMS = [
+  { id: 'follow' as const, name: 'V1 · камера тримає мʼяч' },
+  { id: 'dolly' as const, name: 'V2 · рівний кіно-рух' },
+];
+
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
+  const [cam, setCam] = useState<'follow' | 'dolly'>('follow');
   const [stage, setStage] = useState<'intro' | 'zoom' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
@@ -55,6 +61,7 @@ export default function FlowV3() {
 
   /* вибір варіанта = ПОВНИЙ рестарт з інтро */
   const restartWith = (v: number) => { setVr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const restartCam = (c: 'follow' | 'dolly') => { setCam(c); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
 
 
   return (
@@ -80,7 +87,19 @@ export default function FlowV3() {
           {stage === 'dive' && (
             <>
               <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
-                <BallDive />
+                <BallDive key={cam} mode={cam} />
+              </div>
+              {/* перемикач варіацій камери: вибір = повний рестарт з інтро */}
+              <div style={{ position: 'absolute', zIndex: 6, top: 'calc(10px + env(safe-area-inset-top))', right: 10, display: 'grid', gap: 5, justifyItems: 'end' }}>
+                {CAMS.map((c) => (
+                  <button key={c.id} onClick={() => restartCam(c.id)} style={{
+                    fontFamily: 'Unbounded', fontWeight: 800, fontSize: 8.5, textTransform: 'uppercase',
+                    letterSpacing: '0.04em', padding: '6px 9px', borderRadius: 3, cursor: 'pointer',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    background: cam === c.id ? 'rgba(255,198,25,0.92)' : 'rgba(10,24,34,0.55)',
+                    color: cam === c.id ? '#16110d' : 'rgba(255,248,236,0.85)',
+                  }}>{c.name}</button>
+                ))}
               </div>
               <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>
                 <button className="v30-btn v30-in" onClick={() => setStage('end')}>далі ▸</button>

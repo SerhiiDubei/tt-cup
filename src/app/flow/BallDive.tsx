@@ -3,14 +3,21 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * КАДР 2 · «Мʼяч падає у воду» — процедурна генерація, візуал v2.
- * Леєри: небо (сонце+хмарка+птахи) → тонкий багатошаровий горизонт із
- * сонячною доріжкою і піною → вода: мʼякі god-rays із диханням, каустична
- * СІТКА плям, 2 паралакс-шари частинок, глибинний градієнт у темно-синє,
- * віньєтка дна → мʼяч: падіння → сплеск → занурення, ДУЖЕ повільне внизу.
+ * КАДР 2 · «Мʼяч падає у воду» — процедурна генерація, візуал v3 + КАМЕРА.
+ * Перші ~3с камера статична (небо, горизонт, падіння, сплеск), далі їде
+ * вниз разом із мʼячем; чим глибше — тим темніше, поверхня і промені
+ * лишаються вгорі й виходять із кадру.
+ * mode 'follow' (V1): камера мʼяко тримає мʼяч у верхній третині.
+ * mode 'dolly'  (V2): рівномірний кіно-рух; мʼяч повільно сповзає нижче.
  */
-export default function BallDive() {
+export default function BallDive({
+  mode = 'follow',
+  hitWord = 'бульк!',
+  line = 'Все почалося з одного мʼяча…',
+}: { mode?: 'follow' | 'dolly'; hitWord?: string; line?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const wordRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const cv = ref.current;
@@ -21,213 +28,263 @@ export default function BallDive() {
     if (!c2) return;
     const ctx: CanvasRenderingContext2D = c2;
 
-    const SKY = 46, T_DROP = 1.6, T_HIT = T_DROP + 0.5;
+    const SURF = 46;                    // світова Y поверхні
+    const CAM0 = -(H - 64);             // старт камери: небо на весь екран, вода — смужка внизу
+    const T_DESC = 3.0;                 // перші 3с — камера опускається до води
+    const T_DROP = 2.4, T_HIT = T_DROP + 0.6;
     type P = { x: number; y: number; vx: number; vy: number; r: number; life: number; splash?: boolean };
     let parts: P[] = [];
-    const plankFar = Array.from({ length: 22 }, (_, i) => ({ x: (i * 41) % W, y: SKY + 10 + ((i * 61) % (H - SKY - 16)), s: 0.3 + ((i * 17) % 7) / 30 }));
-    const plankNear = Array.from({ length: 14 }, (_, i) => ({ x: (i * 53) % W, y: SKY + 20 + ((i * 47) % (H - SKY - 30)), s: 0.9 + ((i * 23) % 8) / 14 }));
+    const plankFar = Array.from({ length: 40 }, (_, i) => ({ x: (i * 41) % W, y: SURF + 12 + ((i * 61) % 760), s: 0.3 + ((i * 17) % 7) / 30 }));
+    const plankNear = Array.from({ length: 26 }, (_, i) => ({ x: (i * 53) % W, y: SURF + 22 + ((i * 47) % 760), s: 0.9 + ((i * 23) % 8) / 14 }));
     let t = 0;
+    let t0 = -1, tPrev = 0;             // реальний час: не залежить від фреймрейту (120Hz/фон)
     let raf = 0;
-    const surfY = (x: number) =>
-      SKY + Math.sin(x * 0.22 + t * 2.1) * 1.4 + Math.sin(x * 0.07 - t * 1.3) * 1.0 + Math.sin(x * 0.45 + t * 3.2) * 0.4;
+    let camY = CAM0;
+    let ballW = { x: W / 2, y: -20 };   // світові координати мʼяча
 
-    function frame() {
-      t += 1 / 60;
+    const surfWave = (x: number) =>
+      SURF + Math.sin(x * 0.22 + t * 2.1) * 1.4 + Math.sin(x * 0.07 - t * 1.3) * 1.0 + Math.sin(x * 0.45 + t * 3.2) * 0.4;
 
-      /* ---- НЕБО: насичене вгорі → світле біля горизонту (атмосферна перспектива) ---- */
-      for (let y = 0; y < SKY + 4; y += 1) {
-        const k = Math.min(1, y / SKY);
-        const kk = Math.pow(k, 1.4);
-        ctx.fillStyle = `rgb(${Math.round(96 + 104 * kk)},${Math.round(170 + 66 * kk)},${Math.round(215 + 33 * kk)})`;
+    /* колір води від СВІТОВОЇ глибини: бірюза → темно-синє → майже чорне */
+    function waterRGB(wy: number): [number, number, number] {
+      const d = Math.max(0, wy - SURF);
+      const k = Math.min(1, d / 620);
+      const kk = k * k;
+      return [Math.round(42 - 40 * kk), Math.round(150 - 138 * kk), Math.round(188 - 168 * kk)];
+    }
+
+    function frame(now: number) {
+      if (t0 < 0) { t0 = now; tPrev = now; }
+      t = (now - t0) / 1000;
+      const dt = Math.min(0.1, (now - tPrev) / 1000);
+      tPrev = now;
+      const fk = dt * 60;               // коефіцієнт «кадрів» для frame-based величин
+
+      /* ---- мʼяч у світі ---- */
+      let show = false, ballR = 4.5;
+      if (t >= T_DROP && t < T_HIT) {
+        show = true;
+        const p = (t - T_DROP) / (T_HIT - T_DROP);
+        ballW.y = -8 + p * p * (SURF + 8);
+      } else if (t >= T_HIT) {
+        show = true;
+        const d = t - T_HIT;
+        /* швидкий вхід → постійне повільне тонення (світ нескінченний) */
+        ballW.y = SURF + 46 * (1 - Math.exp(-d / 1.6)) + d * 13;
+        ballW.x = W / 2 + Math.sin(d * 0.9) * 5;
+        ballR = 4.5 - Math.min(1.6, d * 0.12);
+      }
+
+      /* ---- камера (аналітична — стійка до фризів/тротлінгу) ----
+         3с опускання з неба до води → рух углиб */
+      if (t < T_DESC) {
+        const p = t / T_DESC;
+        camY = CAM0 * (1 - p * p * (3 - 2 * p));           // smoothstep-опускання
+      } else if (mode === 'follow') {
+        const target = Math.max(0, ballW.y - H * 0.34);    // мʼяч у верхній третині
+        const e = Math.min(1, (t - T_DESC) / 1.6);
+        camY = target * (e * e * (3 - 2 * e));
+      } else {
+        camY = 11 * (t - T_DESC);                          // рівний dolly, повільніший за мʼяч
+      }
+      const darkness = Math.min(0.85, Math.max(0, camY) / 330); // чим нижче — тим темніше
+      /* далеке небо рухається повільніше за світ, поки камера над водою */
+      const par = (f: number) => (camY < 0 ? camY * f : camY);
+
+      /* ---- фон: небо (якщо в кадрі) + вода зі світовим градієнтом ---- */
+      const horizonS = SURF - camY;                       // екранна Y горизонту
+      for (let y = 0; y < H; y += 1) {
+        const wy = y + camY;
+        if (wy < SURF - 4) {
+          const k = Math.min(1, Math.max(0, (wy - CAM0) / (SURF - CAM0)));
+          const kk = Math.pow(k, 1.4);
+          ctx.fillStyle = `rgb(${Math.round(96 + 104 * kk)},${Math.round(170 + 66 * kk)},${Math.round(215 + 33 * kk)})`;
+        } else {
+          const [r, g, b] = waterRGB(wy);
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+        }
         ctx.fillRect(0, y, W, 1);
       }
-      /* мʼяке сонце: багатошаровий ореол + делікатний глер */
-      const sunX = 28, sunY = 13;
-      for (const [rr, aa] of [[13, 0.05], [10, 0.09], [8, 0.16], [6.5, 0.3]] as [number, number][]) {
-        ctx.fillStyle = `rgba(255,244,208,${aa})`;
-        ctx.beginPath(); ctx.arc(sunX, sunY, rr, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.arc(sunX, sunY, 4.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fffdf2'; ctx.beginPath(); ctx.arc(sunX - 1, sunY - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-      const gl = 0.10 + 0.05 * Math.sin(t * 1.7);
-      ctx.fillStyle = `rgba(255,248,220,${gl})`;
-      ctx.fillRect(sunX - 12, sunY, 24, 1); ctx.fillRect(sunX, sunY - 12, 1, 24);
-      /* хмарка */
-      const cx = ((t * 2.0) % (W + 60)) - 30;
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fillRect(Math.round(cx), 8, 26, 4); ctx.fillRect(Math.round(cx) + 5, 5, 14, 3); ctx.fillRect(Math.round(cx) + 4, 12, 18, 3);
-      /* птахи */
-      ctx.fillStyle = 'rgba(60,84,96,0.5)';
-      ctx.fillRect(Math.round(100 + Math.sin(t * 0.7) * 8), 16, 3, 1); ctx.fillRect(Math.round(116 + Math.sin(t * 0.7) * 8), 20, 3, 1);
-      /* далекий острів: блідий силует біля горизонту + пара дерев */
-      const isX = 116;
-      for (let ix = -18; ix <= 18; ix++) {
-        const hgt = Math.max(0, 6 * Math.cos((ix / 19) * Math.PI / 2));
-        ctx.fillStyle = 'rgba(122,168,196,0.85)';
-        ctx.fillRect(isX + ix, Math.round(SKY - hgt), 1, Math.round(hgt) + 1);
-      }
-      ctx.fillStyle = 'rgba(96,142,170,0.9)';
-      ctx.fillRect(isX - 6, SKY - 8, 1, 3); ctx.fillRect(isX - 8, SKY - 7, 5, 1);
-      ctx.fillRect(isX + 4, SKY - 9, 1, 4); ctx.fillRect(isX + 2, SKY - 8, 5, 1);
 
-      /* ---- ВОДА: глибинний градієнт у темно-синє ---- */
-      for (let y = SKY - 4; y < H; y += 1) {
-        const k = Math.min(1, (y - SKY) / (H - SKY));
-        const kk = k * k;
-        ctx.fillStyle = `rgb(${Math.round(42 - 34 * kk)},${Math.round(150 - 116 * kk)},${Math.round(188 - 132 * kk)})`;
-        ctx.fillRect(0, Math.max(y, 0), W, 1);
-      }
-      /* віньєтка дна */
-      for (let y = H - 46; y < H; y += 2) {
-        const a = ((y - (H - 46)) / 46) * 0.35;
-        ctx.fillStyle = `rgba(2,10,26,${a})`;
-        ctx.fillRect(0, y, W, 2);
-      }
-
-      /* ---- ГОРИЗОНТ: делікатна кромка, мілина, відбиття острова ---- */
-      for (let x = 0; x < W; x += 1) {
-        const sy = surfY(x);
-        /* небо просвічує до кромки (світле — стик мʼякий) */
-        ctx.fillStyle = '#c8e6f4';
-        ctx.fillRect(x, SKY - 4, 1, Math.max(0, Math.round(sy) - (SKY - 4)));
-        /* градуйована кромка: блік → світло → мілина */
-        ctx.fillStyle = 'rgba(246,253,255,0.9)';
-        ctx.fillRect(x, Math.round(sy), 1, 1);
-        ctx.fillStyle = 'rgba(196,236,250,0.6)';
-        ctx.fillRect(x, Math.round(sy) + 1, 1, 1);
-        ctx.fillStyle = 'rgba(140,210,232,0.35)';
-        ctx.fillRect(x, Math.round(sy) + 2, 1, 2);
-        ctx.fillStyle = 'rgba(110,190,215,0.18)';
-        ctx.fillRect(x, Math.round(sy) + 4, 1, 3);
-        /* піна: поодинокі дрібні іскри, рідко */
-        if (Math.sin(x * 1.7 + t * 2.2) * Math.sin(x * 0.31 - t * 1.1) > 0.985) {
-          ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x, Math.round(sy) - 1, 1, 1);
+      /* ---- небесні елементи (тільки поки небо в кадрі) ---- */
+      if (horizonS > -6) {
+        /* сонце: дуже мʼякий ореол, без хреста */
+        const sunX = 28, sunY = 13 - par(0.10);
+        for (const [rr, aa] of [[16, 0.025], [12, 0.05], [9, 0.10], [7, 0.18], [5.5, 0.3]] as [number, number][]) {
+          ctx.fillStyle = `rgba(255,246,214,${aa})`;
+          ctx.beginPath(); ctx.arc(sunX, sunY, rr, 0, Math.PI * 2); ctx.fill();
         }
-      }
-      /* відбиття острова: тремкі штрихи під кромкою */
-      for (let i = 0; i < 5; i++) {
-        const rx = 116 + Math.sin(t * 1.3 + i * 2) * 3;
-        ctx.fillStyle = `rgba(122,168,196,${0.22 - i * 0.035})`;
-        ctx.fillRect(Math.round(rx - 10 + i), Math.round(surfY(116) + 3 + i * 2), 20 - i * 3, 1);
-      }
-      /* сонячна доріжка під поверхнею: мерехтливі штрихи вузьким конусом від сонця */
-      for (let y = SKY + 3; y < SKY + 46; y += 2) {
-        const spread = 4 + (y - SKY) * 0.55;
-        for (let i = 0; i < 2; i++) {
-          const gx = 28 + Math.sin(y * 1.7 + t * (3 + i)) * spread;
-          if (Math.sin(y * 2.3 + t * 4 + i * 2) > 0.2) {
-            ctx.fillStyle = `rgba(255,250,225,${0.22 - (y - SKY) * 0.004})`;
-            ctx.fillRect(Math.round(gx), y, 2, 1);
+        ctx.fillStyle = '#fff9e6'; ctx.beginPath(); ctx.arc(sunX, sunY, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fffdf4'; ctx.beginPath(); ctx.arc(sunX - 0.5, sunY - 0.5, 2, 0, Math.PI * 2); ctx.fill();
+        /* хмарка + птахи */
+        const cx = ((t * 2.0) % (W + 60)) - 30;
+        const cloudY = -par(0.22), birdY = -par(0.3);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(Math.round(cx), Math.round(8 + cloudY), 26, 4);
+        ctx.fillRect(Math.round(cx) + 5, Math.round(5 + cloudY), 14, 3);
+        ctx.fillRect(Math.round(cx) + 4, Math.round(12 + cloudY), 18, 3);
+        ctx.fillStyle = 'rgba(60,84,96,0.5)';
+        ctx.fillRect(Math.round(100 + Math.sin(t * 0.7) * 8), Math.round(16 + birdY), 3, 1);
+        ctx.fillRect(Math.round(116 + Math.sin(t * 0.7) * 8), Math.round(20 + birdY), 3, 1);
+
+        /* ---- горизонт: делікатна кромка ---- */
+        for (let x = 0; x < W; x += 1) {
+          const sy = surfWave(x) - camY;
+          ctx.fillStyle = '#c8e6f4';
+          ctx.fillRect(x, Math.round(horizonS) - 4, 1, Math.max(0, Math.round(sy) - (Math.round(horizonS) - 4)));
+          ctx.fillStyle = 'rgba(246,253,255,0.9)'; ctx.fillRect(x, Math.round(sy), 1, 1);
+          ctx.fillStyle = 'rgba(196,236,250,0.6)'; ctx.fillRect(x, Math.round(sy) + 1, 1, 1);
+          ctx.fillStyle = 'rgba(140,210,232,0.35)'; ctx.fillRect(x, Math.round(sy) + 2, 1, 2);
+          ctx.fillStyle = 'rgba(110,190,215,0.18)'; ctx.fillRect(x, Math.round(sy) + 4, 1, 3);
+          if (Math.sin(x * 1.7 + t * 2.2) * Math.sin(x * 0.31 - t * 1.1) > 0.985) {
+            ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x, Math.round(sy) - 1, 1, 1);
+          }
+        }
+        /* сонячна доріжка під поверхнею */
+        for (let y = 3; y < 46; y += 2) {
+          const ys = SURF + y - camY;
+          if (ys < horizonS || ys > H) continue;
+          const spread = 4 + y * 0.55;
+          for (let i = 0; i < 2; i++) {
+            const gx = 28 + Math.sin(y * 1.7 + t * (3 + i)) * spread;
+            if (Math.sin(y * 2.3 + t * 4 + i * 2) > 0.2) {
+              ctx.fillStyle = `rgba(255,250,225,${0.2 - y * 0.0038})`;
+              ctx.fillRect(Math.round(gx), Math.round(ys), 2, 1);
+            }
           }
         }
       }
 
-      /* ---- GOD-RAYS: мʼякі, дихають шириною і яскравістю ---- */
+      /* ---- god-rays від поверхні (світові, виходять із кадру з камерою) ---- */
       for (let i = 0; i < 4; i++) {
         const sway = Math.sin(t * 0.4 + i * 1.9) * 12;
         const x0 = 16 + i * 40 + sway;
         const breathe = 0.5 + 0.5 * Math.sin(t * 0.65 + i * 2.2);
         const wBase = 3 + breathe * 4;
-        for (let y = SKY + 4; y < H * 0.78; y += 2) {
-          const prog = (y - SKY) / (H * 0.78 - SKY);
+        for (let wy = SURF + 4; wy < SURF + 220; wy += 2) {
+          const ys = wy - camY;
+          if (ys < -2 || ys > H) continue;
+          const prog = (wy - SURF) / 220;
           const a = (0.075 - i * 0.008) * breathe * (1 - prog) * (1 - prog);
           if (a <= 0.004) continue;
           const wRay = wBase + prog * 7;
-          const xx = x0 + (y - SKY) * (0.14 + i * 0.02);
+          const xx = x0 + (wy - SURF) * (0.14 + i * 0.02);
           ctx.fillStyle = `rgba(215,244,255,${a})`;
-          ctx.fillRect(Math.round(xx), y, Math.round(wRay), 2);
-          ctx.fillStyle = `rgba(215,244,255,${a * 0.45})`;
-          ctx.fillRect(Math.round(xx) - 2, y, 2, 2); ctx.fillRect(Math.round(xx + wRay), y, 2, 2);
+          ctx.fillRect(Math.round(xx), Math.round(ys), Math.round(wRay), 2);
         }
       }
-
-      /* ---- КАУСТИЧНА СІТКА: плями-вузли, що пливуть ---- */
+      /* каустична сітка близько до поверхні (світова) */
       for (let gy = 0; gy < 4; gy++) {
-        const bandY = SKY + 14 + gy * 26;
+        const bandW = SURF + 14 + gy * 26;
+        const ys0 = bandW - camY;
+        if (ys0 < -8 || ys0 > H + 8) continue;
         const fade = 1 - gy * 0.22;
         for (let x = 0; x < W; x += 4) {
           const n = Math.sin(x * 0.32 + t * 1.5 + gy) * Math.sin(x * 0.13 - t * 0.9 + gy * 3) + Math.sin(x * 0.07 + t * 0.5);
           if (n > 1.05) {
-            const yy = bandY + Math.sin(x * 0.09 + t * 1.1 + gy) * 6;
+            const yy = ys0 + Math.sin(x * 0.09 + t * 1.1 + gy) * 6;
             ctx.fillStyle = `rgba(205,242,255,${0.12 * fade})`;
             ctx.fillRect(x, Math.round(yy), 4, 2);
-            ctx.fillStyle = `rgba(205,242,255,${0.05 * fade})`;
-            ctx.fillRect(x - 2, Math.round(yy) + 2, 8, 1);
           }
         }
       }
-
-      /* ---- частинки: 2 паралакс-шари ---- */
+      /* планктон: 2 паралакс-шари у світі */
       ctx.fillStyle = 'rgba(200,232,246,0.16)';
-      for (const p of plankFar) ctx.fillRect(Math.round((p.x + t * 2 * p.s) % W), Math.round(p.y + Math.sin(t * 0.5 + p.x) * 1.5), 1, 1);
+      for (const p of plankFar) { const ys = p.y - camY * 0.85; if (ys > -2 && ys < H) ctx.fillRect(Math.round((p.x + t * 2 * p.s) % W), Math.round(ys + Math.sin(t * 0.5 + p.x) * 1.5), 1, 1); }
       ctx.fillStyle = 'rgba(220,245,255,0.30)';
-      for (const p of plankNear) ctx.fillRect(Math.round((p.x + t * 5 * p.s) % W), Math.round(p.y + Math.sin(t * 0.8 + p.x) * 2.5), 1, 1);
+      for (const p of plankNear) { const ys = p.y - camY; if (ys > -2 && ys < H) ctx.fillRect(Math.round((p.x + t * 5 * p.s) % W), Math.round(ys + Math.sin(t * 0.8 + p.x) * 2.5), 1, 1); }
 
-      /* ---- МʼЯЧ ---- */
-      let ballX = W / 2, ballY = -20, ballR = 4.5, show = false, depth = 0;
-      if (t >= T_DROP && t < T_HIT) {
-        show = true;
-        const p = (t - T_DROP) / (T_HIT - T_DROP);
-        ballY = -8 + p * p * (SKY + 8);
-      } else if (t >= T_HIT) {
-        show = true;
-        const d = t - T_HIT;
-        /* двофазне занурення: швидкий вхід, ДУЖЕ повільний дрейф унизу */
-        depth = 1 - (0.55 * Math.exp(-d / 2.2) + 0.45 * Math.exp(-d / 14));
-        ballY = SKY + depth * (H * 0.72);
-        ballX = W / 2 + Math.sin(d * 1.0) * (6 * (1 - depth * 0.85));
-        ballR = 4.5 - depth * 3.2;
-      }
-
+      /* ---- сплеск + бульбашки (світові) ---- */
       if (t >= T_HIT - 0.02 && t < T_HIT + 0.06 && parts.filter((p) => p.splash).length === 0) {
-        for (let i = 0; i < 16; i++) parts.push({ x: W / 2, y: SKY, vx: (Math.random() - 0.5) * 2.6, vy: -(1.2 + Math.random() * 2.4), r: Math.random() < 0.4 ? 2 : 1, life: 1, splash: true });
-        for (let i = 0; i < 10; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 8, y: SKY + 4, vx: (Math.random() - 0.5) * 0.5, vy: 0.6 + Math.random() * 1.2, r: 1, life: 1 });
+        for (let i = 0; i < 16; i++) parts.push({ x: W / 2, y: SURF, vx: (Math.random() - 0.5) * 2.6, vy: -(1.2 + Math.random() * 2.4), r: Math.random() < 0.4 ? 2 : 1, life: 1, splash: true });
+        for (let i = 0; i < 10; i++) parts.push({ x: W / 2 + (Math.random() - 0.5) * 8, y: SURF + 4, vx: (Math.random() - 0.5) * 0.5, vy: 0.6 + Math.random() * 1.2, r: 1, life: 1 });
       }
       const hitPulse = t > T_HIT && t < T_HIT + 1.1 ? (1 - (t - T_HIT) / 1.1) : 0;
-      if (hitPulse > 0) {
+      if (hitPulse > 0 && horizonS > -6) {
         for (const dir of [-1, 1]) {
           const rr = (1 - hitPulse) * 40 + 6;
           const hx = W / 2 + dir * rr;
           ctx.fillStyle = `rgba(240,253,255,${hitPulse * 0.8})`;
-          ctx.fillRect(Math.round(hx) - 1, Math.round(surfY(hx)) - 1, 3, 1);
-          ctx.fillStyle = `rgba(240,253,255,${hitPulse * 0.35})`;
-          ctx.fillRect(Math.round(hx) - 2, Math.round(surfY(hx)), 5, 1);
+          ctx.fillRect(Math.round(hx) - 1, Math.round(surfWave(hx) - camY) - 1, 3, 1);
         }
       }
-      /* слід бульбашок: рідшає і дрібнішає з глибиною */
-      if (show && t > T_HIT && Math.random() < Math.max(0.06, 0.5 - depth * 0.5)) {
-        parts.push({ x: ballX + (Math.random() - 0.5) * 4, y: ballY - ballR, vx: (Math.random() - 0.5) * 0.25, vy: -(0.3 + Math.random() * 0.5), r: 1, life: 1 });
+      if (show && t > T_HIT && Math.random() < 0.35 * fk) {
+        parts.push({ x: ballW.x + (Math.random() - 0.5) * 4, y: ballW.y - ballR, vx: (Math.random() - 0.5) * 0.25, vy: -(0.3 + Math.random() * 0.5), r: 1, life: 1 });
       }
       parts = parts.filter((p) => p.life > 0);
       for (const p of parts) {
-        if (p.splash) { p.vy += 0.1; if (p.y > surfY(p.x) + 1 && p.vy > 0) p.life = 0; }
-        if (!p.splash && p.y < surfY(p.x) + 2) p.life = 0;
-        p.x += p.vx; p.y += p.vy; p.life -= p.splash ? 0.02 : 0.006;
-        ctx.fillStyle = `rgba(228,249,255,${0.8 * p.life})`;
-        ctx.fillRect(Math.round(p.x), Math.round(p.y), p.r, p.r);
+        if (p.splash) { p.vy += 0.1 * fk; if (p.y > surfWave(p.x) + 1 && p.vy > 0) p.life = 0; }
+        if (!p.splash && p.y < surfWave(p.x) + 2) p.life = 0;
+        p.x += p.vx * fk; p.y += p.vy * fk; p.life -= (p.splash ? 0.02 : 0.005) * fk;
+        const ys = p.y - camY;
+        if (ys > -2 && ys < H + 2) {
+          ctx.fillStyle = `rgba(228,249,255,${0.8 * p.life})`;
+          ctx.fillRect(Math.round(p.x), Math.round(ys), p.r, p.r);
+        }
       }
 
-      if (show && ballR > 0.7) {
-        const glow = Math.max(0.25, 1 - depth * 0.9);
-        ctx.globalAlpha = ballY < SKY ? 1 : 0.3 + glow * 0.7;
-        /* мʼякий ореол на глибині */
-        if (depth > 0.35) { ctx.fillStyle = `rgba(200,235,250,${0.10 * glow})`; ctx.beginPath(); ctx.arc(ballX, ballY, ballR + 2.5, 0, Math.PI * 2); ctx.fill(); }
-        ctx.fillStyle = '#f2fafd';
-        ctx.beginPath(); ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2); ctx.fill();
-        if (ballR > 2) { ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(ballX - ballR * 0.4), Math.round(ballY - ballR * 0.55), 2, 1); }
-        ctx.globalAlpha = 1;
+      /* ---- мʼяч ---- */
+      if (show) {
+        const ys = ballW.y - camY;
+        if (ys > -6 && ys < H + 6) {
+          const deep = Math.min(1, Math.max(0, (ballW.y - SURF) / 620));
+          ctx.globalAlpha = ballW.y < SURF ? 1 : Math.max(0.3, 1 - deep * 0.75);
+          if (deep > 0.15) { ctx.fillStyle = `rgba(200,235,250,${0.10 * (1 - deep)})`; ctx.beginPath(); ctx.arc(ballW.x, ys, ballR + 2.5, 0, Math.PI * 2); ctx.fill(); }
+          ctx.fillStyle = '#f2fafd';
+          ctx.beginPath(); ctx.arc(ballW.x, ys, ballR, 0, Math.PI * 2); ctx.fill();
+          if (ballR > 2) { ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(ballW.x - ballR * 0.4), Math.round(ys - ballR * 0.55), 2, 1); }
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      /* ---- глобальне темніння з глибиною камери ---- */
+      if (darkness > 0.01) {
+        ctx.fillStyle = `rgba(1,6,18,${darkness})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      /* ---- текстовий шар ---- */
+      if (wordRef.current) {
+        const w = (t - T_HIT) / 1.5;                       // слово-звук у момент удару
+        if (w > 0 && w < 1) {
+          const appear = Math.min(1, w * 8);
+          const scale = 1 + (1 - appear) * 0.8;
+          const fade = w > 0.65 ? 1 - (w - 0.65) / 0.35 : 1;
+          wordRef.current.style.opacity = fade.toFixed(2);
+          wordRef.current.style.transform = `translate(-50%,-100%) scale(${scale.toFixed(3)})`;
+          wordRef.current.style.top = `${((SURF - camY) / H * 100 - 5).toFixed(1)}%`;
+        } else wordRef.current.style.opacity = '0';
+      }
+      if (lineRef.current) {                               // білий текст під час занурення
+        const a = Math.max(0, Math.min(1, (t - (T_HIT + 3.2)) / 1.6));
+        lineRef.current.style.opacity = a.toFixed(2);
       }
 
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [mode]);
 
   return (
-    <canvas ref={ref} style={{
-      position: 'absolute', inset: 0, width: '100%', height: '100%',
-      imageRendering: 'pixelated', display: 'block',
-    }} />
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <canvas ref={ref} style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%',
+        imageRendering: 'pixelated', display: 'block',
+      }} />
+      <div ref={wordRef} style={{
+        position: 'absolute', left: '50%', top: '11%', transform: 'translate(-50%,-100%)',
+        opacity: 0, pointerEvents: 'none', whiteSpace: 'nowrap',
+        fontFamily: 'Unbounded', fontWeight: 900, fontSize: 'clamp(26px, 8.5vw, 42px)',
+        textTransform: 'uppercase', letterSpacing: '0.02em', color: '#ffffff',
+        textShadow: '3px 3px 0 rgba(8,28,42,0.5)',
+      }}>{hitWord}</div>
+      <div ref={lineRef} style={{
+        position: 'absolute', left: 0, right: 0, top: '42%', padding: '0 28px',
+        opacity: 0, pointerEvents: 'none', textAlign: 'center',
+        fontFamily: 'Unbounded', fontWeight: 700, fontSize: 15, lineHeight: 1.6,
+        color: 'rgba(255,255,255,0.97)', textShadow: '0 2px 14px rgba(0,0,0,0.65)',
+      }}>{line}</div>
+    </div>
   );
 }
