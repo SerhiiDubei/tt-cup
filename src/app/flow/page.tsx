@@ -39,9 +39,17 @@ const CAMS = [
   { id: 'dolly' as const, name: 'V2 · рівний кіно-рух' },
 ];
 
+/* 3 варіанти шрифту+моушену наративу (референс — «The Boat», SBS) */
+const TXTS = [
+  { id: 'log' as const, name: 'Т1 · журнал' },
+  { id: 'hand' as const, name: 'Т2 · рукопис' },
+  { id: 'deep' as const, name: 'Т3 · глибина' },
+];
+
 export default function FlowV3() {
   const [vr, setVr] = useState(1);
   const [cam, setCam] = useState<'follow' | 'dolly'>('follow');
+  const [txt, setTxt] = useState<'log' | 'hand' | 'deep'>('log');
   const [stage, setStage] = useState<'intro' | 'zoom' | 'reveal' | 'dive' | 'end'>('intro');
   const [runKey, setRunKey] = useState(0);
   const [showNext, setShowNext] = useState(false);
@@ -62,10 +70,14 @@ export default function FlowV3() {
   /* вибір варіанта = ПОВНИЙ рестарт з інтро */
   const restartWith = (v: number) => { setVr(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
   const restartCam = (c: 'follow' | 'dolly') => { setCam(c); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
+  const restartTxt = (v: 'log' | 'hand' | 'deep') => { setTxt(v); setShowNext(false); setStage('intro'); setRunKey((k) => k + 1); };
 
 
   return (
-    <main className="ob-root v30"><div className="ob-stage" style={{ background: '#16110d' }} key={runKey}>
+    <main className="ob-root v30">
+      {/* морські шрифти наративу (повна кирилиця) */}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&family=Neucha&family=Old+Standard+TT:ital@0;1&display=swap" />
+      <div className="ob-stage" style={{ background: '#16110d' }} key={runKey}>
 
       {(stage === 'intro' || stage === 'zoom') && (
         <div style={{
@@ -87,9 +99,9 @@ export default function FlowV3() {
           {stage === 'dive' && (
             <>
               <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#0e4a66' }}>
-                <BallDive key={cam} mode={cam} />
+                <BallDive key={cam + txt} mode={cam} variant={txt} />
               </div>
-              {/* перемикач варіацій камери: вибір = повний рестарт з інтро */}
+              {/* перемикачі варіацій: вибір = повний рестарт з інтро */}
               <div style={{ position: 'absolute', zIndex: 6, top: 'calc(10px + env(safe-area-inset-top))', right: 10, display: 'grid', gap: 5, justifyItems: 'end' }}>
                 {CAMS.map((c) => (
                   <button key={c.id} onClick={() => restartCam(c.id)} style={{
@@ -99,6 +111,16 @@ export default function FlowV3() {
                     background: cam === c.id ? 'rgba(255,198,25,0.92)' : 'rgba(10,24,34,0.55)',
                     color: cam === c.id ? '#16110d' : 'rgba(255,248,236,0.85)',
                   }}>{c.name}</button>
+                ))}
+                <div style={{ height: 4 }} />
+                {TXTS.map((v) => (
+                  <button key={v.id} onClick={() => restartTxt(v.id)} style={{
+                    fontFamily: 'Unbounded', fontWeight: 800, fontSize: 8.5, textTransform: 'uppercase',
+                    letterSpacing: '0.04em', padding: '6px 9px', borderRadius: 3, cursor: 'pointer',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    background: txt === v.id ? 'rgba(122,220,255,0.92)' : 'rgba(10,24,34,0.55)',
+                    color: txt === v.id ? '#0b2230' : 'rgba(255,248,236,0.85)',
+                  }}>{v.name}</button>
                 ))}
               </div>
               <div style={{ position: 'absolute', zIndex: 6, left: 14, right: 14, bottom: 'calc(18px + env(safe-area-inset-bottom))' }}>

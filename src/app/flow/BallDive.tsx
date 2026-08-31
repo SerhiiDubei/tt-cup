@@ -10,14 +10,37 @@ import { useEffect, useRef } from 'react';
  * mode 'follow' (V1): камера мʼяко тримає мʼяч у верхній третині.
  * mode 'dolly'  (V2): рівномірний кіно-рух; мʼяч повільно сповзає нижче.
  */
+export type TextVariant = 'log' | 'hand' | 'deep';
+
+/* морські шрифти (Google Fonts, повна кирилиця) під кожен варіант моушену */
+const FONT: Record<TextVariant, { family: string; style: string; size: number }> = {
+  log: { family: "'Old Standard TT', 'Times New Roman', serif", style: 'italic', size: 18 },   // бортовий журнал
+  hand: { family: "'Neucha', 'Comic Sans MS', cursive", style: 'normal', size: 20 },           // рукопис
+  deep: { family: "'EB Garamond', Georgia, serif", style: 'normal', size: 18 },                // класика глибини
+};
+
+const DEFAULT_LINES = [
+  'Все почалося з одного мʼяча…',
+  'Він упав — і світ навколо стих.',
+  'Так зникає звичайний вечір.',
+  'Повільно. Непомітно. Назавжди.',
+  'Але на дні кожної тиші…',
+  '…щось чекає.',
+  'Двір. Стіл. Дві ракетки.',
+  'І питання — хто сьогодні король.',
+  '12 вересня все вирішиться.',
+  'DRUID BATTLE CUP. Пірнаємо?',
+];
+
 export default function BallDive({
   mode = 'follow',
+  variant = 'log',
   hitWord = 'бульк!',
-  line = 'Все почалося з одного мʼяча…',
-}: { mode?: 'follow' | 'dolly'; hitWord?: string; line?: string }) {
+  lines = DEFAULT_LINES,
+}: { mode?: 'follow' | 'dolly'; variant?: TextVariant; hitWord?: string; lines?: string[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
-  const lineRef = useRef<HTMLDivElement>(null);
+  const stackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const cv = ref.current;
@@ -30,15 +53,15 @@ export default function BallDive({
 
     const SURF = 46;                    // світова Y поверхні
     const CAM0 = -(H - 64);             // старт камери: небо на весь екран, вода — смужка внизу
-    const CAM_PAUSE = -140;             // зупинка: небо 2/3 кадру, вода — нижня третина
-    const T_DESC = 6.0;                 // повільне опускання камери (удвічі довше)
+    const CAM_PAUSE = -140;             // рівень «зупинки»: небо 2/3 кадру, вода — нижня третина
     const T_DROP = 6.2, T_HIT = 7.4;    // мʼяч летить з верху екрана крізь усе небо
     const T_DIVE = 7.6;                 // після сплеску камера пірнає за мʼячем
-    const camAt = (tt: number) => {     // аналітична позиція камери у фазі опускання
-      const p = Math.min(1, tt / T_DESC);
-      return CAM0 + (CAM_PAUSE - CAM0) * p * p * (3 - 2 * p);
-    };
-    const BALL_Y0 = CAM_PAUSE - 10;     // старт падіння: над верхнім краєм видимого кадру
+    /* опускання: асимптотичне наближення + постійний мікро-дрейф —
+       камера ніколи не «стає» повністю, тож зупинка не акцентована */
+    const camPause = (tt: number) =>
+      CAM_PAUSE + (CAM0 - CAM_PAUSE) * Math.exp(-Math.pow(tt / 2.4, 1.7)) + 1.1 * tt;
+    const CAM_DIVE0 = camPause(T_DIVE);
+    const BALL_Y0 = camPause(T_DROP) - 10; // старт падіння: над верхнім краєм видимого кадру
     type P = { x: number; y: number; vx: number; vy: number; r: number; life: number; splash?: boolean };
     let parts: P[] = [];
     const plankFar = Array.from({ length: 40 }, (_, i) => ({ x: (i * 41) % W, y: SURF + 12 + ((i * 61) % 760), s: 0.3 + ((i * 17) % 7) / 30 }));
@@ -64,6 +87,10 @@ export default function BallDive({
     let raf = 0;
     let camY = CAM0;
     let ballW = { x: W / 2, y: -20 };   // світові координати мʼяча
+    /* стрічка наративу: 10 рядків, на екрані живуть 3-4 */
+    const LINE_DT = 2.6, ROW_H = 38;
+    let lineStart = -1;                 // момент появи першого рядка (фіксується раз)
+    let offsetF = 0;                    // плавний зсув стека вгору
 
     const surfWave = (x: number) =>
       SURF + Math.sin(x * 0.22 + t * 2.1) * 1.4 + Math.sin(x * 0.07 - t * 1.3) * 1.0 + Math.sin(x * 0.45 + t * 3.2) * 0.4;
@@ -99,21 +126,19 @@ export default function BallDive({
       }
 
       /* ---- камера (аналітична — стійка до фризів/тротлінгу) ----
-         повільне опускання → пауза (мʼяч летить) → занурення В ТЕМПІ МʼЯЧА */
-      if (t < T_DESC) {
-        camY = camAt(t);                                   // smoothstep-опускання
-      } else if (t < T_DIVE) {
-        camY = CAM_PAUSE;                                  // кадр стоїть: падіння + сплеск
+         мʼяке опускання з дрейфом (мʼяч летить) → занурення В ТЕМПІ МʼЯЧА */
+      if (t < T_DIVE) {
+        camY = camPause(t);
       } else if (mode === 'follow') {
         /* smoothstep-бленд до жорсткої зчіпки з мʼячем: на виході переходу
            швидкість камери = швидкості мʼяча, далі рух точно однаковий */
         const e = Math.min(1, (t - T_DIVE) / 2.2);
         const E = e * e * (3 - 2 * e);
-        camY = CAM_PAUSE + (ballW.y - H * 0.34 - CAM_PAUSE) * E;
+        camY = CAM_DIVE0 + (ballW.y - H * 0.34 - CAM_DIVE0) * E;
       } else {
         /* рівний dolly: плавний розгін до 13 px/s — асимптотичний темп мʼяча */
         const td = t - T_DIVE;
-        camY = CAM_PAUSE + 13 * (td - 0.6 * (1 - Math.exp(-td / 0.6)));
+        camY = CAM_DIVE0 + 13 * (td - 0.6 * (1 - Math.exp(-td / 0.6)));
       }
       const darkness = Math.min(0.85, Math.max(0, camY) / 330); // чим нижче — тим темніше
       /* далеке небо рухається повільніше за світ, поки камера над водою */
@@ -347,18 +372,58 @@ export default function BallDive({
           }
         } else wordRef.current.style.opacity = '0';
       }
-      if (lineRef.current) {                               // білий текст під час занурення
-        /* проявляється, коли горизонт піднявся достатньо високо — текст завжди на воді */
-        const hFrac = (SURF - camY) / H;
-        const a = Math.max(0, Math.min(1, (0.30 - hFrac) / 0.12));
-        lineRef.current.style.opacity = a.toFixed(2);
+      if (stackRef.current) {                              // стрічка наративу під час занурення
+        /* стартує, коли горизонт піднявся достатньо — текст завжди на воді */
+        if (lineStart < 0 && t > T_DIVE && (SURF - camY) / H < 0.30) lineStart = t;
+        const shown = lineStart < 0 ? 0 : Math.min(lines.length, 1 + Math.floor((t - lineStart) / LINE_DT));
+        const hiddenN = Math.max(0, shown - 4);
+        offsetF += (hiddenN - offsetF) * Math.min(1, dt * 3.5);
+        const drift = variant === 'deep' && lineStart >= 0 ? (t - lineStart) * 2 : 0;   // повільне спливання
+        const rock = variant === 'log' ? Math.sin(t * 0.5) * 1.0 : 0;                   // гойдання палуби
+        stackRef.current.style.transform =
+          `translateY(${(-offsetF * ROW_H - drift).toFixed(1)}px) rotate(${rock.toFixed(2)}deg)`;
+        const rows = stackRef.current.children;
+        for (let i = 0; i < rows.length; i++) {
+          const el = rows[i] as HTMLElement;
+          const born = lineStart + i * LINE_DT;
+          if (lineStart < 0 || t < born) { el.style.opacity = '0'; continue; }
+          const ap = Math.min(1, (t - born) / 0.9);
+          const dp = i + 4 < lines.length
+            ? Math.max(0, Math.min(1, (t - (lineStart + (i + 4) * LINE_DT)) / 1.4))
+            : 0;                                           // фінальні 3-4 рядки лишаються
+          if (variant === 'log') {
+            /* журнал: рядок спливає знизу, тане з нахилом угору */
+            const eo = 1 - Math.pow(1 - ap, 3);
+            el.style.opacity = (ap * (1 - dp)).toFixed(2);
+            el.style.transform = `translateY(${(18 * (1 - eo) - 12 * dp).toFixed(1)}px)`;
+          } else if (variant === 'hand') {
+            /* рукопис: слова проявляються по черзі, рядок гойдається на хвилі */
+            el.style.opacity = (1 - dp).toFixed(2);
+            el.style.transform =
+              `translateY(${(Math.sin(t * 0.6 + i * 1.3) * 1.5).toFixed(1)}px) ` +
+              `translateX(${(14 * dp).toFixed(1)}px) rotate(${(Math.sin(t * 0.8 + i) * 0.8).toFixed(2)}deg)`;
+            const ws = el.children;
+            for (let j = 0; j < ws.length; j++) {
+              const wp = Math.max(0, Math.min(1, (t - born - j * 0.12) / 0.3));
+              (ws[j] as HTMLElement).style.opacity = wp.toFixed(2);
+              (ws[j] as HTMLElement).style.transform = `translateY(${(6 * (1 - wp)).toFixed(1)}px)`;
+            }
+          } else {
+            /* глибина: виринає з розфокусу, дрейфує вгору, тане в каламуть */
+            const eo = 1 - Math.pow(1 - ap, 2);
+            el.style.opacity = (eo * (1 - dp)).toFixed(2);
+            el.style.transform =
+              `translateY(${(10 * (1 - eo) - 8 * dp).toFixed(1)}px) scale(${(0.95 + 0.05 * eo).toFixed(3)})`;
+            el.style.filter = `blur(${(5 * (1 - eo) + 4 * dp).toFixed(1)}px)`;
+          }
+        }
       }
 
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [mode]);
+  }, [mode, variant, lines]);
 
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
@@ -377,12 +442,23 @@ export default function BallDive({
           <span key={i} style={{ display: 'inline-block', opacity: 0 }}>{ch}</span>
         ))}
       </div>
-      <div ref={lineRef} style={{
-        position: 'absolute', left: 0, right: 0, top: '42%', padding: '0 28px',
-        opacity: 0, pointerEvents: 'none', textAlign: 'center',
-        fontFamily: 'Unbounded', fontWeight: 700, fontSize: 15, lineHeight: 1.6,
-        color: 'rgba(255,255,255,0.97)', textShadow: '0 2px 14px rgba(0,0,0,0.65)',
-      }}>{line}</div>
+      <div ref={stackRef} style={{
+        position: 'absolute', left: 0, right: 0, top: '36%', padding: '0 24px',
+        pointerEvents: 'none', textAlign: 'center',
+      }}>
+        {lines.map((ln, i) => (
+          <div key={i} style={{
+            opacity: 0, height: 38, lineHeight: '38px', whiteSpace: 'nowrap',
+            fontFamily: FONT[variant].family, fontStyle: FONT[variant].style,
+            fontSize: FONT[variant].size, color: 'rgba(255,255,255,0.97)',
+            textShadow: '0 2px 14px rgba(0,0,0,0.7)',
+          }}>
+            {ln.split(' ').map((w, j) => (
+              <span key={j} style={{ display: 'inline-block', marginRight: '0.3em' }}>{w}</span>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
