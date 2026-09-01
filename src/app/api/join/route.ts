@@ -12,9 +12,39 @@ function normTelegram(raw: string) {
   return t.slice(0, MAX.telegram);
 }
 
+/**
+ * CORS для чат-реєстрації (dbc-onboarding.vercel.app): онбординг живе на іншому
+ * домені й шле заявку сюди. Дозволяємо лише цей origin; curl і так міг стукати
+ * без CORS, тож нового класу доступу не зʼявляється.
+ */
+const ALLOWED_ORIGINS = new Set([
+  'https://dbc-onboarding.vercel.app',
+  'http://localhost:3310',
+]);
+
+function cors(res: NextResponse, origin: string | null) {
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.headers.set('Access-Control-Allow-Origin', origin);
+    res.headers.set('Vary', 'Origin');
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.headers.set('Access-Control-Max-Age', '86400');
+  }
+  return res;
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return cors(new NextResponse(null, { status: 204 }), req.headers.get('origin'));
+}
+
 export async function POST(req: NextRequest) {
+  return cors(await handleJoin(req), req.headers.get('origin'));
+}
+
+async function handleJoin(req: NextRequest): Promise<NextResponse> {
   let body: {
     kind?: string; firstName?: string; lastName?: string; nick?: string; telegram?: string;
+    instagram?: string; phone?: string;
     answers?: unknown; volunteer?: boolean; roles?: unknown; amount?: number;
     access_token?: string;
   };
@@ -41,7 +71,11 @@ export async function POST(req: NextRequest) {
   const telegram = normTelegram(body.telegram ?? '');
   if (!firstName || !lastName) return NextResponse.json({ error: 'name_required' }, { status: 400 });
   if (kind === 'player' && !nick) return NextResponse.json({ error: 'nick_required' }, { status: 400 });
-  if (telegram.length < 3) return NextResponse.json({ error: 'telegram_required' }, { status: 400 });
+  const instagram = (body.instagram ?? '').trim().replace(/^@/, '').slice(0, MAX.telegram);
+  const phone = (body.phone ?? '').trim().slice(0, 24);
+  // контакт обовʼязковий, але це може бути телеграм АБО інстаграм
+  if (telegram.length < 3 && instagram.length < 2)
+    return NextResponse.json({ error: 'contact_required' }, { status: 400 });
   if (firstName.length > MAX.name || lastName.length > MAX.name || nick.length > MAX.nick)
     return NextResponse.json({ error: 'too_long' }, { status: 400 });
 
@@ -63,7 +97,9 @@ export async function POST(req: NextRequest) {
   const { data, error } = await s
     .from('dbc_players')
     .insert({
-      kind, first_name: firstName, last_name: lastName, nick: nick || null, telegram,
+      kind, first_name: firstName, last_name: lastName, nick: nick || null,
+      telegram: telegram.length >= 3 ? telegram : null,
+      instagram: instagram || null, phone: phone || null,
       level, level_answers: answers, is_sportik: sportik,
       volunteer, volunteer_roles: roles, pay_amount: amount,
       auth_user_id: userId,
