@@ -13,11 +13,11 @@ html:has(.kb-root),body:has(.kb-root){background:#0B0805;margin:0;overflow-x:hid
   --shadow:3px 3px 0 rgba(0,0,0,.55);
   width:100%;min-height:100dvh;background:#0B0805;color:var(--cream);overflow-x:hidden;
   font-family:var(--f-body);display:flex;justify-content:center;
-  align-items:flex-start;padding:0;
+  align-items:stretch;padding:0;
 }
 .kb-phone{width:100%;max-width:430px;background:var(--ink);min-height:100dvh;
   display:flex;flex-direction:column;border-left:var(--border);border-right:var(--border)}
-@media(min-width:480px){.kb-root{padding:20px}.kb-phone{min-height:0;border:var(--border);box-shadow:4px 4px 0 rgba(0,0,0,.6)}}
+@media(min-width:480px){.kb-root{padding:20px;align-items:flex-start}.kb-phone{min-height:0;border:var(--border);box-shadow:4px 4px 0 rgba(0,0,0,.6)}}
 
 .kb-hd{display:flex;align-items:center;gap:12px;padding:calc(16px + env(safe-area-inset-top)) 16px 16px;
   border-bottom:var(--border);background:var(--ink-2)}
