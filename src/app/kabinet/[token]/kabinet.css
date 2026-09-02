@@ -90,7 +90,7 @@ html:has(.kb-root),body:has(.kb-root){background:#0B0805;margin:0;overflow-x:hid
   .kb-root{padding:40px 24px;align-items:center}
   .kb-phone{max-width:940px;display:grid;
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    grid-template-areas:'hd hd' 'now cal' 'act slots' 'rest slots' 'note slots' 'roster roster';
+    grid-template-areas:'hd hd' 'roster roster' 'now cal' 'act slots' 'rest slots' 'note slots';
     align-content:start}
   .kb-hd{grid-area:hd;padding:20px 24px}
   .kb-hd .kb-who b{font-size:12px}
@@ -131,29 +131,35 @@ html:has(.kb-root),body:has(.kb-root){background:#0B0805;margin:0;overflow-x:hid
 .kb-slot .px-q{fill:#5c5348}
 .kb-slot .px-ball{fill:#3a3126}
 
-/* ── склад турніру: 32 місця ── */
-.kb-roster{padding:20px 16px;border-top:2px solid rgba(251,241,221,.14)}
-.kb-roster-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
-.kb-roster-hd .kb-lbl{margin:0}
-.kb-count{font-family:var(--f-pixel);font-size:11px;color:var(--action);white-space:nowrap}
-.kb-count span{color:var(--muted)}
-.kb-bar{height:8px;background:rgba(251,241,221,.12);border:2px solid var(--ink);margin:8px 0 14px}
-.kb-bar i{display:block;height:100%;background:var(--action)}
-.kb-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;
+/* ── склад турніру: перше, що видно після шапки ── */
+.kb-roster{padding:20px 0 18px;border-bottom:2px solid rgba(251,241,221,.14)}
+.kb-roster > .kb-lbl,.kb-roster > .kb-count,.kb-roster > .kb-bar,.kb-roster > p{margin-left:16px;margin-right:16px}
+.kb-count{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}
+.kb-count b{font-family:var(--f-pixel);font-size:30px;line-height:1;color:var(--action)}
+.kb-count span{font-family:var(--f-pixel);font-size:11px;color:var(--muted)}
+.kb-bar{height:10px;background:rgba(251,241,221,.12);border:2px solid var(--ink);
+  box-shadow:2px 2px 0 rgba(0,0,0,.4);margin-bottom:16px}
+.kb-bar i{display:block;height:100%;background:var(--action);transition:width .4s steps(6)}
+/* стрічка йде від краю до краю — так видно, що її можна гортати */
+.kb-strip{display:flex;gap:10px;overflow-x:auto;padding:0 16px 12px;
   scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
 .kb-strip::-webkit-scrollbar{height:6px}
 .kb-strip::-webkit-scrollbar-thumb{background:rgba(251,241,221,.22)}
-.kb-seat{flex:none;width:74px;scroll-snap-align:start;text-align:center}
-.kb-seat .av{width:74px;height:74px;border:2px solid var(--ink);box-shadow:2px 2px 0 rgba(0,0,0,.45);
-  background:var(--ink-2);display:block}
-.kb-seat.free .av{opacity:.55}
-.kb-seat b{display:block;font-family:var(--f-pixel);font-size:7px;line-height:1.5;margin-top:7px;
+.kb-strip::-webkit-scrollbar-track{background:rgba(251,241,221,.06)}
+.kb-seat{flex:none;width:88px;scroll-snap-align:start;text-align:center}
+.kb-seat .av{width:88px;height:88px;border:2px solid var(--ink);
+  box-shadow:3px 3px 0 rgba(0,0,0,.5);background:var(--ink-2);display:block;image-rendering:pixelated}
+.kb-seat.free .av{opacity:.5}
+.kb-seat b{display:block;font-family:var(--f-pixel);font-size:7.5px;line-height:1.5;margin-top:9px;
   color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kb-seat.free b{color:var(--faint)}
-.kb-seat i{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:3px}
-.kb-seat.me .av{box-shadow:0 0 0 2px var(--action),2px 2px 0 rgba(0,0,0,.45)}
+.kb-seat i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:4px}
+.kb-seat.me .av{box-shadow:0 0 0 3px var(--action),3px 3px 0 rgba(0,0,0,.5)}
 .kb-seat.me b{color:var(--action)}
-.kb-roster p{font-size:13px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+.kb-roster p{font-size:13.5px;color:var(--muted);margin:4px 0 0;line-height:1.45}
 @media (min-width:820px){
-  .kb-roster{grid-area:roster;border-left:2px solid rgba(251,241,221,.14);border-top:0}
+  .kb-roster{grid-area:roster;border-bottom:0;border-top:2px solid rgba(251,241,221,.14);padding:22px 0}
+  .kb-roster > .kb-lbl,.kb-roster > .kb-count,.kb-roster > .kb-bar,.kb-roster > p{margin-left:24px;margin-right:24px}
+  .kb-strip{padding-left:24px;padding-right:24px}
+  .kb-count b{font-size:38px}
 }

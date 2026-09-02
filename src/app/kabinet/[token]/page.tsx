@@ -93,34 +93,77 @@ function seedOf(str: string) {
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
-const AV_INK = [
-  '#FFC619', '#F26F21', '#7AC36A', '#4FA3E3', '#E8765A', '#B98BE0',
-  '#00CFC1', '#FF2E88', '#A6E22E', '#FF8A2A', '#8A45FF', '#5AD1E8',
+const BODY: [string, string][] = [
+  ['#FFC619','#C99400'], ['#F26F21','#B44A0E'], ['#7AC36A','#4E8C42'],
+  ['#4FA3E3','#2C6DA3'], ['#E8765A','#B04935'], ['#B98BE0','#7E56A6'],
+  ['#00CFC1','#00908A'], ['#FF2E88','#B5145C'], ['#A6E22E','#6E9C15'],
+  ['#5AD1E8','#2E96AC'], ['#FF8A2A','#C25B10'], ['#D9D2C4','#9A9184'],
 ];
-function Avatar({ nick }: { nick: string }) {
+const INK = '#16110d';
+
+/** Мʼячик-персонаж 16×16: тіло, обличчя, головний убір — усе детерміновано
+    від ніка. Однаковий нік завжди дає того самого героя, файлів не потрібно. */
+function avatarCells(nick: string): Record<string, string> {
   const seed = seedOf(nick);
-  // колір беремо з верхніх бітів, а візерунок — з нижніх, щоб два ніки
-  // не збігалися й кольором, і формою одночасно
-  const main = AV_INK[(seed >>> 20) % AV_INK.length];
-  const alt = AV_INK[((seed >>> 8) + 5) % AV_INK.length];
-  const a: React.ReactNode[] = [];
-  const b: React.ReactNode[] = [];
-  let bits = seed ^ 0x9e3779b9;
-  for (let y = 0; y < 5; y++) {
-    for (let x = 0; x < 3; x++) {
-      bits = Math.imul(bits, 1103515245) + 12345;
-      const v = (bits >>> 16) & 7;
-      if (v < 2) continue;                       // ~25% порожніх
-      const arr = v > 5 ? b : a;                 // ~25% другим кольором
-      arr.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />);
-      if (x < 2) arr.push(<rect key={`m${x}-${y}`} x={4 - x} y={y} width="1" height="1" />);
+  const pick = (shift: number, n: number) => (seed >>> shift) % n;
+  const [light, dark] = BODY[pick(3, BODY.length)];
+  const eyes = pick(9, 5), mouth = pick(13, 4), hat = pick(17, 5), brow = pick(21, 3);
+  const put: Record<string, string> = {};
+  const set = (x: number, y: number, c: string) => {
+    if (x >= 0 && x < 16 && y >= 0 && y < 16) put[x + ',' + y] = c;
+  };
+  const R = 6.4, cx = 7.5, cy = 7.9;
+  const inside = (x: number, y: number) => Math.hypot(x - cx, y - cy) <= R;
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    if (inside(x, y)) {
+      const d = Math.hypot(x - cx, y - cy);
+      const hl = Math.hypot(x - 5.2, y - 5.4);
+      set(x, y, hl < 1.5 ? '#ffffff' : (x - cx) + (y - cy) > 3.2 || d > 5.6 ? dark : light);
+    } else if (inside(x - 1, y) || inside(x + 1, y) || inside(x, y - 1) || inside(x, y + 1)) {
+      set(x, y, INK);
     }
   }
+  const ey = 8;
+  const eye = (x: number) => {
+    if (eyes === 0) { set(x, ey, INK); set(x, ey + 1, INK); }
+    else if (eyes === 1) { set(x, ey, INK); set(x + 1, ey, INK); set(x, ey + 1, INK); set(x + 1, ey + 1, INK); }
+    else if (eyes === 2) { set(x, ey, INK); }
+    else if (eyes === 3) { set(x, ey + 1, INK); set(x + 1, ey + 1, INK); }
+    else { set(x, ey, INK); set(x + 1, ey + 1, INK); }
+  };
+  eye(5); eye(9);
+  if (brow === 1) for (const x of [5, 6, 9, 10]) set(x, ey - 2, INK);
+  if (brow === 2) { set(5, ey - 2, INK); set(6, ey - 1, INK); set(10, ey - 2, INK); set(9, ey - 1, INK); }
+  if (mouth === 0) { for (const x of [6, 7, 8, 9]) set(x, 11, INK); set(5, 10, INK); set(10, 10, INK); }
+  else if (mouth === 1) { for (const x of [6, 7, 8, 9]) { set(x, 11, INK); set(x, 12, INK); } }
+  else if (mouth === 2) { for (const x of [6, 7, 8, 9]) set(x, 11, INK); }
+  else { for (const x of [6, 7, 8]) set(x, 11, INK); set(9, 10, INK); }
+  if (hat === 1) for (let x = 3; x <= 12; x++) { set(x, 3, INK); set(x, 4, '#FF2E88'); }
+  else if (hat === 2) {
+    for (let x = 3; x <= 12; x++) set(x, 3, INK);
+    for (let x = 2; x <= 13; x++) set(x, 4, INK);
+    for (let x = 4; x <= 11; x++) set(x, 2, INK);
+  } else if (hat === 3) { set(7, 1, INK); set(8, 1, INK); set(7, 2, '#FFC619'); set(8, 2, '#FFC619'); }
+  else if (hat === 4) for (let x = 4; x <= 11; x++) set(x, 4, '#fbf1dd');
+  return put;
+}
+
+function Avatar({ nick }: { nick: string }) {
+  const cells = avatarCells(nick);
+  const byColor: Record<string, string[]> = {};
+  for (const k in cells) (byColor[cells[k]] ||= []).push(k);
   return (
-    <svg className="av" viewBox="0 0 5 5" shapeRendering="crispEdges" role="img" aria-label={`аватар ${nick}`}>
-      <rect x="0" y="0" width="5" height="5" fill="#241B12" />
-      <g fill={main}>{a}</g>
-      <g fill={alt}>{b}</g>
+    <svg className="av" viewBox="0 0 16 16" shapeRendering="crispEdges"
+      role="img" aria-label={`аватар ${nick}`}>
+      <rect x="0" y="0" width="16" height="16" fill="#241B12" />
+      {Object.entries(byColor).map(([color, keys]) => (
+        <g key={color} fill={color}>
+          {keys.map((k) => {
+            const [x, y] = k.split(',');
+            return <rect key={k} x={x} y={y} width="1" height="1" />;
+          })}
+        </g>
+      ))}
     </svg>
   );
 }
@@ -139,10 +182,8 @@ function Roster({ meNum }: { meNum: number }) {
   const seats = Array.from({ length: total }, (_, i) => byNum.get(i + 1) ?? null);
   return (
     <div className="kb-roster">
-      <div className="kb-roster-hd">
-        <div className="kb-lbl">СКЛАД ТУРНІРУ</div>
-        <div className="kb-count">{taken}<span>/{total}</span></div>
-      </div>
+      <div className="kb-lbl">СКЛАД ТУРНІРУ</div>
+      <div className="kb-count"><b>{taken}</b><span>з {total}</span></div>
       <div className="kb-bar"><i style={{ width: `${Math.round((taken / total) * 100)}%` }} /></div>
       <div className="kb-strip">
         {seats.map((p, i) => p ? (
@@ -303,6 +344,8 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         <div className="kb-num">№{p.num}</div>
       </div>
 
+      <Roster meNum={p.num} />
+
       <div className="kb-now">
         <div className="kb-lbl">{lbl}</div>
         <div className={'kb-big' + (calm ? ' calm' : '')}>{big}</div>
@@ -313,8 +356,6 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       <div className="kb-act">{action}</div>
 
       <Calendar now={new Date()} />
-
-      <Roster meNum={p.num} />
 
       {p.kind === 'player' && (phase === 'before' || phase === 'league') && <Slots opponents={[]} />}
 
