@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Гравці — DRUID BATTLE CUP',
-  description: 'Хто вже вписався в лігу 2–23 серпня на ДРУЇДІ.',
+  description: 'Хто вже вписався в лігу 7–12 вересня на ДРУЇДІ.',
 };
 
 export default function PlayersLayout({ children }: { children: React.ReactNode }) {
