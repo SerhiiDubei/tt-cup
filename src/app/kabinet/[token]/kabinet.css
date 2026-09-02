@@ -1,5 +1,7 @@
 /* Кабінет учасника DBC — самодостатній стиль, не залежить від liga.css.
    Джерело правди дизайну: Claude Design, проєкт «DBC — кабінет учасника». */
+/* сторінка мусить накрити світле тло сайту повністю, включно зі скролом */
+html:has(.kb-root),body:has(.kb-root){background:#0B0805;margin:0;overflow-x:hidden}
 .kb-root{
   --ink:#16110D; --ink-2:#241B12;
   --cream:#FBF1DD; --muted:#9B8E7C; --faint:#6B6154;
@@ -9,7 +11,7 @@
   --f-body:'Onest',system-ui,sans-serif;
   --border:2px solid #16110D;
   --shadow:3px 3px 0 rgba(0,0,0,.55);
-  min-height:100dvh;background:#0B0805;color:var(--cream);
+  width:100%;min-height:100dvh;background:#0B0805;color:var(--cream);overflow-x:hidden;
   font-family:var(--f-body);display:flex;justify-content:center;
   align-items:flex-start;padding:0;
 }
