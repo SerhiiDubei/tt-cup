@@ -125,7 +125,7 @@ function Roster({ meNum }: { meNum: number }) {
   const byNum = new Map((data?.players ?? []).map((p) => [p.num, p]));
   const left = total - taken;
   return (
-    <section className="kb-roster">
+    <div className="kb-roster">
       <div className="kb-rhd">
         <span className="kb-lbl">Склад турніру</span>
         <span className="kb-count">{taken}<span>/{total}</span></span>
@@ -156,7 +156,7 @@ function Roster({ meNum }: { meNum: number }) {
           ? `Лишилось ${left} ${left === 1 ? 'місце' : left < 5 ? 'місця' : 'місць'}.`
           : 'Усі місця зайняті.'}</p>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -222,16 +222,16 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
 
   return (
     <Shell>
-      <header className="kb-hd">
+      <div className="kb-hd">
         <div className="kb-ava" aria-hidden>{initials}</div>
         <div className="kb-who">
           <b>{name}</b>
           <span>{LEVEL_LABEL[p.level] ?? '—'}{p.is_sportik ? ' · розрядник' : ''}</span>
         </div>
         <div className="kb-num">№{p.num}</div>
-      </header>
+      </div>
 
-      <section className="kb-now">
+      <div className="kb-now">
         <div className="kb-nowhd">
           <span className="kb-lbl">{open ? 'До кінця реєстрації' : phase === 'league' ? 'Ліга йде' : 'День Х'}</span>
           <span className={'kb-pill' + (p.paid ? '' : ' warn')}>
@@ -256,20 +256,20 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         ) : (
           <p className="kb-sub">Турнір завершено. Дякуємо за гру.</p>
         )}
-      </section>
+      </div>
 
       <div className="kb-hr" />
       <Roster meNum={p.num} />
       <div className="kb-hr" />
 
-      <section className="kb-cal">
+      <div className="kb-cal">
         <span className="kb-lbl">Вересень · де ми зараз</span>
         <Bands phase={phase} />
         <div className="kb-oppo">
           <span>Твої суперники</span>
           <b>0 / 8 <i>· жереб 6.09</i></b>
         </div>
-      </section>
+      </div>
 
       <div className="kb-act">
         <a className="kb-btn" href="/yak">Як усе влаштовано →</a>
