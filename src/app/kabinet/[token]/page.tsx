@@ -30,69 +30,13 @@ function phaseNow(now: Date): Phase {
 const TG = 'https://t.me/bomberman047';
 const SLOTS = 8;
 
-/** Відлік до закриття реєстрації. Оновлюється щохвилини — секунди тут зайвий шум. */
-function Countdown({ to }: { to: Date }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(id);
-  }, []);
-  const left = to.getTime() - now;
-  if (left <= 0) return (
-    <div className="kb-cd over"><div><b>0</b><span>реєстрацію закрито</span></div></div>
-  );
-  const d = Math.floor(left / 86400000);
-  const h = Math.floor(left / 3600000) % 24;
-  const m = Math.floor(left / 60000) % 60;
-  return (
-    <div className="kb-cd">
-      <div><b>{d}</b><span>{plural(d, 'день', 'дні', 'днів')}</span></div>
-      <div><b>{String(h).padStart(2, '0')}</b><span>{plural(h, 'година', 'години', 'годин')}</span></div>
-      <div><b>{String(m).padStart(2, '0')}</b><span>{plural(m, 'хвилина', 'хвилини', 'хвилин')}</span></div>
-    </div>
-  );
-}
-function plural(n: number, one: string, few: string, many: string) {
-  const a = Math.abs(n) % 100, b = a % 10;
-  if (a > 10 && a < 20) return many;
-  if (b === 1) return one;
-  if (b >= 2 && b <= 4) return few;
-  return many;
-}
-
-/** Мʼяч зі знаком питання, намальований піксель-сіткою 10×10 —
-    щоб порожній слот виглядав як частина світу, а не як гліф зі шрифту. */
-function UnknownIcon() {
-  const Q = [
-    [3,1],[4,1],[5,1],[6,1],
-    [2,2],[7,2],
-    [6,3],[7,3],
-    [5,4],[6,4],
-    [4,5],[5,5],
-    [4,6],
-    [4,8],
-  ];
-  return (
-    <svg viewBox="0 0 10 10" role="img" aria-label="суперник ще невідомий" shapeRendering="crispEdges">
-      <g className="px-ball">
-        <rect x="3" y="0" width="4" height="1" /><rect x="1" y="1" width="8" height="1" />
-        <rect x="0" y="2" width="10" height="6" /><rect x="1" y="8" width="8" height="1" />
-        <rect x="3" y="9" width="4" height="1" />
-      </g>
-      <g className="px-q">
-        {Q.map(([x, y], i) => <rect key={i} x={x} y={y} width="1" height="1" />)}
-      </g>
-    </svg>
-  );
-}
-
-/** Аватар із ніка: детерміноване піксельне поле 5×5, дзеркальне по вертикалі.
-    Однаковий нік завжди дає однакову картинку, файлів не потрібно. */
+/** Стабільний хеш ніка — щоб персонаж не змінювався між заходами. */
 function seedOf(str: string) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
+
 const BODY: [string, string][] = [
   ['#FFC619','#C99400'], ['#F26F21','#B44A0E'], ['#7AC36A','#4E8C42'],
   ['#4FA3E3','#2C6DA3'], ['#E8765A','#B04935'], ['#B98BE0','#7E56A6'],
@@ -155,7 +99,7 @@ function Avatar({ nick }: { nick: string }) {
   return (
     <svg className="av" viewBox="0 0 16 16" shapeRendering="crispEdges"
       role="img" aria-label={`аватар ${nick}`}>
-      <rect x="0" y="0" width="16" height="16" fill="#241B12" />
+      <rect x="0" y="0" width="16" height="16" fill="#1A1613" />
       {Object.entries(byColor).map(([color, keys]) => (
         <g key={color} fill={color}>
           {keys.map((k) => {
@@ -168,8 +112,8 @@ function Avatar({ nick }: { nick: string }) {
   );
 }
 
-/** Склад турніру: 32 місця однією стрічкою. Зайняті — з ніком і аватаром,
-    вільні — піксельним мʼячем зі знаком питання. */
+/** Склад турніру за макетом 2b: портретні картки 132×188 з нашими
+    персонажами, під ними мінікарта всіх 32 місць. */
 function Roster({ meNum }: { meNum: number }) {
   const [data, setData] = useState<{ players: { num: number; nick: string }[]; total: number; taken: number } | null>(null);
   useEffect(() => {
@@ -179,95 +123,59 @@ function Roster({ meNum }: { meNum: number }) {
   const total = data?.total ?? 32;
   const taken = data?.taken ?? 0;
   const byNum = new Map((data?.players ?? []).map((p) => [p.num, p]));
-  const seats = Array.from({ length: total }, (_, i) => byNum.get(i + 1) ?? null);
+  const left = total - taken;
   return (
-    <div className="kb-roster">
-      <div className="kb-lbl">СКЛАД ТУРНІРУ</div>
-      <div className="kb-count"><b>{taken}</b><span>з {total}</span></div>
-      <div className="kb-bar"><i style={{ width: `${Math.round((taken / total) * 100)}%` }} /></div>
-      <div className="kb-strip">
-        {seats.map((p, i) => p ? (
-          <div key={i} className={'kb-seat' + (p.num === meNum ? ' me' : '')}>
-            <Avatar nick={p.nick} />
-            <b>{p.nick}</b><i>№{p.num}</i>
-          </div>
-        ) : (
-          <div key={i} className="kb-seat free">
-            <div className="av kb-slot"><UnknownIcon /></div>
-            <b>вільне</b><i>—</i>
-          </div>
-        ))}
+    <section className="kb-roster">
+      <div className="kb-rhd">
+        <span className="kb-lbl">Склад турніру</span>
+        <span className="kb-count">{taken}<span>/{total}</span></span>
       </div>
-      <p>{taken < total
-        ? `Лишилось ${total - taken} ${total - taken === 1 ? 'місце' : (total - taken) < 5 ? 'місця' : 'місць'}. Гортай убік — там усі.`
-        : 'Усі місця зайняті.'}</p>
-    </div>
-  );
-}
-
-/** Календар турніру: де ми зараз. Сітка збігається з тією, що в чаті —
-    31.08 понеділок, тож два рівні ряди: реєстрація 1–6, матчі 7–12, фінал 13. */
-function Calendar({ now }: { now: Date }) {
-  const today = now.getFullYear() === 2026 && now.getMonth() === 8 ? now.getDate() : 0;
-  const days: { n: number; cls: string }[] = [{ n: 31, cls: 'mute' }];
-  for (let d = 1; d <= 13; d++) {
-    days.push({ n: d, cls: d <= 6 ? 'reg' : d <= 12 ? 'onl' : 'main' });
-  }
-  const note = today === 0 ? null
-    : today <= 6 ? <>Сьогодні <em>{today} вересня</em> — реєстрація ще відкрита.</>
-    : today <= 12 ? <>Сьогодні <em>{today} вересня</em> — час грати свої матчі.</>
-    : today === 13 ? <>Сьогодні <em>День Х</em>. Побачимось на Друїді.</>
-    : null;
-  return (
-    <div className="kb-cal">
-      <div className="kb-lbl">ВЕРЕСЕНЬ · ДЕ МИ ЗАРАЗ</div>
-      <div className="kb-days">
-        {['пн','вт','ср','чт','пт','сб','нд'].map((w) => <div key={w} className="kb-wd">{w}</div>)}
-        {days.map((d) => {
-          const isToday = d.n === today && d.cls !== 'mute';
-          const past = today > 0 && d.cls !== 'mute' && d.n < today;
+      <div className="kb-strip">
+        {Array.from({ length: total }, (_, i) => {
+          const n = i + 1;
+          const p = byNum.get(n);
+          const me = p && p.num === meNum;
           return (
-            <div key={d.n}
-              className={`kb-day ${d.cls}${isToday ? ' today' : ''}${past ? ' past' : ''}`}
-              aria-current={isToday ? 'date' : undefined}>
-              {d.n}
+            <div key={n} className={'kb-seat' + (me ? ' me' : p ? '' : ' free')}>
+              {p ? <Avatar nick={p.nick} /> : <div className="av" />}
+              <div className="nm">
+                <b>{p ? p.nick : 'вільно'}</b>
+                <span>{me ? `Ти · місце №${n}` : `Місце №${n}`}</span>
+              </div>
             </div>
           );
         })}
       </div>
-      <div className="kb-legend">
-        <span><i style={{ background: 'var(--deadline)' }} />реєстрація</span>
-        <span><i style={{ background: 'var(--primary)' }} />матчі</span>
-        <span><i style={{ background: 'var(--cream)' }} />фінали</span>
+      <div className="kb-mini">
+        <div className="kb-minibar" aria-hidden>
+          {Array.from({ length: total }, (_, i) => (
+            <i key={i} className={byNum.has(i + 1) ? 'on' : ''} />
+          ))}
+        </div>
+        <p>{left > 0
+          ? `Лишилось ${left} ${left === 1 ? 'місце' : left < 5 ? 'місця' : 'місць'}.`
+          : 'Усі місця зайняті.'}</p>
       </div>
-      {note && <p className="kb-today-note">{note}</p>}
-    </div>
+    </section>
   );
 }
 
-/** Вісім слотів суперників. До жеребкування — піксельні заглушки. */
-function Slots({ opponents }: { opponents: string[] }) {
+/** Смуги фаз замість повного календаря: реєстрація · матчі · фінал,
+    активна позначена рискою знизу. */
+function Bands({ phase }: { phase: Phase }) {
   return (
-    <div className="kb-slots">
-      <div className="kb-lbl">ТВОЇ СУПЕРНИКИ · {opponents.length}/{SLOTS}</div>
-      <div className="kb-grid">
-        {Array.from({ length: SLOTS }, (_, i) => (
-          opponents[i]
-            ? <div key={i} className="kb-slot filled">{opponents[i]}</div>
-            : <div key={i} className="kb-slot"><UnknownIcon /></div>
-        ))}
-      </div>
-      <p>Вісім матчів із різними людьми. Жереб зведе пари, щойно закриється реєстрація.</p>
+    <div className="kb-bands">
+      <div className={'kb-band reg' + (phase === 'before' ? ' now' : '')}><b>Реєстрація</b><span>1—6</span></div>
+      <div className={'kb-band onl' + (phase === 'league' ? ' now' : '')}><b>Матчі</b><span>7—12</span></div>
+      <div className={'kb-band fin' + (phase === 'dayx' ? ' now' : '')}><b>Фінал</b><span>13</span></div>
     </div>
   );
 }
 
-/**
- * КАБІНЕТ УЧАСНИКА — переписаний (див. Claude Design «DBC — кабінет учасника»).
- * Одна робота: відповісти на «що мені робити далі і коли» за три секунди.
- * Один головний стан угорі, рівно одна головна дія, решта — під межею.
- * Неоплачений внесок має пріоритет над фазою: це єдине, що вимагає участі.
- */
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="kb-root"><div className="kb-phone">{children}</div></div>;
+}
+
 export default function KabinetPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [p, setP] = useState<Player | null>(null);
@@ -283,98 +191,95 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       try { localStorage.setItem('dbc_token', token); } catch { /* приватний режим */ }
     } catch { setState('error'); }
   }, [token]);
-
   useEffect(() => { void load(); }, [load]);
 
   if (state === 'load') return <Shell><div className="kb-msg">Завантажую…</div></Shell>;
   if (state === 'missing') return (
-    <Shell><div className="kb-msg"><b>ТАКОГО ЗАПИСУ НЕМАЄ</b>
-      Схоже, посилання неповне або застаріле. Напиши — розберемось.
+    <Shell><div className="kb-msg"><b>Такого запису немає</b>
+      Схоже, посилання неповне або застаріле.
       <div className="kb-act" style={{ padding: '20px 0 0' }}>
-        <a className="kb-btn" href={TG}>НАПИСАТИ ОРГАНІЗАТОРУ</a>
+        <a className="kb-btn primary" href={TG}>Написати організатору</a>
       </div></div></Shell>
   );
   if (state === 'error' || !p) return (
-    <Shell><div className="kb-msg"><b>ЗВʼЯЗОК ПРОПАВ</b>
+    <Shell><div className="kb-msg"><b>Звʼязок пропав</b>
       Не вдалося завантажити дані.
       <div className="kb-act" style={{ padding: '20px 0 0' }}>
-        <button className="kb-btn" onClick={() => { setState('load'); void load(); }}>СПРОБУВАТИ ЩЕ РАЗ</button>
+        <button className="kb-btn" onClick={() => { setState('load'); void load(); }}>Спробувати ще раз</button>
       </div></div></Shell>
   );
 
-  const phase = phaseNow(new Date());
+  const now = new Date();
+  const phase = phaseNow(now);
+  const left = REG_END.getTime() - now.getTime();
+  const d = Math.max(0, Math.floor(left / 86400000));
+  const h = Math.max(0, Math.floor(left / 3600000) % 24);
+  const m = Math.max(0, Math.floor(left / 60000) % 60);
   const name = p.nick || p.first_name || 'Гравець';
   const initials = ((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase() || '?';
-  const contact = p.telegram || (p.instagram ? '@' + p.instagram + ' · IG' : '—');
-
-  /* Головний блок. Неоплата перебиває фазу — інакше людина не знає, що від неї чекають. */
-  let lbl: string, big: string, sub: React.ReactNode, calm = false;
-  let action: React.ReactNode = null;
-
-  if (phase === 'before') {
-    lbl = 'ДО КІНЦЯ РЕЄСТРАЦІЇ'; calm = true;
-    big = 'ТИ В СПИСКУ';
-    sub = <>Реєстрація закривається <em>6 вересня о 23:59</em>. Одразу після цього жереб зведе пари.</>;
-    action = <a className="kb-btn ghost" href="/yak">Як усе влаштовано →</a>;
-  } else if (phase === 'league') {
-    lbl = 'ЛІГА ЙДЕ'; calm = true;
-    big = 'ГРАЄМО ДО 12.09';
-    sub = <>Пари вже розкидані. Домовляйся про матчі й грай — час і місце обираєте самі. Список суперників надішле організатор.</>;
-    action = <a className="kb-btn" href={TG}>ДЕ МОЇ ПАРИ?</a>;
-  } else if (phase === 'dayx') {
-    lbl = 'СЬОГОДНІ · ДЕНЬ Х'; calm = false;
-    big = '13 ВЕРЕСНЯ · ДРУЇД';
-    sub = <>Фінали, ФАН-частина о <em>13:00</em>, нагородження о <em>17:45</em>, афтепаті о <em>18:30</em>.</>;
-    action = <a className="kb-btn ghost" href="/yak">Розклад дня →</a>;
-  } else {
-    lbl = 'ТУРНІР ЗАВЕРШЕНО'; calm = true;
-    big = 'ДЯКУЄМО ЗА ГРУ';
-    sub = <>Наступний DRUID BATTLE CUP — скоро. Напишу, щойно відкриємо запис.</>;
-    action = <a className="kb-btn ghost" href={TG}>Написати організатору</a>;
-  }
+  const contact = p.telegram || (p.instagram ? '@' + p.instagram : '—');
+  const open = phase === 'before';
 
   return (
     <Shell>
-      <div className="kb-hd">
+      <header className="kb-hd">
         <div className="kb-ava" aria-hidden>{initials}</div>
         <div className="kb-who">
-          <b>{name.toUpperCase()}</b>
+          <b>{name}</b>
           <span>{LEVEL_LABEL[p.level] ?? '—'}{p.is_sportik ? ' · розрядник' : ''}</span>
         </div>
         <div className="kb-num">№{p.num}</div>
-      </div>
+      </header>
 
-      <Roster meNum={p.num} />
-
-      <div className="kb-now">
-        <div className="kb-lbl">{lbl}</div>
-        <div className={'kb-big' + (calm ? ' calm' : '')}>{big}</div>
-        <p className="kb-sub">{sub}</p>
-        {phase === 'before' && <Countdown to={REG_END} />}
-      </div>
-
-      <div className="kb-act">{action}</div>
-
-      <Calendar now={new Date()} />
-
-      {p.kind === 'player' && (phase === 'before' || phase === 'league') && <Slots opponents={[]} />}
-
-      <div className="kb-rest">
-        <div className="kb-row"><span>Внесок</span>
-          <b className={p.paid ? 'ok' : ''}>
-            {p.pay_amount} грн{p.paid ? ' · підтверджено' : ''}
-          </b>
+      <section className="kb-now">
+        <div className="kb-nowhd">
+          <span className="kb-lbl">{open ? 'До кінця реєстрації' : phase === 'league' ? 'Ліга йде' : 'День Х'}</span>
+          <span className={'kb-pill' + (p.paid ? '' : ' warn')}>
+            <i />{p.paid ? 'Ти в списку' : 'Внесок очікується'}
+          </span>
         </div>
-        <div className="kb-row"><span>Твій контакт</span><b>{contact}</b></div>
-        {p.volunteer && p.volunteer_roles.length > 0 && (
-          <div className="kb-row"><span>Волонтериш</span><b>{p.volunteer_roles.join(', ')}</b></div>
+        {open ? (
+          <>
+            <div className="kb-big">
+              <b>{String(d).padStart(2, '0')}</b>
+              <div>
+                <span>{d === 1 ? 'день' : d < 5 ? 'дні' : 'днів'}</span>
+                <span className="kb-hm">{String(h).padStart(2, '0')} <i>год</i> {String(m).padStart(2, '0')} <i>хв</i></span>
+              </div>
+            </div>
+            <p className="kb-sub">Закриється 6 вересня, 23:59</p>
+          </>
+        ) : phase === 'league' ? (
+          <p className="kb-sub">Пари розкидані. Грай свої матчі до <em>12 вересня</em> — час і місце обираєте самі.</p>
+        ) : phase === 'dayx' ? (
+          <p className="kb-sub">Сьогодні фінали на Друїді. ФАН-частина о <em>13:00</em>, нагородження о <em>17:45</em>.</p>
+        ) : (
+          <p className="kb-sub">Турнір завершено. Дякуємо за гру.</p>
         )}
+      </section>
+
+      <div className="kb-hr" />
+      <Roster meNum={p.num} />
+      <div className="kb-hr" />
+
+      <section className="kb-cal">
+        <span className="kb-lbl">Вересень · де ми зараз</span>
+        <Bands phase={phase} />
+        <div className="kb-oppo">
+          <span>Твої суперники</span>
+          <b>0 / 8 <i>· жереб 6.09</i></b>
+        </div>
+      </section>
+
+      <div className="kb-act">
+        <a className="kb-btn" href="/yak">Як усе влаштовано →</a>
       </div>
-      <div className="kb-note">Посилання на цю сторінку — твій вхід. Збережи його.</div>
+
+      <div className="kb-foot">
+        <div><span>Внесок</span><b>{p.pay_amount} ₴</b></div>
+        <div><span>Твій контакт</span><b>{contact}</b></div>
+      </div>
+      <p className="kb-note">Реєстрація — до 6 вересня, 23:59. Посилання на цю сторінку — твій вхід.</p>
     </Shell>
   );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="kb-root"><div className="kb-phone">{children}</div></div>;
 }
