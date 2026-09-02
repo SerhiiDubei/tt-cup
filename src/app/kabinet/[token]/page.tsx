@@ -13,7 +13,8 @@ type Player = {
 };
 
 /* Ключові дати турніру — єдине джерело для фази кабінету. */
-const DRAW = new Date('2026-09-05T23:59:59+03:00');   // жеребкування
+const REG_END = new Date('2026-09-05T23:59:59+03:00'); // реєстрація закривається
+const DRAW = REG_END;                                  // жеребкування одразу після
 const LEAGUE_END = new Date('2026-09-11T23:59:59+03:00');
 const DAY_X = new Date('2026-09-12T00:00:00+03:00');
 const DAY_X_END = new Date('2026-09-12T23:59:59+03:00');
@@ -27,6 +28,54 @@ function phaseNow(now: Date): Phase {
 }
 
 const TG = 'https://t.me/bomberman047';
+const SLOTS = 8;
+
+/** Відлік до закриття реєстрації. Оновлюється щохвилини — секунди тут зайвий шум. */
+function Countdown({ to }: { to: Date }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const left = to.getTime() - now;
+  if (left <= 0) return (
+    <div className="kb-cd over"><div><b>0</b><span>реєстрацію закрито</span></div></div>
+  );
+  const d = Math.floor(left / 86400000);
+  const h = Math.floor(left / 3600000) % 24;
+  const m = Math.floor(left / 60000) % 60;
+  return (
+    <div className="kb-cd">
+      <div><b>{d}</b><span>{plural(d, 'день', 'дні', 'днів')}</span></div>
+      <div><b>{String(h).padStart(2, '0')}</b><span>{plural(h, 'година', 'години', 'годин')}</span></div>
+      <div><b>{String(m).padStart(2, '0')}</b><span>{plural(m, 'хвилина', 'хвилини', 'хвилин')}</span></div>
+    </div>
+  );
+}
+function plural(n: number, one: string, few: string, many: string) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b === 1) return one;
+  if (b >= 2 && b <= 4) return few;
+  return many;
+}
+
+/** Вісім слотів суперників. До жеребкування — знаки питання. */
+function Slots({ opponents }: { opponents: string[] }) {
+  return (
+    <div className="kb-slots">
+      <div className="kb-lbl">ТВОЇ СУПЕРНИКИ · {opponents.length}/{SLOTS}</div>
+      <div className="kb-grid">
+        {Array.from({ length: SLOTS }, (_, i) => (
+          opponents[i]
+            ? <div key={i} className="kb-slot filled">{opponents[i]}</div>
+            : <div key={i} className="kb-slot" aria-label="ще невідомо">?</div>
+        ))}
+      </div>
+      <p>Вісім матчів із різними людьми. Жереб зведе пари, щойно закриється реєстрація.</p>
+    </div>
+  );
+}
 
 /**
  * КАБІНЕТ УЧАСНИКА — переписаний (див. Claude Design «DBC — кабінет учасника»).
@@ -38,7 +87,6 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   const { token } = use(params);
   const [p, setP] = useState<Player | null>(null);
   const [state, setState] = useState<'load' | 'ok' | 'missing' | 'error'>('load');
-  const [claiming, setClaiming] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -52,17 +100,6 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
-
-  async function claimPaid() {
-    setClaiming(true);
-    try {
-      const r = await fetch(`/api/ya/${token}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'claim_paid' }),
-      });
-      if (r.ok) { const j = await r.json(); setP(j.player); }
-    } finally { setClaiming(false); }
-  }
 
   if (state === 'load') return <Shell><div className="kb-msg">Завантажую…</div></Shell>;
   if (state === 'missing') return (
@@ -81,8 +118,6 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   );
 
   const phase = phaseNow(new Date());
-  const needsPay = p.kind === 'player' && !p.paid;
-  const claimed = !!p.paid_claimed_at;
   const name = p.nick || p.first_name || 'Гравець';
   const initials = ((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase() || '?';
   const contact = p.telegram || (p.instagram ? '@' + p.instagram + ' · IG' : '—');
@@ -91,24 +126,10 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   let lbl: string, big: string, sub: React.ReactNode, calm = false;
   let action: React.ReactNode = null;
 
-  if (needsPay) {
-    lbl = 'ПОТРІБНА ДІЯ';
-    big = claimed ? 'ЧЕКАЄМО ПІДТВЕРДЖЕННЯ' : 'ВНЕСОК ЩЕ НЕ ПІДТВЕРДЖЕНО';
-    sub = claimed
-      ? <>Ти позначив оплату — організатор звірить і підтвердить вручну. Це не миттєво.</>
-      : <>Місце тримаємо до <em>5 вересня</em>. Після цього воно піде наступному в черзі.</>;
-    action = claimed
-      ? <a className="kb-btn ghost" href={TG}>Написати організатору</a>
-      : <>
-          <button className="kb-btn warn" onClick={claimPaid} disabled={claiming}>
-            {claiming ? 'ЗБЕРІГАЮ…' : `Я ОПЛАТИВ ${p.pay_amount} ГРН`}
-          </button>
-          <a className="kb-btn ghost" href={TG}>Питання про оплату</a>
-        </>;
-  } else if (phase === 'before') {
-    lbl = 'ЩО ЗАРАЗ'; calm = true;
+  if (phase === 'before') {
+    lbl = 'ДО КІНЦЯ РЕЄСТРАЦІЇ'; calm = true;
     big = 'ТИ В СПИСКУ';
-    sub = <>Жеребкування — <em>5 вересня</em>. Щойно система розкидає пари, суперники зʼявляться тут.</>;
+    sub = <>Реєстрація закривається <em>5 вересня о 23:59</em>. Одразу після цього жереб зведе пари.</>;
     action = <a className="kb-btn ghost" href="/pravyla">Як усе влаштовано →</a>;
   } else if (phase === 'league') {
     lbl = 'ЛІГА ЙДЕ'; calm = true;
@@ -142,14 +163,17 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         <div className="kb-lbl">{lbl}</div>
         <div className={'kb-big' + (calm ? ' calm' : '')}>{big}</div>
         <p className="kb-sub">{sub}</p>
+        {phase === 'before' && <Countdown to={REG_END} />}
       </div>
 
       <div className="kb-act">{action}</div>
 
+      {p.kind === 'player' && (phase === 'before' || phase === 'league') && <Slots opponents={[]} />}
+
       <div className="kb-rest">
         <div className="kb-row"><span>Внесок</span>
-          <b className={p.paid ? 'ok' : 'warn'}>
-            {p.pay_amount} грн · {p.paid ? 'підтверджено' : claimed ? 'на перевірці' : 'чекає'}
+          <b className={p.paid ? 'ok' : ''}>
+            {p.pay_amount} грн{p.paid ? ' · підтверджено' : ''}
           </b>
         </div>
         <div className="kb-row"><span>Твій контакт</span><b>{contact}</b></div>
