@@ -80,9 +80,9 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'too_long' }, { status: 400 });
 
   const answers = Array.isArray(body.answers)
-    ? body.answers.slice(0, 7).map((a) => Math.max(0, Math.min(3, Number(a) || 0)))
+    ? body.answers.slice(0, 5).map((a) => Math.max(0, Math.min(3, Number(a) || 0)))
     : [];
-  if (kind === 'player' && answers.length !== 7)
+  if (kind === 'player' && answers.length !== 5)
     return NextResponse.json({ error: 'answers_required' }, { status: 400 });
   const { level, sportik } = kind === 'player' ? levelFromAnswers(answers) : { level: 1, sportik: false };
 
