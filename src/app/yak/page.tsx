@@ -65,15 +65,29 @@ export default function YakPage() {
       <section className="yk-sec">
         <div className="kb-lbl">СКІЛЬКИ</div>
         <div className="yk-price">
-          <div><b>420 ГРН</b><span>Участь. Стіл, сітка, призи і їжа на місці.</span></div>
+          <div><b>420 ГРН</b><span>Участь. Стіл, сітка, суддівство і призовий фонд.</span></div>
           <div><b>840 ГРН</b><span>Та сама гра — вдвічі більший вклад у подію та призовий фонд.</span></div>
         </div>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ЩО ВХОДИТЬ У ВНЕСОК</div>
+        <p>Стіл, сітка, мʼячі, суддівство, організація сітки й розкладу, фан-частина
+          і <em>призовий фонд</em>.</p>
+        <p><em>Їжа й напої не входять</em> — вони будуть на місці, але за свої.
+          Дорога до Друїда теж на тобі.</p>
       </section>
 
       <div className="yk-cta kb-act">
         <Link className="kb-btn" href="/kabinet">МІЙ КАБІНЕТ</Link>
         <a className="kb-btn ghost" href={TG}>Лишилось питання — напиши</a>
       </div>
+
+      <nav className="mc-nav">
+        <Link href="/oferta">Публічний договір</Link>
+        <Link href="/refund">Повернення коштів</Link>
+        <Link href="/contacts">Контакти і реквізити</Link>
+      </nav>
     </div></div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '../kabinet/[token]/kabinet.css';
 import './yak.css';
+import '../(merchant)/merchant.css';
 
 export const metadata: Metadata = {
   title: 'Як усе влаштовано · DRUID BATTLE CUP',
