@@ -15,6 +15,13 @@ const ONBOARD = 'https://ttcup-onboard.vercel.app';
 export default function Home() {
   useEffect(() => {
     (async () => {
+      // Запобіжник: якщо Supabase не прийняв redirect_to на онбординг, він скидає
+      // людину сюди — на SITE_URL — із сесією в хеші. Без цієї гілки корінь
+      // відфутболював її на /standings прямо посеред реєстрації.
+      if (location.hash.includes('access_token') || location.hash.includes('error=')) {
+        location.replace('https://dbc-onboarding.vercel.app/short' + location.hash);
+        return;
+      }
       try {
         if (localStorage.getItem('dbc_token')) { location.replace('/standings'); return; }
       } catch { /* ок */ }
