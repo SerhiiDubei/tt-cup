@@ -1,0 +1,79 @@
+import Link from 'next/link';
+
+const TG = 'https://t.me/bomberman047';
+
+/**
+ * «Як усе влаштовано» — заміна старим /pravyla, які досі описували
+ * серпневий цикл («жеребкування 2.08», «День Х 23 серпня»).
+ * Одна сторінка, яку можна прочитати за хвилину і закрити.
+ */
+export default function YakPage() {
+  return (
+    <div className="kb-root"><div className="kb-phone yk">
+      <div className="kb-hd">
+        <div className="kb-ava" aria-hidden>DBC</div>
+        <div className="kb-who">
+          <b>ЯК УСЕ ВЛАШТОВАНО</b>
+          <span>DRUID BATTLE CUP · 13 вересня</span>
+        </div>
+      </div>
+
+      <h1 className="yk-h1">ТУРНІР ЗА ЧОТИРИ КРОКИ</h1>
+      <p className="yk-lead">Без води. Якщо після цієї сторінки лишиться питання — пиши, відповім особисто.</p>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ЯК ЦЕ ЙДЕ</div>
+        <ol className="yk-steps">
+          <li className="yk-step"><i>1</i><div>
+            <b>Реєструєшся — до 6 вересня, 23:59</b>
+            <span>Місць 32. Хто перший — той грає.</span>
+          </div></li>
+          <li className="yk-step"><i>2</i><div>
+            <b>6 вересня система розкидає пари</b>
+            <span>Жереб зводить суперників за силою — щоб було чесно, а не щоб когось знести в першому колі.</span>
+          </div></li>
+          <li className="yk-step"><i>3</i><div>
+            <b>7–12 вересня граєш вісім матчів</b>
+            <span>Це не гра в телефоні. Домовляєтесь самі: час і місце обираєте ви двоє, рахунок вносите в систему.</span>
+          </div></li>
+          <li className="yk-step"><i>4</i><div>
+            <b>13 вересня — День Х на Друїді</b>
+            <span>Очки ділять усіх на дві ліги, у кожної своя сітка і свій приз. Вилетіти в нікуди неможливо.</span>
+          </div></li>
+        </ol>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ПРО МАТЧІ</div>
+        <p>Вісім матчів із різними людьми. Граємо <em>до двох перемог у сетах</em>, сет — до 11 очок.</p>
+        <p>Рахунок вносить будь-хто з пари, другий підтверджує. Не зіграли до 12-го — матч рахується нульовим обом.</p>
+        <p>Після матчу оцінюєш, чи грав суперник на свій заявлений рівень. Хитрувати з рівнем невигідно: це видно за перші два матчі.</p>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ДВІ ЛІГИ</div>
+        <p><em>Верхня</em> — топ за очками онлайн-частини. <em>Нижня</em> — усі інші, зі своєю сіткою і своїм призом.</p>
+        <p>Сенс простий: середнячок грає з середнячками і має реальний шанс на фінал, а не вилітає від розрядника на першій хвилині.</p>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ФАН-ЧАСТИНА</div>
+        <p>13 вересня о <em>13:00</em> — міні-ігри для всіх охочих, навіть якщо ти не в сітці. Стаканчики, відро і ще пара сюрпризів.</p>
+        <p>Фанові очки рахуються нарівні зі спортивними — є окрема номінація.</p>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">СКІЛЬКИ</div>
+        <div className="yk-price">
+          <div><b>420 ГРН</b><span>Участь. Стіл, сітка, призи і їжа на місці.</span></div>
+          <div><b>840 ГРН</b><span>Та сама гра — вдвічі більший вклад у подію та призовий фонд.</span></div>
+        </div>
+      </section>
+
+      <div className="yk-cta kb-act">
+        <Link className="kb-btn" href="/kabinet">МІЙ КАБІНЕТ</Link>
+        <a className="kb-btn ghost" href={TG}>Лишилось питання — напиши</a>
+      </div>
+    </div></div>
+  );
+}

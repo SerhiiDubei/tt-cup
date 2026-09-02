@@ -80,3 +80,53 @@ html:has(.kb-root),body:has(.kb-root){background:#0B0805;margin:0;overflow-x:hid
 .kb-slot.filled{background:var(--ink-2);border-color:var(--action);color:var(--cream);font-size:9px;
   padding:4px;text-align:center;line-height:1.4;word-break:break-word}
 .kb-slots p{font-size:13px;color:var(--muted);margin:12px 0 0;line-height:1.45}
+
+/* ── ДЕСКТОП ──
+   На вузькому — одна колонка-стрічка. На широкому екрані розводимо
+   у дві: ліворуч «що зараз» і дія, праворуч календар, суперники, деталі.
+   Кабінет усе одно читають переважно з телефона, тож десктоп — не окремий
+   дизайн, а та сама сітка, розкладена вшир. */
+@media (min-width:820px){
+  .kb-root{padding:40px 24px;align-items:center}
+  .kb-phone{max-width:940px;display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:'hd hd' 'now cal' 'act slots' 'rest slots' 'note slots';
+    align-content:start}
+  .kb-hd{grid-area:hd;padding:20px 24px}
+  .kb-hd .kb-who b{font-size:12px}
+  .kb-now{grid-area:now;padding:32px 24px 20px}
+  .kb-big{font-size:21px}
+  .kb-sub{font-size:16px}
+  .kb-act{grid-area:act;padding:0 24px 20px}
+  .kb-cal{grid-area:cal;border-left:2px solid rgba(251,241,221,.14)}
+  .kb-slots{grid-area:slots;border-left:2px solid rgba(251,241,221,.14);padding:20px 24px 24px}
+  .kb-rest{grid-area:rest;margin-top:0;border-top:2px solid rgba(251,241,221,.14)}
+  .kb-note{grid-area:note;border-top:0}
+  .kb-grid{grid-template-columns:repeat(4,1fr)}
+}
+
+/* ── календар: де ми зараз у турнірі ── */
+.kb-cal{padding:20px 16px}
+.kb-cal .kb-lbl{margin-bottom:12px}
+.kb-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.kb-wd{font-size:10px;color:#7d7264;text-align:center;padding-bottom:2px}
+.kb-day{aspect-ratio:1.35;display:grid;place-items:center;position:relative;
+  background:#2B2219;color:#8a7d6c;border:2px solid var(--ink);
+  font-family:var(--f-pixel);font-size:8px;box-shadow:2px 2px 0 rgba(0,0,0,.4)}
+.kb-day.mute{background:#221B14;color:#5c5348;box-shadow:none}
+.kb-day.reg{background:var(--deadline);color:#2A1200}
+.kb-day.onl{background:var(--primary);color:#fff}
+.kb-day.main{background:var(--cream);color:var(--ink);box-shadow:0 0 0 2px var(--action),2px 2px 0 rgba(0,0,0,.5)}
+.kb-day.today::after{content:'';position:absolute;left:50%;bottom:3px;transform:translateX(-50%);
+  width:5px;height:5px;background:currentColor}
+.kb-day.past{opacity:.42}
+.kb-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:11px;color:var(--muted)}
+.kb-legend span{display:inline-flex;align-items:center;gap:6px}
+.kb-legend i{width:11px;height:11px;border:2px solid var(--ink);display:inline-block}
+.kb-today-note{margin-top:12px;font-size:13px;color:var(--cream);line-height:1.45}
+.kb-today-note em{font-style:normal;color:var(--action);font-weight:600}
+
+/* ── слот суперника: піксельна іконка замість гліфа «?» ── */
+.kb-slot svg{width:60%;height:60%;display:block}
+.kb-slot .px-q{fill:#5c5348}
+.kb-slot .px-ball{fill:#3a3126}

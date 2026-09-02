@@ -60,7 +60,73 @@ function plural(n: number, one: string, few: string, many: string) {
   return many;
 }
 
-/** Вісім слотів суперників. До жеребкування — знаки питання. */
+/** Мʼяч зі знаком питання, намальований піксель-сіткою 10×10 —
+    щоб порожній слот виглядав як частина світу, а не як гліф зі шрифту. */
+function UnknownIcon() {
+  const Q = [
+    [3,1],[4,1],[5,1],[6,1],
+    [2,2],[7,2],
+    [6,3],[7,3],
+    [5,4],[6,4],
+    [4,5],[5,5],
+    [4,6],
+    [4,8],
+  ];
+  return (
+    <svg viewBox="0 0 10 10" role="img" aria-label="суперник ще невідомий" shapeRendering="crispEdges">
+      <g className="px-ball">
+        <rect x="3" y="0" width="4" height="1" /><rect x="1" y="1" width="8" height="1" />
+        <rect x="0" y="2" width="10" height="6" /><rect x="1" y="8" width="8" height="1" />
+        <rect x="3" y="9" width="4" height="1" />
+      </g>
+      <g className="px-q">
+        {Q.map(([x, y], i) => <rect key={i} x={x} y={y} width="1" height="1" />)}
+      </g>
+    </svg>
+  );
+}
+
+/** Календар турніру: де ми зараз. Сітка збігається з тією, що в чаті —
+    31.08 понеділок, тож два рівні ряди: реєстрація 1–6, матчі 7–12, фінал 13. */
+function Calendar({ now }: { now: Date }) {
+  const today = now.getFullYear() === 2026 && now.getMonth() === 8 ? now.getDate() : 0;
+  const days: { n: number; cls: string }[] = [{ n: 31, cls: 'mute' }];
+  for (let d = 1; d <= 13; d++) {
+    days.push({ n: d, cls: d <= 6 ? 'reg' : d <= 12 ? 'onl' : 'main' });
+  }
+  const note = today === 0 ? null
+    : today <= 6 ? <>Сьогодні <em>{today} вересня</em> — реєстрація ще відкрита.</>
+    : today <= 12 ? <>Сьогодні <em>{today} вересня</em> — час грати свої матчі.</>
+    : today === 13 ? <>Сьогодні <em>День Х</em>. Побачимось на Друїді.</>
+    : null;
+  return (
+    <div className="kb-cal">
+      <div className="kb-lbl">ВЕРЕСЕНЬ · ДЕ МИ ЗАРАЗ</div>
+      <div className="kb-days">
+        {['пн','вт','ср','чт','пт','сб','нд'].map((w) => <div key={w} className="kb-wd">{w}</div>)}
+        {days.map((d) => {
+          const isToday = d.n === today && d.cls !== 'mute';
+          const past = today > 0 && d.cls !== 'mute' && d.n < today;
+          return (
+            <div key={d.n}
+              className={`kb-day ${d.cls}${isToday ? ' today' : ''}${past ? ' past' : ''}`}
+              aria-current={isToday ? 'date' : undefined}>
+              {d.n}
+            </div>
+          );
+        })}
+      </div>
+      <div className="kb-legend">
+        <span><i style={{ background: 'var(--deadline)' }} />реєстрація</span>
+        <span><i style={{ background: 'var(--primary)' }} />матчі</span>
+        <span><i style={{ background: 'var(--cream)' }} />фінали</span>
+      </div>
+      {note && <p className="kb-today-note">{note}</p>}
+    </div>
+  );
+}
+
+/** Вісім слотів суперників. До жеребкування — піксельні заглушки. */
 function Slots({ opponents }: { opponents: string[] }) {
   return (
     <div className="kb-slots">
@@ -69,7 +135,7 @@ function Slots({ opponents }: { opponents: string[] }) {
         {Array.from({ length: SLOTS }, (_, i) => (
           opponents[i]
             ? <div key={i} className="kb-slot filled">{opponents[i]}</div>
-            : <div key={i} className="kb-slot" aria-label="ще невідомо">?</div>
+            : <div key={i} className="kb-slot"><UnknownIcon /></div>
         ))}
       </div>
       <p>Вісім матчів із різними людьми. Жереб зведе пари, щойно закриється реєстрація.</p>
@@ -130,7 +196,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
     lbl = 'ДО КІНЦЯ РЕЄСТРАЦІЇ'; calm = true;
     big = 'ТИ В СПИСКУ';
     sub = <>Реєстрація закривається <em>6 вересня о 23:59</em>. Одразу після цього жереб зведе пари.</>;
-    action = <a className="kb-btn ghost" href="/pravyla">Як усе влаштовано →</a>;
+    action = <a className="kb-btn ghost" href="/yak">Як усе влаштовано →</a>;
   } else if (phase === 'league') {
     lbl = 'ЛІГА ЙДЕ'; calm = true;
     big = 'ГРАЄМО ДО 12.09';
@@ -140,7 +206,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
     lbl = 'СЬОГОДНІ · ДЕНЬ Х'; calm = false;
     big = '13 ВЕРЕСНЯ · ДРУЇД';
     sub = <>Фінали, ФАН-частина о <em>13:00</em>, нагородження о <em>17:45</em>, афтепаті о <em>18:30</em>.</>;
-    action = <a className="kb-btn ghost" href="/pravyla">Розклад дня →</a>;
+    action = <a className="kb-btn ghost" href="/yak">Розклад дня →</a>;
   } else {
     lbl = 'ТУРНІР ЗАВЕРШЕНО'; calm = true;
     big = 'ДЯКУЄМО ЗА ГРУ';
@@ -167,6 +233,8 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       </div>
 
       <div className="kb-act">{action}</div>
+
+      <Calendar now={new Date()} />
 
       {p.kind === 'player' && (phase === 'before' || phase === 'league') && <Slots opponents={[]} />}
 

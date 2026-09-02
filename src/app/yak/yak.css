@@ -1,0 +1,27 @@
+/* «Як усе влаштовано» — та сама мова, що й кабінет. */
+.yk-h1{font-family:var(--f-pixel);font-size:15px;line-height:1.6;color:var(--action);
+  padding:28px 16px 8px}
+.yk-lead{font-size:15px;line-height:1.45;color:var(--muted);padding:0 16px 20px}
+.yk-sec{border-top:2px solid rgba(251,241,221,.14);padding:20px 16px}
+.yk-sec > .kb-lbl{margin-bottom:12px}
+.yk-sec p{font-size:15px;line-height:1.5;color:var(--cream);margin:0 0 10px}
+.yk-sec p:last-child{margin-bottom:0}
+.yk-sec em{font-style:normal;color:var(--action);font-weight:600}
+.yk-steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.yk-step{display:flex;gap:12px;align-items:flex-start}
+.yk-step i{flex:none;width:26px;height:26px;display:grid;place-items:center;
+  font-family:var(--f-pixel);font-size:9px;font-style:normal;
+  background:var(--ink-2);border:2px solid var(--action);color:var(--action)}
+.yk-step div{flex:1;font-size:15px;line-height:1.45}
+.yk-step b{display:block;color:var(--cream);font-weight:600;margin-bottom:2px}
+.yk-step span{color:var(--muted);font-size:14px}
+.yk-price{display:flex;gap:10px;flex-wrap:wrap}
+.yk-price div{flex:1;min-width:130px;border:2px solid rgba(251,241,221,.2);background:var(--ink-2);padding:12px}
+.yk-price b{display:block;font-family:var(--f-pixel);font-size:13px;color:var(--action);margin-bottom:6px}
+.yk-price span{font-size:13px;color:var(--muted);line-height:1.4}
+.yk-cta{padding:20px 16px calc(28px + env(safe-area-inset-bottom))}
+@media (min-width:820px){
+  .kb-phone.yk{display:block;max-width:720px}
+  .yk-h1{font-size:19px;padding:36px 28px 10px}
+  .yk-lead,.yk-sec,.yk-cta{padding-left:28px;padding-right:28px}
+}
