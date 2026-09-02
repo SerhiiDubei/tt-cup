@@ -13,11 +13,11 @@ type Player = {
 };
 
 /* Ключові дати турніру — єдине джерело для фази кабінету. */
-const REG_END = new Date('2026-09-05T23:59:59+03:00'); // реєстрація закривається
+const REG_END = new Date('2026-09-06T23:59:59+03:00'); // реєстрація закривається
 const DRAW = REG_END;                                  // жеребкування одразу після
-const LEAGUE_END = new Date('2026-09-11T23:59:59+03:00');
-const DAY_X = new Date('2026-09-12T00:00:00+03:00');
-const DAY_X_END = new Date('2026-09-12T23:59:59+03:00');
+const LEAGUE_END = new Date('2026-09-12T23:59:59+03:00');
+const DAY_X = new Date('2026-09-13T00:00:00+03:00');
+const DAY_X_END = new Date('2026-09-13T23:59:59+03:00');
 
 type Phase = 'before' | 'league' | 'dayx' | 'after';
 function phaseNow(now: Date): Phase {
@@ -129,16 +129,16 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   if (phase === 'before') {
     lbl = 'ДО КІНЦЯ РЕЄСТРАЦІЇ'; calm = true;
     big = 'ТИ В СПИСКУ';
-    sub = <>Реєстрація закривається <em>5 вересня о 23:59</em>. Одразу після цього жереб зведе пари.</>;
+    sub = <>Реєстрація закривається <em>6 вересня о 23:59</em>. Одразу після цього жереб зведе пари.</>;
     action = <a className="kb-btn ghost" href="/pravyla">Як усе влаштовано →</a>;
   } else if (phase === 'league') {
     lbl = 'ЛІГА ЙДЕ'; calm = true;
-    big = 'ГРАЄМО ДО 11.09';
+    big = 'ГРАЄМО ДО 12.09';
     sub = <>Пари вже розкидані. Домовляйся про матчі й грай — час і місце обираєте самі. Список суперників надішле організатор.</>;
     action = <a className="kb-btn" href={TG}>ДЕ МОЇ ПАРИ?</a>;
   } else if (phase === 'dayx') {
     lbl = 'СЬОГОДНІ · ДЕНЬ Х'; calm = false;
-    big = '12 ВЕРЕСНЯ · ДРУЇД';
+    big = '13 ВЕРЕСНЯ · ДРУЇД';
     sub = <>Фінали, ФАН-частина о <em>13:00</em>, нагородження о <em>17:45</em>, афтепаті о <em>18:30</em>.</>;
     action = <a className="kb-btn ghost" href="/pravyla">Розклад дня →</a>;
   } else {

@@ -229,7 +229,7 @@ export default function JoinPage() {
         <LigaNav />
         <p className="jn-step">волонтерство · без оплати</p>
         <h1 className="jn-h1">Стати волонтером 🙌</h1>
-        <p className="jn-lead">День Х — 23 серпня на ДРУЇДІ. Обери, чим готовий помогти.</p>
+        <p className="jn-lead">День Х — 13 вересня на ДРУЇДІ. Обери, чим готовий помогти.</p>
         <div className="jn-field"><label>Імʼя</label>
           <input className="jn-input" maxLength={40} placeholder="Олена" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></div>
         <div className="jn-field"><label>Прізвище</label>
@@ -344,7 +344,7 @@ export default function JoinPage() {
         <>
           <p className="jn-step">Крок 3/3 · участь</p>
           <h1 className="jn-h1">Оплата участі</h1>
-          <p className="jn-lead">Три тижні ліги (2–23 серпня) + День Х з фіналами і міні-іграми. Все на ДРУЇДІ.</p>
+          <p className="jn-lead">Ліга 7–12 вересня + День Х 13 вересня з фіналами і міні-іграми. Все на ДРУЇДІ.</p>
           <div className="jn-prices">
             <button className={'jn-price' + (amount === 420 ? ' on' : '')} onClick={() => setAmount(420)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
