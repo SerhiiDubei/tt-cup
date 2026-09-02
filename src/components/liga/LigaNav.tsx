@@ -18,9 +18,8 @@ type Who = { name: string; avatar: string | null } | null;
 
 const LINKS: [string, string][] = [
   ['/standings', 'Сітка'],
-  ['/schedule', 'Розклад'],
   ['/players', 'Гравці'],
-  ['/pravyla', 'Правила'],
+  ['/yak', 'Як усе влаштовано'],
 ];
 
 export default function LigaNav() {
@@ -79,7 +78,6 @@ export default function LigaNav() {
             {label}
           </Link>
         ))}
-        <a href="https://ttcup-onboard.vercel.app" onClick={() => setOpen(false)}>🎬 Як це працює</a>
       </nav>
       <div className="nav-tools">
         {signedIn ? (
