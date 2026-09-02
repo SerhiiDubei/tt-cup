@@ -86,6 +86,74 @@ function UnknownIcon() {
   );
 }
 
+/** Аватар із ніка: детерміноване піксельне поле 5×5, дзеркальне по вертикалі.
+    Однаковий нік завжди дає однакову картинку, файлів не потрібно. */
+function seedOf(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+const AV_INK = ['#FFC619', '#F26F21', '#7AC36A', '#4FA3E3', '#E8765A', '#B98BE0'];
+function Avatar({ nick }: { nick: string }) {
+  const seed = seedOf(nick);
+  const hue = AV_INK[seed % AV_INK.length];
+  const cells: React.ReactNode[] = [];
+  let bits = seed;
+  for (let y = 0; y < 5; y++) {
+    for (let x = 0; x < 3; x++) {
+      bits = Math.imul(bits, 1103515245) + 12345;
+      if (((bits >>> 16) & 3) === 0) continue;      // ~25% порожніх
+      cells.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />);
+      if (x < 2) cells.push(<rect key={`m${x}-${y}`} x={4 - x} y={y} width="1" height="1" />);
+    }
+  }
+  return (
+    <svg className="av" viewBox="0 0 5 5" shapeRendering="crispEdges" role="img" aria-label={`аватар ${nick}`}>
+      <rect x="0" y="0" width="5" height="5" fill="#241B12" />
+      <g fill={hue}>{cells}</g>
+    </svg>
+  );
+}
+
+/** Склад турніру: 32 місця однією стрічкою. Зайняті — з ніком і аватаром,
+    вільні — піксельним мʼячем зі знаком питання. */
+function Roster({ meNum }: { meNum: number }) {
+  const [data, setData] = useState<{ players: { num: number; nick: string }[]; total: number; taken: number } | null>(null);
+  useEffect(() => {
+    fetch('/api/players', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => setData(null));
+  }, []);
+  const total = data?.total ?? 32;
+  const taken = data?.taken ?? 0;
+  const byNum = new Map((data?.players ?? []).map((p) => [p.num, p]));
+  const seats = Array.from({ length: total }, (_, i) => byNum.get(i + 1) ?? null);
+  return (
+    <div className="kb-roster">
+      <div className="kb-roster-hd">
+        <div className="kb-lbl">СКЛАД ТУРНІРУ</div>
+        <div className="kb-count">{taken}<span>/{total}</span></div>
+      </div>
+      <div className="kb-bar"><i style={{ width: `${Math.round((taken / total) * 100)}%` }} /></div>
+      <div className="kb-strip">
+        {seats.map((p, i) => p ? (
+          <div key={i} className={'kb-seat' + (p.num === meNum ? ' me' : '')}>
+            <Avatar nick={p.nick} />
+            <b>{p.nick}</b><i>№{p.num}</i>
+          </div>
+        ) : (
+          <div key={i} className="kb-seat free">
+            <div className="av kb-slot"><UnknownIcon /></div>
+            <b>вільне</b><i>—</i>
+          </div>
+        ))}
+      </div>
+      <p>{taken < total
+        ? `Лишилось ${total - taken} ${total - taken === 1 ? 'місце' : (total - taken) < 5 ? 'місця' : 'місць'}. Гортай убік — там усі.`
+        : 'Усі місця зайняті.'}</p>
+    </div>
+  );
+}
+
 /** Календар турніру: де ми зараз. Сітка збігається з тією, що в чаті —
     31.08 понеділок, тож два рівні ряди: реєстрація 1–6, матчі 7–12, фінал 13. */
 function Calendar({ now }: { now: Date }) {
@@ -235,6 +303,8 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       <div className="kb-act">{action}</div>
 
       <Calendar now={new Date()} />
+
+      <Roster meNum={p.num} />
 
       {p.kind === 'player' && (phase === 'before' || phase === 'league') && <Slots opponents={[]} />}
 
