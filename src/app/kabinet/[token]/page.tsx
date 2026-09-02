@@ -93,24 +93,34 @@ function seedOf(str: string) {
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
-const AV_INK = ['#FFC619', '#F26F21', '#7AC36A', '#4FA3E3', '#E8765A', '#B98BE0'];
+const AV_INK = [
+  '#FFC619', '#F26F21', '#7AC36A', '#4FA3E3', '#E8765A', '#B98BE0',
+  '#00CFC1', '#FF2E88', '#A6E22E', '#FF8A2A', '#8A45FF', '#5AD1E8',
+];
 function Avatar({ nick }: { nick: string }) {
   const seed = seedOf(nick);
-  const hue = AV_INK[seed % AV_INK.length];
-  const cells: React.ReactNode[] = [];
-  let bits = seed;
+  // колір беремо з верхніх бітів, а візерунок — з нижніх, щоб два ніки
+  // не збігалися й кольором, і формою одночасно
+  const main = AV_INK[(seed >>> 20) % AV_INK.length];
+  const alt = AV_INK[((seed >>> 8) + 5) % AV_INK.length];
+  const a: React.ReactNode[] = [];
+  const b: React.ReactNode[] = [];
+  let bits = seed ^ 0x9e3779b9;
   for (let y = 0; y < 5; y++) {
     for (let x = 0; x < 3; x++) {
       bits = Math.imul(bits, 1103515245) + 12345;
-      if (((bits >>> 16) & 3) === 0) continue;      // ~25% порожніх
-      cells.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />);
-      if (x < 2) cells.push(<rect key={`m${x}-${y}`} x={4 - x} y={y} width="1" height="1" />);
+      const v = (bits >>> 16) & 7;
+      if (v < 2) continue;                       // ~25% порожніх
+      const arr = v > 5 ? b : a;                 // ~25% другим кольором
+      arr.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />);
+      if (x < 2) arr.push(<rect key={`m${x}-${y}`} x={4 - x} y={y} width="1" height="1" />);
     }
   }
   return (
     <svg className="av" viewBox="0 0 5 5" shapeRendering="crispEdges" role="img" aria-label={`аватар ${nick}`}>
       <rect x="0" y="0" width="5" height="5" fill="#241B12" />
-      <g fill={hue}>{cells}</g>
+      <g fill={main}>{a}</g>
+      <g fill={alt}>{b}</g>
     </svg>
   );
 }
