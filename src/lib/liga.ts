@@ -42,24 +42,45 @@ export const QUESTIONS: { q: string; opts: string[] }[] = [
 ];
 
 /**
- * Рівень 1–4. Розряд — прямий сигнал: він завжди ставить позначку «спортик»,
- * але рівень 4 дає лише тим, хто ще й грає; розрядник, що не грав роками,
- * отримує 3 — це чесніше і до нього, і до його суперників.
+ * Рівень 1–10. Чотирьох сходинок було замало: більшість учасників — аматори,
+ * і їх треба розводити між собою, а не збивати в одну купу.
+ *
+ * Складові: навички (подача, топспін, гра проти сильнішого) і частота гри
+ * дають 0–12; розряд додає окремо, бо це найпряміший сигнал.
  */
 export function levelFromAnswers(answers: number[]): { level: number; sportik: boolean } {
   const a = QUESTIONS.map((_, i) => Math.max(0, Math.min(3, answers[i] ?? 0)));
   const [rank, freq, serve, spin, vs] = a;
   const sportik = rank >= 2;
-  if (sportik) return { level: freq >= 1 ? 4 : 3, sportik };
-  const score = freq + serve + spin + vs + (rank === 1 ? 1 : 0); // 0..13
-  return { level: score <= 3 ? 1 : score <= 7 ? 2 : 3, sportik };
+  const rankBonus = rank === 0 ? 0 : rank === 1 ? 1 : rank === 2 ? 3 : 5;
+  const score = freq + serve + spin + vs + rankBonus;      // 0..17
+  let level = 1 + Math.round((score / 17) * 9);            // 1..10
+  // розрядник у формі не може опинитися серед аматорів: дорослий розряд —
+  // не нижче девʼятого, юнацький — не нижче сьомого
+  if (freq >= 1) {
+    if (rank === 3) level = Math.max(level, 9);
+    else if (rank === 2) level = Math.max(level, 7);
+  }
+  return { level: Math.max(1, Math.min(10, level)), sportik };
 }
 
 export const LEVEL_LABEL: Record<number, string> = {
-  1: 'За вайбом',
-  2: 'Середнячок',
-  3: 'Шарить',
-  4: 'Розрядник',
+  1: 'Вперше в руках',
+  2: 'Новачок',
+  3: 'Аматор',
+  4: 'Дворовий',
+  5: 'Середнячок',
+  6: 'Міцний середняк',
+  7: 'Шарить',
+  8: 'Сильний',
+  9: 'Майже спортик',
+  10: 'Розрядник',
+};
+
+/** Стартовий рейтинг для посіву: рівне розведення 820…1450. */
+export const LEVEL_RATING: Record<number, number> = {
+  1: 820, 2: 890, 3: 960, 4: 1030, 5: 1100,
+  6: 1170, 7: 1240, 8: 1310, 9: 1380, 10: 1450,
 };
 
 /** Ролі волонтерів (VOLONTERY-DEN-X.md). */

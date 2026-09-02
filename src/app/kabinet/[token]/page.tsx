@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
-import { LEVEL_LABEL } from '@/lib/liga';
+import { LEVEL_LABEL, LEVEL_RATING } from '@/lib/liga';
 
 type Player = {
   num: number; kind: 'player' | 'volunteer';
@@ -115,7 +115,7 @@ function Avatar({ nick }: { nick: string }) {
 /** Склад турніру за макетом 2b: портретні картки 132×188 з нашими
     персонажами, під ними мінікарта всіх 32 місць. */
 function Roster({ meNum }: { meNum: number }) {
-  const [data, setData] = useState<{ players: { num: number; nick: string }[]; total: number; taken: number } | null>(null);
+  const [data, setData] = useState<{ players: { num: number; nick: string; level: number }[]; total: number; taken: number } | null>(null);
   useEffect(() => {
     fetch('/api/players', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => setData(null));
@@ -140,7 +140,7 @@ function Roster({ meNum }: { meNum: number }) {
               {p ? <Avatar nick={p.nick} /> : <div className="av" />}
               <div className="nm">
                 <b>{p ? p.nick : 'вільно'}</b>
-                <span>{me ? `Ти · місце №${n}` : `Місце №${n}`}</span>
+                <span>{p ? (me ? 'Це ти' : LEVEL_LABEL[p.level] ?? '') : 'ще ніхто'}</span>
               </div>
             </div>
           );
@@ -180,6 +180,11 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   const { token } = use(params);
   const [p, setP] = useState<Player | null>(null);
   const [state, setState] = useState<'load' | 'ok' | 'missing' | 'error'>('load');
+  const [tick, setTick] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -209,12 +214,13 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       </div></div></Shell>
   );
 
-  const now = new Date();
+  const now = new Date(tick);
   const phase = phaseNow(now);
   const left = REG_END.getTime() - now.getTime();
   const d = Math.max(0, Math.floor(left / 86400000));
   const h = Math.max(0, Math.floor(left / 3600000) % 24);
   const m = Math.max(0, Math.floor(left / 60000) % 60);
+  const sec = Math.max(0, Math.floor(left / 1000) % 60);
   const name = p.nick || p.first_name || 'Гравець';
   const initials = ((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase() || '?';
   const contact = p.telegram || (p.instagram ? '@' + p.instagram : '—');
@@ -244,7 +250,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
               <b>{String(d).padStart(2, '0')}</b>
               <div>
                 <span>{d === 1 ? 'день' : d < 5 ? 'дні' : 'днів'}</span>
-                <span className="kb-hm">{String(h).padStart(2, '0')} <i>год</i> {String(m).padStart(2, '0')} <i>хв</i></span>
+                <span className="kb-hm">{String(h).padStart(2, '0')} <i>год</i> {String(m).padStart(2, '0')} <i>хв</i> <span className="kb-sec">{String(sec).padStart(2, '0')} <i>с</i></span></span>
               </div>
             </div>
             <p className="kb-sub">Закриється 6 вересня, 23:59</p>
@@ -265,6 +271,18 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       <div className="kb-cal">
         <span className="kb-lbl">Вересень · де ми зараз</span>
         <Bands phase={phase} />
+        <div className="kb-lvl">
+          <div className="kb-lvlhd">
+            <b>{LEVEL_LABEL[p.level] ?? '—'}</b>
+            <span>рівень {p.level}/10 · ≈{LEVEL_RATING[p.level] ?? 1000}</span>
+          </div>
+          <div className="kb-lvlbar" role="img" aria-label={`рівень ${p.level} з 10`}>
+            {Array.from({ length: 10 }, (_, i) => (
+              <i key={i} className={i < p.level ? (p.level >= 8 ? 'pro' : 'on') : ''} />
+            ))}
+          </div>
+        </div>
+
         <div className="kb-oppo">
           <span>Твої суперники</span>
           <b>0 / 8 <i>· жереб 6.09</i></b>
