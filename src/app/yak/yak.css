@@ -25,3 +25,6 @@
   .yk-h1{font-size:19px;padding:36px 28px 10px}
   .yk-lead,.yk-sec,.yk-cta{padding-left:28px;padding-right:28px}
 }
+/* інлайнові посилання в тексті — інакше не відрізнити від звичайних слів */
+.yk-sec a{color:var(--action);text-decoration:none;border-bottom:1px solid rgba(255,198,25,.45)}
+.yk-sec a:hover{border-bottom-color:var(--action)}
