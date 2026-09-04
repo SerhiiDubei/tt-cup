@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
-import { LEVEL_LABEL, LEVEL_RATING } from '@/lib/liga';
+import { LEVEL_LABEL, LEVEL_RATING, PACKAGES } from '@/lib/liga';
 
 type Player = {
   num: number; kind: 'player' | 'volunteer';
@@ -173,6 +173,182 @@ function Bands({ phase }: { phase: Phase }) {
   );
 }
 
+/* ---- піксельні знаки: та сама мова, що й аватари гравців ---------- */
+
+function Px({ cells, color }: { cells: [number, number][]; color: string }) {
+  const uniq = [...new Set(cells.map(([x, y]) => x + ',' + y))];
+  return (
+    <svg viewBox="0 0 16 16" width="100%" height="100%" shapeRendering="crispEdges" aria-hidden>
+      {uniq.map(k => {
+        const [x, y] = k.split(',');
+        return <rect key={k} x={x} y={y} width="1" height="1" fill={color} />;
+      })}
+    </svg>
+  );
+}
+
+/** Галочка завтовшки два пікселі — по діагоналях, без згладжування. */
+const CHECK: [number, number][] = (() => {
+  const c: [number, number][] = [];
+  for (let i = 0; i < 4; i++) { c.push([3 + i, 7 + i], [3 + i, 8 + i]); }
+  for (let i = 0; i < 7; i++) { c.push([7 + i, 10 - i], [7 + i, 11 - i]); }
+  return c;
+})();
+
+const CROSS: [number, number][] = (() => {
+  const c: [number, number][] = [];
+  for (let i = 0; i < 8; i++) { c.push([4 + i, 4 + i], [4 + i, 5 + i], [11 - i, 4 + i], [11 - i, 5 + i]); }
+  return c;
+})();
+
+/** Пісочний годинник — для стану «платіж ще підтверджується». */
+const GLASS: [number, number][] = (() => {
+  const c: [number, number][] = [];
+  for (let x = 3; x < 13; x++) { c.push([x, 3], [x, 12]); }
+  for (let i = 0; i < 4; i++) { c.push([4 + i, 4 + i], [11 - i, 4 + i], [4 + i, 11 - i], [11 - i, 11 - i]); }
+  return c;
+})();
+
+const PENCIL: [number, number][] = (() => {
+  const c: [number, number][] = [];
+  for (let i = 0; i < 8; i++) { c.push([4 + i, 11 - i], [5 + i, 11 - i], [4 + i, 10 - i]); }
+  c.push([3, 12], [3, 11], [2, 13]);
+  return c;
+})();
+
+/* ---- привітання після оплати -------------------------------------- */
+
+type GreetKind = 'ok' | 'pending' | 'fail';
+
+function Overlay({ label, onClose, children }:
+  { label: string; onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onClose]);
+  return (
+    <div className="kb-ov" role="dialog" aria-modal="true" aria-label={label}>
+      <button className="kb-ovbg" onClick={onClose} aria-label="Закрити" tabIndex={-1} />
+      <div className="kb-card">{children}</div>
+    </div>
+  );
+}
+
+function PayGreeting({ kind, p, onClose }: { kind: GreetKind; p: Player; onClose: () => void }) {
+  const pack = Object.values(PACKAGES).find(x => x.price === (p.pay_base ?? 0));
+  const disc = p.pay_discount_pct ? ` · знижка −${p.pay_discount_pct}%` : '';
+
+  if (kind === 'fail') return (
+    <Overlay label="Платіж не пройшов" onClose={onClose}>
+      <div className="kb-stamp bad"><Px cells={CROSS} color="#E8701A" /></div>
+      <span className="kb-lbl">Платіж не пройшов</span>
+      <b className="kb-cardh">Гроші не списались</b>
+      <p className="kb-cardp">Банк відхилив операцію — на картці нічого не змінилось.
+        Спробуй ще раз або напиши організатору, розберемось.</p>
+      <div className="kb-cardact">
+        <a className="kb-btn primary" href={TG}>Написати організатору</a>
+        <button className="kb-btn" onClick={onClose}>Закрити</button>
+      </div>
+    </Overlay>
+  );
+
+  if (kind === 'pending') return (
+    <Overlay label="Платіж обробляється" onClose={onClose}>
+      <div className="kb-stamp wait"><Px cells={GLASS} color="#F5B21B" /></div>
+      <span className="kb-lbl">Платіж обробляється</span>
+      <b className="kb-cardh">Майже готово</b>
+      <p className="kb-cardp">Банк прийняв оплату, підтвердження ще їде.
+        Онови сторінку за хвилину — статус зміниться сам.</p>
+      <div className="kb-cardact">
+        <button className="kb-btn primary" onClick={() => location.reload()}>Оновити</button>
+        <button className="kb-btn" onClick={onClose}>Закрити</button>
+      </div>
+    </Overlay>
+  );
+
+  return (
+    <Overlay label="Оплата пройшла" onClose={onClose}>
+      <div className="kb-stamp"><Px cells={CHECK} color="#8FBE33" /></div>
+      <span className="kb-lbl">Внесок отримано</span>
+      <b className="kb-cardh">Ти в основі</b>
+      <div className="kb-sum">
+        <b>{p.pay_amount} ₴</b>
+        <span>{pack ? `пакет «${pack.name}»` : 'внесок'}{disc}</span>
+      </div>
+      <p className="kb-cardp">Місце <em>№{p.num}</em> із 32 закріплене за тобою.
+        Далі — жереб 6 вересня: суперники зʼявляться просто тут.</p>
+      <div className="kb-cardact">
+        <button className="kb-btn primary" onClick={onClose}>До кабінету</button>
+      </div>
+    </Overlay>
+  );
+}
+
+/* ---- правка власних даних ----------------------------------------- */
+
+const FIELDS_EDIT = [
+  { k: 'first_name', label: 'Імʼя', ph: 'Сергій', mode: 'text' },
+  { k: 'last_name', label: 'Прізвище', ph: 'Дубей', mode: 'text' },
+  { k: 'nick', label: 'Нік у сітці', ph: 'SERHIO', mode: 'text' },
+  { k: 'telegram', label: 'Телеграм', ph: '@nickname', mode: 'text' },
+  { k: 'instagram', label: 'Інстаграм', ph: 'nickname', mode: 'text' },
+  { k: 'phone', label: 'Телефон', ph: '0961234567', mode: 'tel' },
+] as const;
+
+function EditSheet({ p, token, onSaved, onClose }:
+  { p: Player; token: string; onSaved: (x: Player) => void; onClose: () => void }) {
+  const [v, setV] = useState<Record<string, string>>({
+    first_name: p.first_name ?? '', last_name: p.last_name ?? '', nick: p.nick ?? '',
+    telegram: p.telegram ?? '', instagram: p.instagram ?? '', phone: p.phone ?? '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<{ field?: string; message: string } | null>(null);
+
+  async function save() {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/ya/${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(v),
+      });
+      const j = await r.json();
+      if (!r.ok) { setErr({ field: j.field, message: j.message ?? 'Не вдалося зберегти.' }); return; }
+      onSaved(j.player); onClose();
+    } catch { setErr({ message: 'Звʼязок пропав. Спробуй ще раз.' }); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <Overlay label="Виправити свої дані" onClose={onClose}>
+      <span className="kb-lbl">Твої дані</span>
+      <b className="kb-cardh">Виправити</b>
+      <p className="kb-cardp">Змінюй скільки треба — рівень, номер у списку й оплата лишаються як є.</p>
+      <div className="kb-form">
+        {FIELDS_EDIT.map(f => (
+          <label key={f.k} className={'kb-fld' + (err?.field === f.k ? ' bad' : '')}>
+            <span>{f.label}</span>
+            <input
+              type={f.mode} inputMode={f.mode === 'tel' ? 'tel' : undefined}
+              value={v[f.k]} placeholder={f.ph} autoComplete="off"
+              onChange={e => setV({ ...v, [f.k]: e.target.value })}
+            />
+          </label>
+        ))}
+      </div>
+      {err && <p className="kb-err">{err.message}</p>}
+      <div className="kb-cardact">
+        <button className="kb-btn primary" onClick={save} disabled={busy}>
+          {busy ? 'Зберігаю…' : 'Зберегти'}
+        </button>
+        <button className="kb-btn" onClick={onClose} disabled={busy}>Скасувати</button>
+      </div>
+    </Overlay>
+  );
+}
+
+
 function Shell({ children }: { children: React.ReactNode }) {
   return <div className="kb-root"><div className="kb-phone">{children}</div></div>;
 }
@@ -182,9 +358,22 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   const [p, setP] = useState<Player | null>(null);
   const [state, setState] = useState<'load' | 'ok' | 'missing' | 'error'>('load');
   const [tick, setTick] = useState(() => Date.now());
+  const [greet, setGreet] = useState<'ok' | 'fail' | null>(null);
+  const [edit, setEdit] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // ?pay проставляє /api/pay/return; прибираємо його з адреси,
+  // щоб оновлення сторінки не показувало привітання вдруге
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('pay');
+    if (q !== 'ok' && q !== 'fail') return;
+    setGreet(q);
+    const u = new URL(window.location.href);
+    u.searchParams.delete('pay');
+    window.history.replaceState(null, '', u.pathname + u.search + u.hash);
   }, []);
 
   const load = useCallback(async () => {
@@ -236,6 +425,11 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
           <span>{LEVEL_LABEL[p.level] ?? '—'}{p.is_sportik ? ' · розрядник' : ''}</span>
         </div>
         <div className="kb-num">№{p.num}</div>
+        <button className="kb-edit" onClick={() => setEdit(true)}
+          aria-label="Виправити свої дані" title="Виправити свої дані">
+          <i><Px cells={PENCIL} color="#F5B21B" /></i>
+          <span>Правка</span>
+        </button>
       </div>
 
       <div className="kb-now">
@@ -300,6 +494,17 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         <div><span>Твій контакт</span><b>{contact}</b></div>
       </div>
       <p className="kb-note">Реєстрація — до 6 вересня, 23:59. Посилання на цю сторінку — твій вхід.</p>
+
+      {greet && (
+        <PayGreeting
+          kind={greet === 'fail' ? 'fail' : p.paid ? 'ok' : 'pending'}
+          p={p} onClose={() => setGreet(null)}
+        />
+      )}
+      {edit && (
+        <EditSheet p={p} token={token} onClose={() => setEdit(false)}
+          onSaved={x => setP(x)} />
+      )}
     </Shell>
   );
 }

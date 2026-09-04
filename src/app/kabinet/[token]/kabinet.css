@@ -35,7 +35,8 @@ html:has(.kb-root),body:has(.kb-root){background:#080706;margin:0;overflow-x:hid
 .kb-who{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
 .kb-who b{font:700 16px/1.1 var(--fc);letter-spacing:.02em;text-transform:uppercase;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kb-who span{font:400 13px/1.2 var(--f);color:#6B6257}
+.kb-who span{font:400 13px/1.2 var(--f);color:#6B6257;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kb-num{flex:none;min-height:34px;display:flex;align-items:center;padding:0 11px;
   background:var(--ink);border-radius:4px;font:700 14px var(--fm);color:var(--accent)}
 
@@ -166,3 +167,56 @@ html:has(.kb-root),body:has(.kb-root){background:#080706;margin:0;overflow-x:hid
   .kb-strip{padding-left:24px;padding-right:24px}
   .kb-big > b{font-size:72px}
 }
+
+/* ---- кнопка правки у шапці ---------------------------------------- */
+.kb-edit{flex:none;display:flex;align-items:center;gap:6px;min-height:34px;padding:0 9px 0 7px;
+  background:var(--ink);border:0;border-radius:4px;cursor:pointer;
+  transition:background .15s}
+.kb-edit:hover{background:#241D14}
+.kb-edit i{width:15px;height:15px;display:block;flex:none}
+.kb-edit span{font:600 9.5px/1 var(--fm);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent)}
+@media (max-width:359px){ .kb-edit span{display:none} .kb-edit{padding:0 8px} }
+
+/* ---- модалка: привітання після оплати і правка даних --------------- */
+.kb-ov{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  padding:18px;animation:kb-fade .18s ease-out}
+.kb-ovbg{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;
+  background:rgba(6,5,4,.82);cursor:pointer}
+.kb-card{position:relative;width:100%;max-width:360px;max-height:calc(100dvh - 36px);overflow-y:auto;
+  display:flex;flex-direction:column;gap:10px;padding:26px 22px 22px;
+  background:var(--panel);border-radius:14px;box-shadow:inset 0 0 0 1px var(--edge),0 24px 60px rgba(0,0,0,.6);
+  animation:kb-rise .22s cubic-bezier(.2,.9,.3,1)}
+@keyframes kb-fade{from{opacity:0}to{opacity:1}}
+@keyframes kb-rise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+
+/* печатка — пікселі проявляються кроками, як штамп */
+.kb-stamp{width:64px;height:64px;padding:9px;border-radius:10px;margin-bottom:4px;
+  background:rgba(143,190,51,.13);box-shadow:inset 0 0 0 1px rgba(143,190,51,.32);
+  animation:kb-stamp .32s steps(4) both}
+.kb-stamp.bad{background:rgba(232,112,26,.14);box-shadow:inset 0 0 0 1px rgba(232,112,26,.34)}
+.kb-stamp.wait{background:rgba(245,178,27,.13);box-shadow:inset 0 0 0 1px rgba(245,178,27,.32)}
+@keyframes kb-stamp{from{opacity:0;transform:scale(1.5) rotate(-8deg)}to{opacity:1;transform:none}}
+
+.kb-cardh{font:700 26px/1.05 var(--fc);letter-spacing:.02em;text-transform:uppercase;color:var(--text)}
+.kb-cardp{margin:0;font:400 14px/1.5 var(--f);color:#9A9086}
+.kb-cardp em{font-style:normal;color:var(--accent)}
+.kb-sum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:8px;
+  background:#0E0C0A;box-shadow:inset 0 0 0 1px var(--panel-line)}
+.kb-sum b{font:700 26px/1 var(--fm);color:var(--accent)}
+.kb-sum span{font:400 12.5px/1.3 var(--f);color:var(--muted)}
+.kb-cardact{display:flex;flex-direction:column;gap:8px;padding-top:6px}
+.kb-btn:disabled{opacity:.5;cursor:default}
+
+/* форма правок */
+.kb-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding-top:2px}
+.kb-fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.kb-fld:nth-child(3),.kb-fld:nth-child(6){grid-column:1/-1}
+.kb-fld > span{font:500 9.5px/1 var(--fm);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.kb-fld input{width:100%;min-height:44px;padding:0 12px;background:#0E0C0A;color:var(--text);
+  border:0;border-radius:7px;box-shadow:inset 0 0 0 1px var(--panel-line);
+  font:400 15px var(--f);transition:box-shadow .15s}
+.kb-fld input::placeholder{color:var(--dim)}
+.kb-fld input:focus{outline:0;box-shadow:inset 0 0 0 1px var(--accent)}
+.kb-fld.bad input{box-shadow:inset 0 0 0 1px var(--orange)}
+.kb-err{margin:0;font:400 13px/1.4 var(--f);color:#F0996A}
