@@ -68,7 +68,7 @@ async function handle(req: NextRequest): Promise<NextResponse> {
     clientFirstName: player.first_name ?? '',
     clientLastName: player.last_name ?? '',
     clientPhone: player.phone ?? '',
-    returnUrl: `https://${WFP.domain}/kabinet/${player.token}`,
+    returnUrl: `https://${WFP.domain}/api/pay/return/${player.token}`,
     serviceUrl: `https://${WFP.domain}/api/pay/callback`,
   });
 
