@@ -26,7 +26,7 @@ export default function YakPage() {
         <ol className="yk-steps">
           <li className="yk-step"><i>1</i><div>
             <b>Реєструєшся — до 6 вересня, 23:59</b>
-            <span>Місць 32. Хто перший — той грає.</span>
+            <span>Місць 32. Хто перший — той грає, а перші 10 ще й платять на 20% менше.</span>
           </div></li>
           <li className="yk-step"><i>2</i><div>
             <b>6 вересня система розкидає пари</b>
@@ -65,9 +65,18 @@ export default function YakPage() {
       <section className="yk-sec">
         <div className="kb-lbl">СКІЛЬКИ</div>
         <div className="yk-price">
-          <div><b>420 ГРН</b><span>Участь. Стіл, сітка, суддівство і призовий фонд.</span></div>
-          <div><b>840 ГРН</b><span>Та сама гра — вдвічі більший вклад у подію та призовий фонд.</span></div>
+          <div>
+            <b>ГРАВЕЦЬ · 420 ₴</b>
+            <span>Все, щоб грати: стіл, сітка, мʼячі, суддівство і призовий фонд.</span>
+          </div>
+          <div>
+            <b>МЕЦЕНАТ · 840 ₴</b>
+            <span>Те саме — плюс твоє імʼя серед меценатів на афіші й на сайті,
+              окремий знак у складі турніру і згадка на нагородженні.</span>
+          </div>
         </div>
+        <p style={{ marginTop: 12 }}><em>Перші 10 реєстрацій — мінус 20%</em> на будь-який пакет.
+          Знижка застосовується сама, нічого вводити не треба.</p>
       </section>
 
       <section className="yk-sec">

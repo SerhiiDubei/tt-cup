@@ -5,7 +5,7 @@ import { payCode } from '@/lib/liga';
 export const dynamic = 'force-dynamic';
 
 const FIELDS =
-  'num, kind, first_name, last_name, nick, telegram, instagram, phone, level, is_sportik, volunteer, volunteer_roles, pay_amount, paid, paid_claimed_at, auth_user_id, created_at';
+  'num, kind, first_name, last_name, nick, telegram, instagram, phone, level, is_sportik, volunteer, volunteer_roles, pay_amount, paid, paid_claimed_at, pay_base, pay_discount_pct, pay_status, auth_user_id, created_at';
 
 function pub(row: Record<string, unknown>) {
   const { auth_user_id, ...rest } = row;

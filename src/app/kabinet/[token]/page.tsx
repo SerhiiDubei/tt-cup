@@ -9,6 +9,7 @@ type Player = {
   telegram: string | null; instagram?: string | null; phone?: string | null;
   level: number; is_sportik: boolean; volunteer: boolean; volunteer_roles: string[];
   pay_amount: number; paid: boolean; paid_claimed_at: string | null; created_at: string;
+  pay_base?: number | null; pay_discount_pct?: number | null; pay_status?: string | null;
   payCode: string; googleLinked?: boolean;
 };
 
@@ -294,7 +295,8 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       </div>
 
       <div className="kb-foot">
-        <div><span>Внесок</span><b>{p.pay_amount} ₴</b></div>
+        <div><span>{p.paid ? 'Оплачено' : 'До оплати'}</span>
+          <b>{p.pay_amount} ₴{p.pay_discount_pct ? ` −${p.pay_discount_pct}%` : ''}</b></div>
         <div><span>Твій контакт</span><b>{contact}</b></div>
       </div>
       <p className="kb-note">Реєстрація — до 6 вересня, 23:59. Посилання на цю сторінку — твій вхід.</p>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supaServer } from '@/lib/supabase/server';
-import { levelFromAnswers, payCode, PRICES } from '@/lib/liga';
+import { levelFromAnswers, payCode, PACKAGES, discountFor, priceWith, type PackId } from '@/lib/liga';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +45,7 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
   let body: {
     kind?: string; firstName?: string; lastName?: string; nick?: string; telegram?: string;
     instagram?: string; phone?: string;
-    answers?: unknown; volunteer?: boolean; roles?: unknown; amount?: number;
+    answers?: unknown; volunteer?: boolean; roles?: unknown; amount?: number; pack?: string;
     access_token?: string;
   };
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'bad_json' }, { status: 400 }); }
@@ -86,8 +86,13 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'answers_required' }, { status: 400 });
   const { level, sportik } = kind === 'player' ? levelFromAnswers(answers) : { level: 1, sportik: false };
 
-  const amount = kind === 'volunteer' ? 0
-    : PRICES.includes(body.amount as 420 | 840) ? (body.amount as number) : 420;
+  // ціну рахує сервер: знижка «перших 10» і сам пакет клієнту не довіряються
+  const packId: PackId = body.pack === 'patron' ? 'patron' : 'player';
+  const pack = PACKAGES[packId];
+  const { count: takenBefore } = await supaServer()
+    .from('dbc_players').select('id', { count: 'exact', head: true }).eq('kind', 'player');
+  const discountPct = kind === 'volunteer' ? 0 : discountFor(takenBefore ?? 0);
+  const amount = kind === 'volunteer' ? 0 : priceWith(pack.price, discountPct);
   const volunteer = kind === 'volunteer' || body.volunteer === true;
   const roles = volunteer && Array.isArray(body.roles)
     ? body.roles.filter((r): r is string => typeof r === 'string').map((r) => r.slice(0, 40)).slice(0, 8)
@@ -102,6 +107,7 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
       instagram: instagram || null, phone: phone || null,
       level, level_answers: answers, is_sportik: sportik,
       volunteer, volunteer_roles: roles, pay_amount: amount,
+      pay_base: kind === 'volunteer' ? 0 : pack.price, pay_discount_pct: discountPct,
       auth_user_id: userId,
     })
     .select('token, num')

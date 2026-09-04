@@ -83,6 +83,40 @@ export const LEVEL_RATING: Record<number, number> = {
   6: 1170, 7: 1240, 8: 1310, 9: 1380, 10: 1450,
 };
 
+/**
+ * Пакети участі. Назви — щоб людина обирала між «чим» і «чим», а не між
+ * двома числами. Перші 10 реєстрацій отримують 20%: місця тримає той,
+ * хто наважився першим.
+ */
+export const EARLY_BIRD_SLOTS = 10;
+export const EARLY_BIRD_PCT = 20;
+
+export type PackId = 'player' | 'patron';
+export const PACKAGES: Record<PackId, {
+  id: PackId; name: string; price: number; tagline: string; perks: string;
+}> = {
+  player: {
+    id: 'player',
+    name: 'ГРАВЕЦЬ',
+    price: 420,
+    tagline: 'Все, щоб грати',
+    perks: 'Стіл, сітка, мʼячі, суддівство і призовий фонд.',
+  },
+  patron: {
+    id: 'patron',
+    name: 'МЕЦЕНАТ',
+    price: 840,
+    tagline: 'Те саме + тримаєш турнір',
+    perks: 'Твоє імʼя — серед меценатів на афіші й на сайті, окремий знак у складі турніру і згадка на нагородженні.',
+  },
+};
+
+/** Знижка діє, доки зайнято менше ніж EARLY_BIRD_SLOTS місць. */
+export const discountFor = (taken: number) => (taken < EARLY_BIRD_SLOTS ? EARLY_BIRD_PCT : 0);
+
+/** Ціна після знижки, округлена до гривні. */
+export const priceWith = (base: number, pct: number) => Math.round(base * (100 - pct) / 100);
+
 /** Ролі волонтерів (VOLONTERY-DEN-X.md). */
 export const VOLUNTEER_ROLES = [
   'суддівство на фіналах',
