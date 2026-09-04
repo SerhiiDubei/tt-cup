@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * found». Перетворюємо такий POST на звичайний GET тієї ж сторінки.
  * Справжні Server Actions мають заголовок next-action — їх не чіпаємо.
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   if (req.method === 'POST' && !req.headers.get('next-action')) {
     return NextResponse.redirect(req.nextUrl, 303);
   }

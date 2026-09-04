@@ -122,10 +122,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ token: st
   // звʼязок із гравцем має лишитися бодай один
   const { data: cur, error: curErr } = await supaServer()
     .from('dbc_players').select('telegram, instagram').eq('token', token).maybeSingle();
-  if ((curErr && badUuid(curErr)) || !cur) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
+  if (curErr && badUuid(curErr)) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (curErr) return NextResponse.json({ error: curErr.message }, { status: 500 });
+  if (!cur) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   const tgAfter = upd.telegram !== undefined ? upd.telegram : cur?.telegram ?? null;
   const igAfter = upd.instagram !== undefined ? upd.instagram : cur?.instagram ?? null;
   if (!tgAfter && !igAfter) return bad('telegram', 'Лишається без звʼязку — вкажи телеграм або інстаграм.');
