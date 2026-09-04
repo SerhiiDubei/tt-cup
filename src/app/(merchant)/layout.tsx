@@ -18,6 +18,11 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
         <Link href="/refund">Повернення коштів</Link>
         <Link href="/contacts">Контакти і реквізити</Link>
       </nav>
+      <div className="mc-pay">
+        <b>VISA</b><span aria-hidden>·</span><b>Mastercard</b>
+        <a href="https://www.wayforpay.com" target="_blank" rel="noreferrer">Оплата карткою через WayForPay</a>
+        <span>ФОП Дубей С. В. · ІПН 3327100410</span>
+      </div>
     </div></div>
   );
 }

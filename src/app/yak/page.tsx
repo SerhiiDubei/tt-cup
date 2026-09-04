@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { MERCHANT, PRODUCT } from '@/lib/merchant';
 
 const TG = 'https://t.me/bomberman047';
 
@@ -71,8 +72,8 @@ export default function YakPage() {
           </div>
           <div>
             <b>МЕЦЕНАТ · 840 ₴</b>
-            <span>Те саме — плюс твоє імʼя серед меценатів на афіші й на сайті,
-              окремий знак у складі турніру і згадка на нагородженні.</span>
+            <span>Те саме — плюс свідома підтримка організаторів і самої затії,
+              і подарунок у день турніру.</span>
           </div>
         </div>
         <p style={{ marginTop: 12 }}><em>Перші 10 реєстрацій — мінус 20%</em> на будь-який пакет.
@@ -87,6 +88,47 @@ export default function YakPage() {
           Дорога до Друїда теж на тобі.</p>
       </section>
 
+      <section className="yk-sec">
+        <div className="kb-lbl">ЯК ОПЛАТИТИ</div>
+        <p>Онлайн банківською карткою <em>Visa</em> або <em>Mastercard</em> через платіжний
+          сервіс <a href="https://wayforpay.com" rel="noreferrer">WayForPay</a>.
+          Валюта розрахунків — гривня. Інших способів оплати не передбачено.</p>
+        <p>Одразу після успішного платежу приходить персональне посилання на кабінет —
+          це і є підтвердження участі. Ніякого паперу отримувати не треба.</p>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ЯК І КОЛИ НАДАЄТЬСЯ ПОСЛУГА</div>
+        <p>Онлайн-частина — на цьому ж сайті: жеребкування {'\u2014'} 7 вересня, матчі й таблиця
+          з 8 по 12 вересня в кабінеті учасника.</p>
+        <p>Офлайн-частина — <em>{PRODUCT.venue}</em>, {PRODUCT.eventDate}.
+          Географія надання послуги — Україна, місто Івано-Франківськ.</p>
+        <p>Це послуга, а не товар: <em>доставка не передбачена</em>, служби доставки не залучаються.</p>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ПОВЕРНЕННЯ КОШТІВ</div>
+        <p>Повертаємо <em>повністю</em> — при відмові не пізніше ніж за 3 доби до турніру,
+          при скасуванні події організатором, при помилковій або подвійній оплаті.</p>
+        <p><em>50%</em> — при відмові менше ніж за 3 доби. <em>Без повернення</em> — при неявці
+          без попередження. Повний порядок і строки — на сторінці{' '}
+          <Link href="/refund">«Повернення коштів»</Link>.</p>
+      </section>
+
+      <section className="yk-sec">
+        <div className="kb-lbl">ПРОДАВЕЦЬ</div>
+        <dl className="mc-dl">
+          <dt>Найменування</dt><dd>{MERCHANT.legalName}</dd>
+          <dt>ІПН / РНОКПП</dt><dd>{MERCHANT.taxId}</dd>
+          <dt>Юридична адреса</dt><dd>{MERCHANT.legalAddress}</dd>
+          <dt>Фактична адреса</dt><dd>{MERCHANT.actualAddress}</dd>
+          <dt>Телефон</dt><dd>{MERCHANT.phone}</dd>
+          <dt>Email</dt><dd>{MERCHANT.email}</dd>
+        </dl>
+        <p>Умови співпраці повністю — у{' '}
+          <Link href="/oferta">публічному договорі</Link>.</p>
+      </section>
+
       <div className="yk-cta kb-act">
         <Link className="kb-btn" href="/kabinet">МІЙ КАБІНЕТ</Link>
         <a className="kb-btn ghost" href={TG}>Лишилось питання — напиши</a>
@@ -97,6 +139,11 @@ export default function YakPage() {
         <Link href="/refund">Повернення коштів</Link>
         <Link href="/contacts">Контакти і реквізити</Link>
       </nav>
+      <div className="mc-pay">
+        <b>VISA</b><span aria-hidden>·</span><b>Mastercard</b>
+        <a href="https://www.wayforpay.com" target="_blank" rel="noreferrer">Оплата карткою через WayForPay</a>
+        <span>ФОП Дубей С. В. · ІПН 3327100410</span>
+      </div>
     </div></div>
   );
 }
