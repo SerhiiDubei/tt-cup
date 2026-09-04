@@ -7,7 +7,7 @@ import {
 } from '@/lib/anim/sprites';
 import {
   type Shot, type RallyTuning,
-  between, makeShot, makeSmashCadence, shotX, shotY, shotZ,
+  between, makeShot, makeSmashCadence, shotX, shotY, shotZ, shotImpact,
   makeFx, pushTrail, spawnConfetti, stepFx,
 } from '@/lib/anim/rally';
 
@@ -80,6 +80,7 @@ export default function QueueIdle() {
         from: { x: from.x, y: from.y },
         to: { x: g.tx + margin + rnd() * Math.max(1, g.tw - margin * 2), y: padY(to.side) },
         len: H, smash: isSmashTime(), bounce: true,
+        contactZ: CONTACT_Z * S, // потрібна фізиці, щоб вивести мить відскоку
       });
       t = 0; bounced = false; toSide = 1 - fromIdx;
       from.swing = 0;
@@ -216,7 +217,8 @@ export default function QueueIdle() {
 
       const u = Math.min(1, t / s.dur);
       if (!bounced && u >= s.bT) { // відскік на столі
-        bounced = true; squash = 1;
+        bounced = true;
+        squash = Math.min(1.15, .55 + shotImpact(s) * .5); // сплющення від сили удару
         fx.ripples.push({ x: shotX(s, s.bT), y: shotY(s, s.bT), t: 0 });
       }
       squash = Math.max(0, squash - dt / 140);

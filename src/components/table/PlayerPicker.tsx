@@ -4,15 +4,15 @@ import type { Player } from '@/lib/tournament/types';
 import HeroArt from '@/components/HeroArt';
 import SelfieCapture from '@/components/SelfieCapture';
 import { NickFit, RatingChip } from '@/components/table/bits';
-import { quickAddPlayer, setPlayerArt } from '@/lib/table/api';
+import { quickAddPlayer } from '@/lib/table/api';
 import { stylizeSelfie } from '@/lib/api';
-import { markArtPending, clearArtPending, isArtPending } from '@/lib/table/artPending';
+import { isArtPending } from '@/lib/table/artPending';
 import { SUPERPOWER_LABEL } from '@/lib/avatar';
 import { STYLES } from '@/config';
 
 const STYLE_LABEL: Record<string, string> = { attacker: 'Атакер', defender: 'Захисник', allrounder: 'Універсал', spinner: 'Спінер' };
 
-type QuickAdd = { step: 1 | 2 | 3; name: string; selfie: string | null; style: string; gender: 'male' | 'female' | null; busy: boolean; err: string | null };
+type QuickAdd = { step: 1 | 3; name: string; style: string; gender: 'male' | 'female' | null; busy: boolean; err: string | null };
 
 const QA_ERR: Record<string, string> = {
   nick_taken: 'Таке імʼя вже зайняте — підправ його трохи',
@@ -129,7 +129,7 @@ export default function PlayerPicker({
   }, [pool, q]);
 
   const openQa = (name = '') =>
-    setQa({ step: 1, name, selfie: null, style: 'attacker', gender: null, busy: false, err: null });
+    setQa({ step: 1, name, style: 'attacker', gender: null, busy: false, err: null });
 
   /** Спільний вхід для тапів по картках, слотах і квик-адду двомісного пікера. */
   function pick(id: string) {
@@ -156,13 +156,7 @@ export default function PlayerPicker({
     try {
       const nick = qa.name.trim();
       const { id } = await quickAddPlayer(nick, qa.style, qa.gender ?? undefined);
-      if (qa.selfie) {
-        const { selfie, style } = qa;
-        markArtPending(id); // картки/ряди новачка показують міні-лоадер, поки арт вариться
-        // fire-and-forget: помилки мовчки ігноруємо — лишиться кольорова заглушка
-        void stylizeSelfie(selfie, style).then((r) => setPlayerArt(id, r.url))
-          .catch(() => clearArtPending(id));
-      }
+      // AI-арт прибрано (D-057): аватар малюється процедурно з id — миттєво й безкоштовно
       if (count === 1) {
         await onConfirm([id]); // одразу вибираємо новачка й закриваємось
         // якщо батько проковтнув помилку і не закрив пікер — не лишаємось у «СТВОРЮЮ…»
@@ -255,7 +249,7 @@ export default function PlayerPicker({
         {qa !== null ? (
           /* ---------- швидка реєстрація ---------- */
           <div className="k-qa">
-            <span className="k-qa-step">крок {qa.step}/3 · {qa.step === 1 ? 'імʼя' : qa.step === 2 ? 'селфі' : 'стиль гри'}</span>
+            <span className="k-qa-step">крок {qa.step}/2 · {qa.step === 1 ? 'імʼя' : 'стиль гри'}</span>
 
             {qa.step === 1 && (
               <>
@@ -263,26 +257,13 @@ export default function PlayerPicker({
                   className="k-qa-input" autoFocus maxLength={24} placeholder="Твоє імʼя або нік"
                   value={qa.name} enterKeyHint="next"
                   onChange={(e) => setQa({ ...qa, name: e.target.value })}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && qa.name.trim()) setQa({ ...qa, step: 2, err: null }); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && qa.name.trim()) setQa({ ...qa, step: 3, err: null }); }}
                 />
                 {qa.err && <p className="k-qa-err">{qa.err}</p>}
                 <div className="k-qa-nav">
                   <button className="kbtn lg" onClick={() => setQa(null)}>← НАЗАД</button>
-                  <button className="kbtn xl pink" disabled={!qa.name.trim()} onClick={() => setQa({ ...qa, step: 2, err: null })}>ДАЛІ →</button>
+                  <button className="kbtn xl pink" disabled={!qa.name.trim()} onClick={() => setQa({ ...qa, step: 3, err: null })}>ДАЛІ →</button>
                 </div>
-              </>
-            )}
-
-            {qa.step === 2 && (
-              <>
-                <SelfieCapture onCaptured={(d) => setQa((q) => (q ? { ...q, selfie: d } : q))} onUnavailable={() => {}} />
-                <div className="k-qa-nav">
-                  <button className="kbtn lg" onClick={() => setQa({ ...qa, step: 1 })}>← НАЗАД</button>
-                  {qa.selfie
-                    ? <button className="kbtn xl pink" onClick={() => setQa({ ...qa, step: 3 })}>ДАЛІ →</button>
-                    : <button className="kbtn lg yellow" onClick={() => setQa({ ...qa, selfie: null, step: 3 })}>ПРОПУСТИТИ</button>}
-                </div>
-                <p className="k-qa-hint">Фото піде лише на AI-стилізацію — картка-герой домалюється сама за ~хвилину.</p>
               </>
             )}
 
@@ -304,7 +285,7 @@ export default function PlayerPicker({
                 </div>
                 {qa.err && <p className="k-qa-err">{qa.err}</p>}
                 <div className="k-qa-nav">
-                  <button className="kbtn lg" disabled={qa.busy} onClick={() => setQa({ ...qa, step: 2 })}>← НАЗАД</button>
+                  <button className="kbtn lg" disabled={qa.busy} onClick={() => setQa({ ...qa, step: 1 })}>← НАЗАД</button>
                   <button className="kbtn xl pink" disabled={qa.busy} onClick={() => { void qaDone(); }}>{qa.busy ? 'СТВОРЮЮ…' : 'ГОТОВО'}</button>
                 </div>
               </>
