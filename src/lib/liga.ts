@@ -11,7 +11,7 @@ export const MOCK_PAY = !BANKA_URL;
 export const TG_CONFIRM_URL = process.env.NEXT_PUBLIC_TG_CONFIRM_URL || '';
 
 /** Ключові дати (D-036): ліга 21 день, реєстрація до жеребкування. */
-export const DRAW_DATE = '2026-09-06T23:59:59+03:00'; // жеребкування — щойно закриється реєстрація
+export const DRAW_DATE = '2026-09-07T23:59:59+03:00'; // жеребкування — щойно закриється реєстрація
 export const DAYX_DATE = '2026-08-23';
 
 export const PRICES = [420, 840] as const;

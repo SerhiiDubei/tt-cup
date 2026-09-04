@@ -14,7 +14,7 @@ type Player = {
 };
 
 /* Ключові дати турніру — єдине джерело для фази кабінету. */
-const REG_END = new Date('2026-09-06T23:59:59+03:00'); // реєстрація закривається
+const REG_END = new Date('2026-09-07T23:59:59+03:00'); // реєстрація закривається
 const DRAW = REG_END;                                  // жеребкування одразу після
 const LEAGUE_END = new Date('2026-09-12T23:59:59+03:00');
 const DAY_X = new Date('2026-09-13T00:00:00+03:00');
@@ -166,8 +166,8 @@ function Roster({ meNum }: { meNum: number }) {
 function Bands({ phase }: { phase: Phase }) {
   return (
     <div className="kb-bands">
-      <div className={'kb-band reg' + (phase === 'before' ? ' now' : '')}><b>Реєстрація</b><span>1—6</span></div>
-      <div className={'kb-band onl' + (phase === 'league' ? ' now' : '')}><b>Матчі</b><span>7—12</span></div>
+      <div className={'kb-band reg' + (phase === 'before' ? ' now' : '')}><b>Реєстрація</b><span>1—7</span></div>
+      <div className={'kb-band onl' + (phase === 'league' ? ' now' : '')}><b>Матчі</b><span>8—12</span></div>
       <div className={'kb-band fin' + (phase === 'dayx' ? ' now' : '')}><b>Фінал</b><span>13</span></div>
     </div>
   );
@@ -277,7 +277,7 @@ function PayGreeting({ kind, p, onClose }: { kind: GreetKind; p: Player; onClose
         <span>{pack ? `пакет «${pack.name}»` : 'внесок'}{disc}</span>
       </div>
       <p className="kb-cardp">Місце <em>№{p.num}</em> із 32 закріплене за тобою.
-        Далі — жереб 6 вересня: суперники зʼявляться просто тут.</p>
+        Далі — жереб 7 вересня: суперники зʼявляться просто тут.</p>
       <div className="kb-cardact">
         <button className="kb-btn primary" onClick={onClose}>До кабінету</button>
       </div>
@@ -448,7 +448,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
                 <span className="kb-hm">{String(h).padStart(2, '0')} <i>год</i> {String(m).padStart(2, '0')} <i>хв</i> <span className="kb-sec">{String(sec).padStart(2, '0')} <i>с</i></span></span>
               </div>
             </div>
-            <p className="kb-sub">Закриється 6 вересня, 23:59</p>
+            <p className="kb-sub">Закриється 7 вересня, 23:59</p>
           </>
         ) : phase === 'league' ? (
           <p className="kb-sub">Пари розкидані. Грай свої матчі до <em>12 вересня</em> — час і місце обираєте самі.</p>
@@ -480,7 +480,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
 
         <div className="kb-oppo">
           <span>Твої суперники</span>
-          <b>0 / 8 <i>· жереб 6.09</i></b>
+          <b>0 / 8 <i>· жереб 7.09</i></b>
         </div>
       </div>
 
@@ -493,7 +493,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
           <b>{p.pay_amount} ₴{p.pay_discount_pct ? ` −${p.pay_discount_pct}%` : ''}</b></div>
         <div><span>Твій контакт</span><b>{contact}</b></div>
       </div>
-      <p className="kb-note">Реєстрація — до 6 вересня, 23:59. Посилання на цю сторінку — твій вхід.</p>
+      <p className="kb-note">Реєстрація — до 7 вересня, 23:59. Посилання на цю сторінку — твій вхід.</p>
 
       {greet && (
         <PayGreeting

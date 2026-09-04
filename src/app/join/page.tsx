@@ -344,7 +344,7 @@ export default function JoinPage() {
         <>
           <p className="jn-step">Крок 3/3 · участь</p>
           <h1 className="jn-h1">Оплата участі</h1>
-          <p className="jn-lead">Ліга 7–12 вересня + День Х 13 вересня з фіналами і міні-іграми. Все на ДРУЇДІ.</p>
+          <p className="jn-lead">Ліга 8–12 вересня + День Х 13 вересня з фіналами і міні-іграми. Все на ДРУЇДІ.</p>
           <div className="jn-prices">
             <button className={'jn-price' + (amount === 420 ? ' on' : '')} onClick={() => setAmount(420)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
