@@ -10,7 +10,7 @@ export default function Footer() {
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22 }}>{BRAND}</div>
             <p style={{ opacity: 0.7, marginTop: 8, maxWidth: 320, fontSize: 14 }}>
-              Ліга 8–12 вересня на ДРУЇДІ · 8 матчів · залік 50/50 · День Х — 13 вересня.
+              Ліга 9–12 вересня на ДРУЇДІ · 8 матчів · залік 50/50 · День Х — 13 вересня.
             </p>
           </div>
           <div style={{ display: 'grid', gap: 8 }}>

@@ -32,7 +32,7 @@ export default function PlayersPage() {
 
   return (
     <main className="jn-root insite"><div className="jn-wrap wide">
-      <p className="jn-step">ліга · 8–12 вересня</p>
+      <p className="jn-step">ліга · 9–12 вересня</p>
       <h1 className="jn-h1">Гравці</h1>
       <p className="jn-lead">Хто вже вписався в DRUID BATTLE CUP. Рівень — чесна самозаява, її ще перевірить ліга.</p>
 
