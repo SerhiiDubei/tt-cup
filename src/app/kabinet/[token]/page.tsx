@@ -10,6 +10,7 @@ type Player = {
   level: number; is_sportik: boolean; volunteer: boolean; volunteer_roles: string[];
   pay_amount: number; paid: boolean; paid_claimed_at: string | null; created_at: string;
   pay_base?: number | null; pay_discount_pct?: number | null; pay_status?: string | null;
+  pay_reason?: string | null; pay_reason_code?: number | null;
   payCode: string; googleLinked?: boolean;
 };
 
@@ -216,6 +217,32 @@ const PENCIL: [number, number][] = (() => {
   return c;
 })();
 
+/**
+ * Коди WayForPay людською мовою. Порада важливіша за код: людині треба
+ * знати, що робити далі, а не як це називається в банку.
+ */
+function payFailHint(code?: number | null): { what: string; next: string } {
+  switch (code) {
+    case 1101: return {
+      what: 'Банк, який видав картку, відхилив платіж.',
+      next: 'Найчастіше це вимкнені інтернет-платежі або ліміт. Спробуй Apple Pay чи Google Pay — вони на сторінці оплати є, — або іншу картку.',
+    };
+    case 1124: return {
+      what: 'Сторінка оплати закрилась раніше, ніж платіж пройшов.',
+      next: 'Нічого не списалось. Просто натисни «Оплатити» ще раз і доведи до кінця.',
+    };
+    case 1108: case 1109: return {
+      what: 'Банк не підтвердив операцію.',
+      next: 'Перевір, чи вистачає коштів, і спробуй ще раз або іншою карткою.',
+    };
+    default: return {
+      what: 'Платіж не пройшов.',
+      next: 'Спробуй ще раз, іншою карткою або через Apple Pay чи Google Pay.',
+    };
+  }
+}
+
+
 /* ---- привітання після оплати -------------------------------------- */
 
 type GreetKind = 'ok' | 'pending' | 'fail';
@@ -239,19 +266,22 @@ function PayGreeting({ kind, p, onClose }: { kind: GreetKind; p: Player; onClose
   const pack = Object.values(PACKAGES).find(x => x.price === (p.pay_base ?? 0));
   const disc = p.pay_discount_pct ? ` · знижка −${p.pay_discount_pct}%` : '';
 
-  if (kind === 'fail') return (
-    <Overlay label="Платіж не пройшов" onClose={onClose}>
-      <div className="kb-stamp bad"><Px cells={CROSS} color="#E8701A" /></div>
-      <span className="kb-lbl">Платіж не пройшов</span>
-      <b className="kb-cardh">Гроші не списались</b>
-      <p className="kb-cardp">Банк відхилив операцію — на картці нічого не змінилось.
-        Спробуй ще раз або напиши організатору, розберемось.</p>
-      <div className="kb-cardact">
-        <a className="kb-btn primary" href={TG}>Написати організатору</a>
-        <button className="kb-btn" onClick={onClose}>Закрити</button>
-      </div>
-    </Overlay>
-  );
+  if (kind === 'fail') {
+    const h = payFailHint(p.pay_reason_code);
+    return (
+      <Overlay label="Платіж не пройшов" onClose={onClose}>
+        <div className="kb-stamp bad"><Px cells={CROSS} color="#E8701A" /></div>
+        <span className="kb-lbl">Платіж не пройшов</span>
+        <b className="kb-cardh">Гроші не списались</b>
+        <p className="kb-cardp">{h.what} На картці нічого не змінилось.</p>
+        <p className="kb-cardp">{h.next}</p>
+        <div className="kb-cardact">
+          <button className="kb-btn primary" onClick={onClose}>Спробувати ще раз</button>
+          <a className="kb-btn" href={TG}>Написати організатору</a>
+        </div>
+      </Overlay>
+    );
+  }
 
   if (kind === 'pending') return (
     <Overlay label="Платіж обробляється" onClose={onClose}>
@@ -468,8 +498,13 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       {!p.paid && p.kind === 'player' && (
         <div className="kb-due">
           <div className="kb-duehd"><i />ВНЕСОК НЕ СПЛАЧЕНО</div>
-          <p>Місце <b>№{p.num}</b> за тобою поки лише записане, але не закріплене.
-            Закріплює його внесок — до <b>9 вересня, 23:59</b>.</p>
+          {p.pay_status === 'failed' ? (
+            <p>Остання спроба оплати не пройшла: {payFailHint(p.pay_reason_code).what}{' '}
+              {payFailHint(p.pay_reason_code).next}</p>
+          ) : (
+            <p>Місце <b>№{p.num}</b> за тобою поки лише записане, але не закріплене.
+              Закріплює його внесок — до <b>9 вересня, 23:59</b>.</p>
+          )}
           <button className="kb-btn pay" onClick={pay} disabled={paying}>
             {paying ? 'ВІДКРИВАЮ ОПЛАТУ…' : `ОПЛАТИТИ ${p.pay_base ?? 420} ₴`}
           </button>

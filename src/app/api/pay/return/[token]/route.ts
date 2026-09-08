@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supaServer } from '@/lib/supabase/server';
-import { verifyCallback, type Callback } from '@/lib/wayforpay';
+import { verifyCallback, payPatch, type Callback } from '@/lib/wayforpay';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,12 +61,6 @@ async function applyIfSigned(c: Callback): Promise<string | null> {
   if (!ref || !c.merchantSignature || !verifyCallback(c)) return null;
 
   const ok = c.transactionStatus === 'Approved';
-  const s = supaServer();
-  await s.from('dbc_players').update(
-    ok
-      ? { paid: true, pay_status: 'paid', pay_paid_at: new Date().toISOString() }
-      : { pay_status: c.transactionStatus === 'Refunded' ? 'refunded' : 'failed' },
-  ).eq('pay_order_ref', ref);
-
+  await supaServer().from('dbc_players').update(payPatch(c)).eq('pay_order_ref', ref);
   return ok ? 'ok' : 'fail';
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supaServer } from '@/lib/supabase/server';
-import { verifyCallback, callbackAck, type Callback } from '@/lib/wayforpay';
+import { verifyCallback, callbackAck, payPatch, type Callback } from '@/lib/wayforpay';
 import { track, playerId } from '@/lib/analytics';
 import { PACKAGES } from '@/lib/liga';
 
@@ -30,8 +30,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'bad_signature' }, { status: 403 });
   }
 
-  const ok = c.transactionStatus === 'Approved';
-  const refunded = c.transactionStatus === 'Refunded';
   const s = supaServer();
 
   // Стан ДО оновлення. Потрібен двічі: звідси беремо властивості для
@@ -41,22 +39,20 @@ export async function POST(req: NextRequest) {
     .select('num, paid, pay_status, pay_amount, pay_base, level, is_sportik')
     .eq('pay_order_ref', ref).maybeSingle();
 
-  // Повернення знімає «оплачено»: інакше людина з поверненими грішми
-  // лишалась би в списку як оплачена.
-  await s.from('dbc_players').update(
-    ok
-      ? { paid: true, pay_status: 'paid', pay_paid_at: new Date().toISOString() }
-      : refunded
-        ? { paid: false, pay_status: 'refunded', pay_paid_at: null }
-        : { pay_status: 'failed' },
-  ).eq('pay_order_ref', ref);
+  // payPatch — єдине місце, де вирішується, що записати за станом платежу:
+  // прапорець «оплачено», статус і причина від банку. Сторінка повернення
+  // користується тим самим хелпером, тож два шляхи не можуть розійтися.
+  const patch = payPatch(c);
+  await s.from('dbc_players').update(patch).eq('pay_order_ref', ref);
 
   // Аналітика — після того, як гроші вже записані в базу.
   //
   // Успіх, невдача і повернення це три окремі події, а не одна з ознакою.
   // Так у воронку стає рівно одна подія — оплата, — а невдачі живуть
   // власним списком: це ті, кому треба написати руками, поки не пізно.
-  const status = ok ? 'paid' : refunded ? 'refunded' : 'failed';
+  const status = patch.pay_status;
+  const ok = status === 'paid';
+  const refunded = status === 'refunded';
   if (before && before.pay_status !== status) {
     const pack = packOf(before.pay_base);
     const now = new Date().toISOString();
@@ -83,6 +79,9 @@ export async function POST(req: NextRequest) {
           : {
               ...common,
               transaction_status: c.transactionStatus ?? 'unknown',
+              // причину беремо з того самого місця, що й база — щоб у PostHog
+              // і в кабінеті гравець бачив те саме
+              reason: c.reason ?? null,
               reason_code: c.reasonCode ?? null,
               $set: { paid: false, pay_status: 'failed' },
             },

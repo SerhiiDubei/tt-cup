@@ -64,6 +64,7 @@ export type Callback = {
   merchantAccount?: string; orderReference?: string; amount?: number | string;
   currency?: string; authCode?: string; cardPan?: string;
   transactionStatus?: string; reasonCode?: string | number; merchantSignature?: string;
+  reason?: string;
 };
 
 /** Перевірка підпису вхідного колбека — без неї будь-хто міг би
@@ -86,4 +87,25 @@ export function callbackAck(orderReference: string) {
     time,
     signature: sign([orderReference, 'accept', time]),
   };
+}
+
+/**
+ * Що записати в заявку за відповіддю банку.
+ *
+ * Причину зберігаємо обовʼязково: без неї «failed» нічого не пояснює —
+ * ні гравцю, ні організатору. Найчастіші коди: 1100 — успіх,
+ * 1101 — відмовив банк-емітент картки, 1124 — сесія оплати витекла.
+ *
+ * Повернення знімає «оплачено», інакше людина з поверненими грішми
+ * лишалась би в списку як оплачена.
+ */
+export function payPatch(c: Callback) {
+  const reason = { pay_reason: c.reason ?? null, pay_reason_code: Number(c.reasonCode) || null };
+  if (c.transactionStatus === 'Approved') {
+    return { ...reason, paid: true, pay_status: 'paid', pay_paid_at: new Date().toISOString() };
+  }
+  if (c.transactionStatus === 'Refunded') {
+    return { ...reason, paid: false, pay_status: 'refunded', pay_paid_at: null };
+  }
+  return { ...reason, pay_status: 'failed' };
 }
