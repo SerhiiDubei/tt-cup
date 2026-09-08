@@ -3,18 +3,21 @@
 // (публічний ключ) і в Supabase увімкнено провайдера Google.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+/** Supabase перейменував anon key на publishable — приймаємо обидва імені,
+    інакше вхід тихо зникає, бо в проєкті задане тільки друге. */
+const PUB_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
 export const GOOGLE_AUTH_ENABLED =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!PUB_KEY;
 
 let client: SupabaseClient | null = null;
 
 /** Браузерний клієнт (anon key — публічний, RLS все одно закритий). */
 export function supaBrowser(): SupabaseClient {
   if (!client) {
-    client = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, PUB_KEY);
   }
   return client;
 }

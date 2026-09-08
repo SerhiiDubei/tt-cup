@@ -128,7 +128,8 @@ html:has(.kb-root),body:has(.kb-root){background:#080706;margin:0;overflow-x:hid
 
 /* дія */
 .kb-act{padding:2px 18px 18px;display:flex;flex-direction:column;gap:9px}
-.kb-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;
+.kb-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;width:100%;
+  box-sizing:border-box;
   background:#17140F;box-shadow:inset 0 0 0 1px #332E28;border-radius:8px;
   font:600 14px var(--fc);letter-spacing:.1em;text-transform:uppercase;color:var(--text);
   text-decoration:none;cursor:pointer;border:0;transition:background .15s,box-shadow .15s}
@@ -220,3 +221,32 @@ html:has(.kb-root),body:has(.kb-root){background:#080706;margin:0;overflow-x:hid
 .kb-fld input:focus{outline:0;box-shadow:inset 0 0 0 1px var(--accent)}
 .kb-fld.bad input{box-shadow:inset 0 0 0 1px var(--orange)}
 .kb-err{margin:0;font:400 13px/1.4 var(--f);color:#F0996A}
+
+/* попередження про вбудований браузер соцмережі */
+.kb-warn{margin-top:16px;padding:14px 15px;border-radius:9px;text-align:left;
+  background:rgba(232,112,26,.13);box-shadow:inset 0 0 0 1px rgba(232,112,26,.4);
+  font:400 13.5px/1.5 var(--f);color:#E9B892}
+.kb-warn b{display:block;font:700 12px/1.3 var(--fc);letter-spacing:.08em;text-transform:uppercase;
+  color:#F0996A;margin-bottom:6px}
+.kb-warn em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* ---- несплачений внесок: має бити в очі перше, ніж усе решта ------ */
+.kb-due{padding:18px 18px 20px;background:linear-gradient(180deg,#3A1C08,#241206);
+  box-shadow:inset 0 -1px 0 rgba(232,112,26,.45);
+  animation:kb-due-in .3s ease-out both}
+@keyframes kb-due-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.kb-duehd{display:flex;align-items:center;gap:9px;margin-bottom:9px;
+  font:700 13px/1 var(--fc);letter-spacing:.14em;text-transform:uppercase;color:#FFB367}
+.kb-duehd i{width:9px;height:9px;border-radius:50%;background:var(--orange);
+  box-shadow:0 0 0 0 rgba(232,112,26,.65);animation:kb-pulse 1.8s ease-out infinite}
+@keyframes kb-pulse{
+  0%{box-shadow:0 0 0 0 rgba(232,112,26,.6)}
+  70%{box-shadow:0 0 0 11px rgba(232,112,26,0)}
+  100%{box-shadow:0 0 0 0 rgba(232,112,26,0)}}
+.kb-due p{margin:0 0 14px;font:400 14.5px/1.5 var(--f);color:#E7D6C6}
+.kb-due p b{color:var(--accent);font-weight:700}
+.kb-btn.pay{background:var(--orange);color:#22120A;box-shadow:none;min-height:56px;
+  font:700 15px var(--fc);letter-spacing:.1em}
+.kb-btn.pay:hover{background:#FF8434;box-shadow:none}
+/* остання доба реєстрації — відлік стає тривожним */
+.kb-big.last > b{color:var(--orange)}

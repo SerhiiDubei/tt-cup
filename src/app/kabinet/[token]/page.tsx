@@ -360,6 +360,8 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   const [tick, setTick] = useState(() => Date.now());
   const [greet, setGreet] = useState<'ok' | 'fail' | null>(null);
   const [edit, setEdit] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [payErr, setPayErr] = useState<string | null>(null);
   useEffect(() => {
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
@@ -387,6 +389,37 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
     } catch { setState('error'); }
   }, [token]);
   useEffect(() => { void load(); }, [load]);
+
+  /** Оплата просто з кабінету: сервер рахує суму й підписує форму банку. */
+  const pay = useCallback(async () => {
+    setPaying(true); setPayErr(null);
+    try {
+      const r = await fetch('/api/pay/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.form) {
+        setPayErr(j.error === 'already_paid' ? 'Внесок уже зарахований — онови сторінку.'
+          : 'Оплата зараз не піднімається. Напиши організатору.');
+        setPaying(false); return;
+      }
+      const f = document.createElement('form');
+      f.method = 'POST'; f.action = j.payUrl; f.acceptCharset = 'utf-8';
+      Object.entries(j.form as Record<string, unknown>).forEach(([k, v]) => {
+        (Array.isArray(v) ? v : [v]).forEach((val) => {
+          const i = document.createElement('input');
+          i.type = 'hidden'; i.name = Array.isArray(v) ? k + '[]' : k; i.value = String(val);
+          f.appendChild(i);
+        });
+      });
+      document.body.appendChild(f); f.submit();
+    } catch {
+      setPayErr('Звʼязок пропав. Спробуй ще раз.');
+      setPaying(false);
+    }
+  }, [token]);
 
   if (state === 'load') return <Shell><div className="kb-msg">Завантажую…</div></Shell>;
   if (state === 'missing') return (
@@ -432,6 +465,18 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         </button>
       </div>
 
+      {!p.paid && p.kind === 'player' && (
+        <div className="kb-due">
+          <div className="kb-duehd"><i />ВНЕСОК НЕ СПЛАЧЕНО</div>
+          <p>Місце <b>№{p.num}</b> за тобою поки лише записане, але не закріплене.
+            Закріплює його внесок — до <b>8 вересня, 23:59</b>.</p>
+          <button className="kb-btn pay" onClick={pay} disabled={paying}>
+            {paying ? 'ВІДКРИВАЮ ОПЛАТУ…' : `ОПЛАТИТИ ${p.pay_base ?? 420} ₴`}
+          </button>
+          {payErr && <p className="kb-err" style={{ marginTop: 10 }}>{payErr}</p>}
+        </div>
+      )}
+
       <div className="kb-now">
         <div className="kb-nowhd">
           <span className="kb-lbl">{open ? 'До кінця реєстрації' : phase === 'league' ? 'Ліга йде' : 'День Х'}</span>
@@ -441,11 +486,19 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         </div>
         {open ? (
           <>
-            <div className="kb-big">
-              <b>{String(d).padStart(2, '0')}</b>
+            {/* в останню добу «00 днів» головним числом читалось би як «нуль» —
+                тому головним стають години */}
+            <div className={'kb-big' + (d === 0 ? ' last' : '')}>
+              <b>{String(d === 0 ? h : d).padStart(2, '0')}</b>
               <div>
-                <span>{d === 1 ? 'день' : d < 5 ? 'дні' : 'днів'}</span>
-                <span className="kb-hm">{String(h).padStart(2, '0')} <i>год</i> {String(m).padStart(2, '0')} <i>хв</i> <span className="kb-sec">{String(sec).padStart(2, '0')} <i>с</i></span></span>
+                <span>{d === 0
+                  ? (h === 1 ? 'година' : h < 5 ? 'години' : 'годин')
+                  : (d === 1 ? 'день' : d < 5 ? 'дні' : 'днів')}</span>
+                <span className="kb-hm">
+                  {d === 0
+                    ? <>{String(m).padStart(2, '0')} <i>хв</i> <span className="kb-sec">{String(sec).padStart(2, '0')} <i>с</i></span></>
+                    : <>{String(h).padStart(2, '0')} <i>год</i> {String(m).padStart(2, '0')} <i>хв</i> <span className="kb-sec">{String(sec).padStart(2, '0')} <i>с</i></span></>}
+                </span>
               </div>
             </div>
             <p className="kb-sub">Закриється 8 вересня, 23:59</p>

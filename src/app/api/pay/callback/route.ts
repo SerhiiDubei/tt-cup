@@ -25,11 +25,16 @@ export async function POST(req: NextRequest) {
   }
 
   const ok = c.transactionStatus === 'Approved';
+  const refunded = c.transactionStatus === 'Refunded';
   const s = supaServer();
+  // Повернення знімає «оплачено»: інакше людина з поверненими грішми
+  // лишалась би в списку як оплачена.
   await s.from('dbc_players').update(
     ok
       ? { paid: true, pay_status: 'paid', pay_paid_at: new Date().toISOString() }
-      : { pay_status: c.transactionStatus === 'Refunded' ? 'refunded' : 'failed' },
+      : refunded
+        ? { paid: false, pay_status: 'refunded', pay_paid_at: null }
+        : { pay_status: 'failed' },
   ).eq('pay_order_ref', ref);
 
   // WayForPay чекає підписане підтвердження, інакше повторює колбек

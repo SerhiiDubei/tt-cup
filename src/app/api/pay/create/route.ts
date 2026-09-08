@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supaServer } from '@/lib/supabase/server';
 import { purchaseForm, wfpReady, WFP } from '@/lib/wayforpay';
-import { PACKAGES, discountFor, priceWith, type PackId } from '@/lib/liga';
+import { PACKAGES, type PackId } from '@/lib/liga';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,22 +35,27 @@ async function handle(req: NextRequest): Promise<NextResponse> {
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'bad_json' }, { status: 400 }); }
 
   const token = (body.token ?? '').trim();
-  const packId = (body.pack === 'patron' ? 'patron' : 'player') as PackId;
+  // явний вибір відрізняємо від його відсутності: кабінет пакет не передає,
+  // і тоді береться той, що зафіксований у заявці
+  const asked: PackId | null =
+    body.pack === 'patron' ? 'patron' : body.pack === 'player' ? 'player' : null;
   if (!token) return NextResponse.json({ error: 'token_required' }, { status: 400 });
 
   const s = supaServer();
   const { data: player, error } = await s.from('dbc_players')
-    .select('id, num, token, first_name, last_name, phone, paid, pay_order_ref')
+    .select('id, num, token, first_name, last_name, phone, paid, pay_base, pay_order_ref')
     .eq('token', token).maybeSingle();
   if (error || !player) return NextResponse.json({ error: 'not_found' }, { status: 404 });
   if (player.paid) return NextResponse.json({ error: 'already_paid' }, { status: 409 });
 
-  // знижку рахуємо від кількості вже зайнятих місць, а не від слова клієнта
-  const { count } = await s.from('dbc_players')
-    .select('id', { count: 'exact', head: true }).eq('kind', 'player');
-  const pack = PACKAGES[packId];
-  const pct = discountFor((count ?? 1) - 1);   // сам гравець уже в таблиці
-  const amount = priceWith(pack.price, pct);
+  // Пакет: явний вибір клієнта важливіший (так можна доплатити до МЕЦЕНАТА),
+  // інакше той, що зафіксований у заявці. Ціну беремо з PACKAGES, не з клієнта.
+  // Знижок немає — сума дорівнює ціні пакета.
+  const fromRow: PackId | null = player.pay_base === PACKAGES.patron.price ? 'patron'
+    : player.pay_base === PACKAGES.player.price ? 'player' : null;
+  const pack = PACKAGES[asked ?? fromRow ?? 'player'];
+  const pct = 0;
+  const amount = pack.price;
 
   const orderReference = `DBC-${player.num}-${Date.now()}`;
   await s.from('dbc_players').update({

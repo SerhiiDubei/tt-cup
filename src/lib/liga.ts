@@ -85,11 +85,9 @@ export const LEVEL_RATING: Record<number, number> = {
 
 /**
  * Пакети участі. Назви — щоб людина обирала між «чим» і «чим», а не між
- * двома числами. Перші 10 реєстрацій отримують 20%: місця тримає той,
- * хто наважився першим.
+ * двома числами. Знижок немає: ціна одна для всіх і не залежить від того,
+ * коли людина записалась.
  */
-export const EARLY_BIRD_SLOTS = 10;
-export const EARLY_BIRD_PCT = 20;
 
 export type PackId = 'player' | 'patron';
 export const PACKAGES: Record<PackId, {
@@ -111,10 +109,8 @@ export const PACKAGES: Record<PackId, {
   },
 };
 
-/** Знижка діє, доки зайнято менше ніж EARLY_BIRD_SLOTS місць. */
-export const discountFor = (taken: number) => (taken < EARLY_BIRD_SLOTS ? EARLY_BIRD_PCT : 0);
-
-/** Ціна після знижки, округлена до гривні. */
+/** Ціна зі знижкою — лишається заради вже оплачених заявок, де знижка
+    зафіксована в рядку. Нові платежі йдуть за повною ціною. */
 export const priceWith = (base: number, pct: number) => Math.round(base * (100 - pct) / 100);
 
 /** Ролі волонтерів (VOLONTERY-DEN-X.md). */

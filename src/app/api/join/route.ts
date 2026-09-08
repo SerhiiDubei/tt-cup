@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supaServer } from '@/lib/supabase/server';
-import { levelFromAnswers, payCode, PACKAGES, discountFor, priceWith, type PackId } from '@/lib/liga';
+import { levelFromAnswers, payCode, PACKAGES, type PackId } from '@/lib/liga';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,13 +86,12 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'answers_required' }, { status: 400 });
   const { level, sportik } = kind === 'player' ? levelFromAnswers(answers) : { level: 1, sportik: false };
 
-  // ціну рахує сервер: знижка «перших 10» і сам пакет клієнту не довіряються
+  // ціну рахує сервер: пакет клієнту не довіряємо. Знижок немає —
+  // ціна одна для всіх, незалежно від того, коли людина записалась.
   const packId: PackId = body.pack === 'patron' ? 'patron' : 'player';
   const pack = PACKAGES[packId];
-  const { count: takenBefore } = await supaServer()
-    .from('dbc_players').select('id', { count: 'exact', head: true }).eq('kind', 'player');
-  const discountPct = kind === 'volunteer' ? 0 : discountFor(takenBefore ?? 0);
-  const amount = kind === 'volunteer' ? 0 : priceWith(pack.price, discountPct);
+  const discountPct = 0;
+  const amount = kind === 'volunteer' ? 0 : pack.price;
   const volunteer = kind === 'volunteer' || body.volunteer === true;
   const roles = volunteer && Array.isArray(body.roles)
     ? body.roles.filter((r): r is string => typeof r === 'string').map((r) => r.slice(0, 40)).slice(0, 8)

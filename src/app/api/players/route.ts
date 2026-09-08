@@ -5,9 +5,9 @@ export const dynamic = 'force-dynamic';
 
 export const TOTAL_SLOTS = 32;
 
-/* Чат живе на іншому домені й читає звідси кількість зайнятих місць,
-   щоб показати знижку «перших 10». Без CORS він отримував помилку
-   і мовчки показував ціну без знижки. */
+/* Публічний склад турніру: тільки номер, нік і рівень. Кабінет читає
+   звідси стрічку учасників, чат — кількість зайнятих місць. CORS —
+   бо чат живе на іншому домені. */
 const ORIGINS = new Set(['https://dbc-onboarding.vercel.app', 'http://localhost:3310']);
 function cors(res: NextResponse, origin: string | null) {
   if (origin && ORIGINS.has(origin)) {
