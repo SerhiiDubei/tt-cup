@@ -16,12 +16,19 @@ import { PostHog } from 'posthog-node';
  *     ліміт часу, після якого подію кидаємо, а платіж проводимо далі.
  *
  * Змінні оточення (Vercel → Settings → Environment Variables):
- *   NEXT_PUBLIC_POSTHOG_KEY   phc_… — публічний токен проєкту, тільки запис
- *   NEXT_PUBLIC_POSTHOG_HOST  https://eu.i.posthog.com (за замовчуванням)
+ *   POSTHOG_KEY   phc_… — токен проєкту, вміє тільки писати події
+ *   POSTHOG_HOST  https://eu.i.posthog.com (за замовчуванням)
+ *
+ * Без префікса NEXT_PUBLIC_, бо тут змінна потрібна лише на сервері, а
+ * Vercel справедливо свариться на публічний префікс у серверній змінній.
+ * Сам токен при цьому не секрет: він уміє тільки писати і вже лежить
+ * відкрито в HTML онбордингу. Якщо колись знадобиться в браузері —
+ * заведемо окрему NEXT_PUBLIC_POSTHOG_KEY, її теж підхопимо нижче.
  */
 
-const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '';
-const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
+const KEY = process.env.POSTHOG_KEY ?? process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '';
+const HOST = process.env.POSTHOG_HOST ?? process.env.NEXT_PUBLIC_POSTHOG_HOST
+  ?? 'https://eu.i.posthog.com';
 
 /** Скільки максимум чекаємо на PostHog, перш ніж забити й віддати ack. */
 const BUDGET_MS = 2500;

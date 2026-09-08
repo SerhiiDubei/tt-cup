@@ -13,8 +13,8 @@ import crypto from 'node:crypto';
 const h = vi.hoisted(() => {
   process.env.WFP_MERCHANT_ACCOUNT = 'test_merchant';
   process.env.WFP_SECRET_KEY = 'test_secret';
-  process.env.NEXT_PUBLIC_POSTHOG_KEY = 'phc_test';
-  process.env.NEXT_PUBLIC_POSTHOG_HOST = 'https://eu.i.posthog.com';
+  process.env.POSTHOG_KEY = 'phc_test';
+  process.env.POSTHOG_HOST = 'https://eu.i.posthog.com';
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
   process.env.SUPABASE_SECRET_KEY = 'sb_secret_test';
   return {
