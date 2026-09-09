@@ -58,8 +58,13 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     if (user) {
       userId = user.id;
       const existing = await supaServer().from('dbc_players')
-        .select('token').eq('auth_user_id', userId).maybeSingle();
-      if (existing.data) return NextResponse.json({ token: existing.data.token, already: true });
+        .select('token, num').eq('auth_user_id', userId).maybeSingle();
+      // num віддаємо обовʼязково: онбординг підписує людину як
+      // dbc-player-<num>, і без цього поля клієнтські події лишаються
+      // під анонімним id, а серверні під номером заявки — два різні списки
+      if (existing.data) return NextResponse.json({
+        token: existing.data.token, num: existing.data.num, already: true,
+      });
     }
   }
 
@@ -129,5 +134,5 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     if (error.code === 'PGRST205') return NextResponse.json({ error: 'db_not_ready' }, { status: 503 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ token: data!.token, payCode: payCode(data!.num), amount });
+  return NextResponse.json({ token: data!.token, num: data!.num, payCode: payCode(data!.num), amount });
 }

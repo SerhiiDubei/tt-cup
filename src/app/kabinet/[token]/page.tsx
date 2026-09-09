@@ -1,7 +1,8 @@
 'use client';
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import { LEVEL_LABEL, LEVEL_RATING, PACKAGES } from '@/lib/liga';
+import { identifyPlayer, track } from '@/lib/analytics/client';
 
 type Player = {
   num: number; kind: 'player' | 'volunteer';
@@ -392,6 +393,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   const [edit, setEdit] = useState(false);
   const [paying, setPaying] = useState(false);
   const [payErr, setPayErr] = useState<string | null>(null);
+  const named = useRef(false);
   useEffect(() => {
     const id = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(id);
@@ -420,9 +422,30 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
   }, [token]);
   useEffect(() => { void load(); }, [load]);
 
+  // Аналітика кабінету. Спершу identify, і лише потім події — інакше вони
+  // підуть під анонімним id і не зійдуться з серверними подіями про оплату.
+  useEffect(() => {
+    if (!p || named.current) return;
+    named.current = true;
+    const pack = p.pay_base === PACKAGES.patron.price ? 'patron'
+      : p.pay_base === PACKAGES.player.price ? 'player' : null;
+    identifyPlayer(p.num, {
+      level: p.level, sportik: p.is_sportik, kind: p.kind,
+      pack, paid: p.paid, pay_status: p.pay_status ?? null,
+    });
+    track('cabinet_opened', {
+      paid: p.paid, pay_status: p.pay_status ?? null,
+      pay_reason_code: p.pay_reason_code ?? null, pack,
+      phase: phaseNow(new Date()),
+    });
+    // повернення з банку: ?pay уже прочитаний і прибраний з адреси вище
+    if (greet) track('pay_returned', { result: greet, pay_status: p.pay_status ?? null });
+  }, [p, greet]);
+
   /** Оплата просто з кабінету: сервер рахує суму й підписує форму банку. */
   const pay = useCallback(async () => {
     setPaying(true); setPayErr(null);
+    track('pay_clicked', { amount: p?.pay_base ?? null, num: p?.num ?? null });
     try {
       const r = await fetch('/api/pay/create', {
         method: 'POST',
@@ -431,6 +454,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       });
       const j = await r.json();
       if (!r.ok || !j.form) {
+        track('pay_unavailable', { reason: j.error ?? 'unknown', status: r.status });
         setPayErr(j.error === 'already_paid' ? 'Внесок уже зарахований — онови сторінку.'
           : 'Оплата зараз не піднімається. Напиши організатору.');
         setPaying(false); return;
@@ -444,12 +468,18 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
           f.appendChild(i);
         });
       });
+      // миттєво: далі починається навігація в банк, звичайна черга не встигне
+      track('pay_redirected', {
+        amount: j.amount ?? null,
+        order_ref: (j.form as Record<string, unknown>).orderReference ?? null,
+      }, true);
       document.body.appendChild(f); f.submit();
     } catch {
+      track('pay_failed_to_start');
       setPayErr('Звʼязок пропав. Спробуй ще раз.');
       setPaying(false);
     }
-  }, [token]);
+  }, [token, p]);
 
   if (state === 'load') return <Shell><div className="kb-msg">Завантажую…</div></Shell>;
   if (state === 'missing') return (
