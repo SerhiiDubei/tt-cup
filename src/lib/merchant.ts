@@ -36,7 +36,7 @@ export const PRODUCT = {
   priceSupport: 840,
   currency: 'UAH',
   /** Дата надання послуги */
-  eventDate: '13 вересня 2026',
+  eventDate: '19 вересня 2026',
   venue: 'простір ДРУЇД, м. Івано-Франківськ',
 } as const;
 
