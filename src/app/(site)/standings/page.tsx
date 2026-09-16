@@ -4,7 +4,7 @@ import '../../liga.css';
 
 export const metadata: Metadata = { title: 'Сітка — DRUID BATTLE CUP' };
 
-/** Рейтинг ліги: порожній стан до жеребкування 15.09; далі — live 50/50. */
+/** Рейтинг ліги: порожній стан до жеребкування 18.09; далі — live 50/50. */
 export default function StandingsPage() {
   return (
     <main className="jn-root insite"><div className="jn-wrap wide">
@@ -17,7 +17,7 @@ export default function StandingsPage() {
 
       <div className="jn-card jn-count">
         <p className="jn-count-label">Таблиця зʼявиться після жеребкування</p>
-        <div className="jn-count-big">15 вересня 🎲</div>
+        <div className="jn-count-big">18 вересня 🎲</div>
         <p className="jn-hint" style={{ margin: 0 }}>
           Система розкине пари за рівнями → три дні ліги → фінали Дня Х <b>19 вересня</b>.
         </p>
