@@ -47,6 +47,8 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     instagram?: string; phone?: string;
     answers?: unknown; volunteer?: boolean; roles?: unknown; amount?: number; pack?: string;
     access_token?: string;
+    /** код передачі місця від гравця, що вибув — див. dbc_transfers */
+    transfer?: string;
   };
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'bad_json' }, { status: 400 }); }
 
@@ -103,6 +105,21 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     : [];
 
   const s = supaServer();
+
+  // Передача місця: гравець вибув і віддає свій внесок новому. Код видає
+  // організатор руками, використовується рівно раз. Перевіряємо ДО вставки:
+  // заявка з мертвим кодом не має зʼявитися неоплаченою під виглядом переданої.
+  const transferCode = (body.transfer ?? '').trim().toUpperCase();
+  let transfer: { code: string; from_num: number; amount: number; order_ref: string | null; note: string | null } | null = null;
+  if (transferCode) {
+    const t = await s.from('dbc_transfers')
+      .select('code, from_num, amount, order_ref, note, used_at')
+      .eq('code', transferCode).maybeSingle();
+    if (!t.data) return NextResponse.json({ error: 'transfer_invalid' }, { status: 400 });
+    if (t.data.used_at) return NextResponse.json({ error: 'transfer_used' }, { status: 409 });
+    transfer = t.data;
+  }
+
   const { data, error } = await s
     .from('dbc_players')
     .insert({
@@ -110,9 +127,18 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
       telegram: telegram.length >= 3 ? telegram : null,
       instagram: instagram || null, phone: phone || null,
       level, level_answers: answers, is_sportik: sportik,
-      volunteer, volunteer_roles: roles, pay_amount: amount,
+      volunteer, volunteer_roles: roles,
+      pay_amount: transfer ? transfer.amount : amount,
       pay_base: kind === 'volunteer' ? 0 : pack.price, pay_discount_pct: discountPct,
       auth_user_id: userId,
+      // Передане місце: внесок уже сплачений тим, хто вибув. Номер його
+      // платежу НЕ копіюємо — pay_order_ref унікальний, а обидві заявки
+      // мить співіснують. Слід грошей живе в dbc_transfers.order_ref;
+      // сюди — синтетичний ref, який колбек банку ніколи не надішле.
+      ...(transfer ? {
+        paid: true, pay_status: 'transferred', pay_paid_at: new Date().toISOString(),
+        pay_order_ref: `TRANSFER:${transfer.code}`, pay_reason: transfer.note, pay_reason_code: 1100,
+      } : {}),
     })
     .select('token, num')
     .single();
@@ -128,11 +154,29 @@ async function handleJoin(req: NextRequest): Promise<NextResponse> {
     if (acc.data) await s.from('dbc_players').update({ account_id: acc.data.id }).eq('token', data.token);
   }
 
+  // Код спалюємо і того, хто вибув, прибираємо в той самий момент —
+  // один вийшов, один зайшов, склад турніру не стрибає.
+  if (!error && data && transfer) {
+    await s.from('dbc_transfers')
+      .update({ used_by: data.num, used_at: new Date().toISOString() })
+      .eq('code', transfer.code);
+    await s.from('dbc_players').delete().eq('num', transfer.from_num);
+  }
+
   if (error) {
-    if (error.code === '23505') return NextResponse.json({ error: 'nick_taken' }, { status: 409 });
+    if (error.code === '23505') {
+      // унікальних індексів кілька: нік, google-акаунт, номер платежу
+      const which = /nick/.test(error.message) ? 'nick_taken'
+        : /auth_user_id/.test(error.message) ? 'already_registered' : 'duplicate';
+      return NextResponse.json({ error: which, detail: error.message }, { status: 409 });
+    }
     // PGRST205 = таблиці ще нема (міграція не накочена) — кажемо чесно
     if (error.code === 'PGRST205') return NextResponse.json({ error: 'db_not_ready' }, { status: 503 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ token: data!.token, num: data!.num, payCode: payCode(data!.num), amount });
+  return NextResponse.json({
+    token: data!.token, num: data!.num, payCode: payCode(data!.num),
+    amount: transfer ? transfer.amount : amount,
+    ...(transfer ? { transferred: true, paid: true } : {}),
+  });
 }
