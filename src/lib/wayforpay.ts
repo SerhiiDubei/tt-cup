@@ -104,7 +104,13 @@ export function payPatch(c: Callback) {
   if (c.transactionStatus === 'Approved') {
     return { ...reason, paid: true, pay_status: 'paid', pay_paid_at: new Date().toISOString() };
   }
-  if (c.transactionStatus === 'Refunded') {
+  // RefundInProcessing (код 1138) — повернення ще в дорозі, але гроші вже не
+  // наші, тож для нас це те саме повернення: «оплачено» знімаємо одразу.
+  // Окремого статусу не заводимо: check-обмеження pay_status у базі знає лише
+  // paid/failed/refunded/…, а фінальний Refunded і так запише те саме.
+  // Раніше цей стан падав у «failed» — і людина з поверненням виглядала
+  // в кабінеті як невдала оплата з кнопкою «оплатити».
+  if (c.transactionStatus === 'Refunded' || c.transactionStatus === 'RefundInProcessing' || c.transactionStatus === 'Voided') {
     return { ...reason, paid: false, pay_status: 'refunded', pay_paid_at: null };
   }
   return { ...reason, pay_status: 'failed' };

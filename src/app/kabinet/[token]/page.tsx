@@ -525,7 +525,16 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         </button>
       </div>
 
-      {!p.paid && p.kind === 'player' && (
+      {/* Повернення (знявся з турніру): без кнопки «оплатити», щоб людина
+          з поверненими грішми не платила вдруге за інерцією. */}
+      {!p.paid && p.kind === 'player' && p.pay_status === 'refunded' && (
+        <div className="kb-due">
+          <div className="kb-duehd"><i />ВНЕСОК ПОВЕРНУТО</div>
+          <p>Ти знявся з турніру. Внесок повертається на ту саму картку, з якої платив —
+            зазвичай 3–5 банківських днів.</p>
+        </div>
+      )}
+      {!p.paid && p.kind === 'player' && p.pay_status !== 'refunded' && (
         <div className="kb-due">
           <div className="kb-duehd"><i />ВНЕСОК НЕ СПЛАЧЕНО</div>
           {p.pay_status === 'failed' ? (
@@ -546,7 +555,7 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         <div className="kb-nowhd">
           <span className="kb-lbl">{open ? 'До кінця реєстрації' : phase === 'league' ? 'Ліга йде' : 'День Х'}</span>
           <span className={'kb-pill' + (p.paid ? '' : ' warn')}>
-            <i />{p.paid ? 'Ти в списку' : 'Внесок очікується'}
+            <i />{p.paid ? 'Ти в списку' : p.pay_status === 'refunded' ? 'Ти знявся' : 'Внесок очікується'}
           </span>
         </div>
         {open ? (

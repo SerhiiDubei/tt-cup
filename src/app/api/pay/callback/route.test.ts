@@ -159,6 +159,19 @@ describe('невдача і повернення — окремі події', (
     expect(h.sent[0].event).toBe('payment_refunded');
   });
 
+  it('повернення в дорозі (RefundInProcessing) — уже повернення, а не «failed»', async () => {
+    h.row.current = { ...pending(), paid: true, pay_status: 'paid' };
+    await post(callback('RefundInProcessing', { reasonCode: 1138 }));
+    expect(h.updates[0]).toMatchObject({ paid: false, pay_status: 'refunded', pay_reason_code: 1138 });
+    expect(h.sent).toHaveLength(1);
+    expect(h.sent[0].event).toBe('payment_refunded');
+
+    // фінальний Refunded від WayForPay — стан уже такий, події вдруге немає
+    h.row.current = { ...pending(), paid: false, pay_status: 'refunded' };
+    await post(callback('Refunded'));
+    expect(h.sent).toHaveLength(1);
+  });
+
   it('невдача не потрапляє в подію успіху — у воронці стоїть лише успіх', async () => {
     await post(callback('Declined'));
     expect(h.sent.map((e) => e.event)).not.toContain('payment_succeeded');

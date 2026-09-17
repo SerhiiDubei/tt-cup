@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
   const status = patch.pay_status;
   const ok = status === 'paid';
   const refunded = status === 'refunded';
+  // RefundInProcessing і фінальний Refunded дають той самий статус, тож
+  // подія повернення йде рівно один раз — на першому з них.
   if (before && before.pay_status !== status) {
     const pack = packOf(before.pay_base);
     const now = new Date().toISOString();
