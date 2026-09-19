@@ -621,8 +621,11 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
       </div>
 
       <div className="kb-foot">
-        <div><span>{p.paid ? 'Оплачено' : 'До оплати'}</span>
-          <b>{p.pay_amount} ₴{p.pay_discount_pct ? ` −${p.pay_discount_pct}%` : ''}</b></div>
+        {/* вписаним на місці внесок не нараховують — «Оплачено 0 ₴» збивало б з пантелику */}
+        <div><span>{p.pay_amount === 0 ? 'Участь' : p.paid ? 'Оплачено' : 'До оплати'}</span>
+          <b>{p.pay_amount === 0
+            ? 'без внеску'
+            : `${p.pay_amount} ₴${p.pay_discount_pct ? ` −${p.pay_discount_pct}%` : ''}`}</b></div>
         <div><span>Твій контакт</span><b>{contact}</b></div>
       </div>
       <p className="kb-note">Реєстрація — до 18 вересня, 23:59. Посилання на цю сторінку — твій вхід.</p>
