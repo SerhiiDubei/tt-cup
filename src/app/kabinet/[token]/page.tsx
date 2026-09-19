@@ -31,6 +31,8 @@ function phaseNow(now: Date): Phase {
 }
 
 const TG = 'https://t.me/bomberman047';
+/** Табло Дня Х живе окремим застосунком; ?me=<номер> одразу показує гравцю його стіл. */
+const TURNIR_URL = 'https://dbc-turnir.vercel.app';
 const SLOTS = 8;
 
 /** Стабільний хеш ніка — щоб персонаж не змінювався між заходами. */
@@ -308,7 +310,7 @@ function PayGreeting({ kind, p, onClose }: { kind: GreetKind; p: Player; onClose
         <span>{pack ? `пакет «${pack.name}»` : 'внесок'}{disc}</span>
       </div>
       <p className="kb-cardp">Місце <em>№{p.num}</em> із 32 закріплене за тобою.
-        Далі — жереб 18 вересня: суперники зʼявляться просто тут.</p>
+        Жереб кинуто: твій стіл і суперники вже в табло Дня Х.</p>
       <div className="kb-cardact">
         <button className="kb-btn primary" onClick={onClose}>До кабінету</button>
       </div>
@@ -606,12 +608,15 @@ export default function KabinetPage({ params }: { params: Promise<{ token: strin
         </div>
 
         <div className="kb-oppo">
-          <span>Твої суперники</span>
-          <b>0 / 8 <i>· жереб 18.09</i></b>
+          <span>Жереб кинуто</span>
+          <b>19.09 <i>· твій стіл у табло</i></b>
         </div>
       </div>
 
       <div className="kb-act">
+        <a className="kb-btn primary" href={`${TURNIR_URL}/?me=${p.num}`}>
+          МОЇ МАТЧІ І ТАБЛО
+        </a>
         <a className="kb-btn" href="/yak">Як усе влаштовано →</a>
       </div>
 
