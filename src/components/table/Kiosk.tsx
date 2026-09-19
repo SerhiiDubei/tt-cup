@@ -10,6 +10,7 @@ import PlayerPicker from '@/components/table/PlayerPicker';
 import ScoreEntry from '@/components/table/ScoreEntry';
 import WhoNext from '@/components/table/WhoNext';
 import Leaderboard from '@/components/table/Leaderboard';
+import { IDLE_PHRASES, idleIndex } from '@/lib/table/idlePhrases';
 import Ceremony, { type CeremonyData } from '@/components/table/Ceremony';
 import QueueIdle from '@/components/table/QueueIdle';
 import Showcase from '@/components/table/Showcase';
@@ -20,10 +21,15 @@ type Overlay =
   | { k: 'none' }
   | { k: 'pick-start' }
   | { k: 'pick-queue' }
+  | { k: 'turnir' }
   | { k: 'score'; gameId: string; aId: string; bId: string }
   | { k: 'next'; winnerId: string; loserId: string; sets: SetScore[] };
 
 /* ---------- дрібні хелпери ---------- */
+
+/** Анонс турніру на кіоску (D-060): вимкнено до старту ліги — щоб на столі
+ *  було рівно те, що працює сьогодні. Повернути = поставити true. */
+const SHOW_TURNIR = false;
 
 const POLL_MS = 3000;
 const EASE = 'cubic-bezier(.22,1,.36,1)';
@@ -201,7 +207,7 @@ function QueuePanel({ queue, busy, onLeave }: { queue: Player[]; busy: boolean; 
       {queue.length === 0 ? (
         <div className="k-queue-empty">
           <QueueIdle />
-          <p>Черга порожня — стіл чекає на тебе</p>
+          <IdleCall />
         </div>
       ) : (
         <div className="k-queue-list" ref={listRef}>
@@ -209,6 +215,22 @@ function QueuePanel({ queue, busy, onLeave }: { queue: Player[]; busy: boolean; 
         </div>
       )}
     </aside>
+  );
+}
+
+/* ---------- заклик у порожній черзі: 36 фраз по колу (D-058) ---------- */
+function IdleCall() {
+  const [i, setI] = useState(() => idleIndex());
+  useEffect(() => {
+    const t = setInterval(() => setI(idleIndex()), 3000); // тік частий, індекс міняється раз на 12 с
+    return () => clearInterval(t);
+  }, []);
+  const p = IDLE_PHRASES[i];
+  return (
+    <div className="k-idlecall" key={i}>
+      <b>{p.big}</b>
+      <span>{p.sub}</span>
+    </div>
   );
 }
 
@@ -220,6 +242,30 @@ function CancelGameButton({ busy, onCancel }: { busy: boolean; onCancel: () => v
       onClick={() => fire(onCancel)}>
       {armed ? 'Точно скасувати? Тапни ще раз' : 'Скасувати гру'}
     </button>
+  );
+}
+
+/* ---------- «Турнірна гра» — анонс + QR на реєстрацію (D-055) ---------- */
+function TurnirOverlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="k-ovl" onPointerDown={onClose}>
+      <div className="k-turnir" onPointerDown={(e) => e.stopPropagation()}>
+        <button className="k-turnir-x" aria-label="Закрити" onClick={onClose}>✕</button>
+        <span className="k-turnir-badge">🏆 DRUID BATTLE CUP</span>
+        <h2>Турнірні ігри — вже скоро</h2>
+        <p className="k-turnir-lead">
+          Зараз за цим столом іде вільна гра. А турнір — це ліга на три тижні,
+          твої суперники за рівнем і фінали з призами.
+        </p>
+        <div className="k-turnir-qr">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/qr-turnir.png" alt="QR: реєстрація на турнір" />
+        </div>
+        <p className="k-turnir-cta">
+          Наведи камеру телефона —<br /><b>і реєструйся на турнір</b>
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -537,6 +583,9 @@ export default function Kiosk() {
               <div className="k-actions">
                 <button className="kbtn xl pink" disabled={busy} onClick={() => setOverlay({ k: 'pick-start' })}>СТАТИ ДО СТОЛУ</button>
                 <button className="kbtn lg cyan" disabled={busy} onClick={() => setOverlay({ k: 'pick-queue' })}>ЗАПИСАТИСЬ У ЧЕРГУ</button>
+                {SHOW_TURNIR && (
+                  <button className="kbtn lg yellow" onClick={() => setOverlay({ k: 'turnir' })}>🏆 ТУРНІРНА ГРА</button>
+                )}
               </div>
               {state.lastWinner && (
                 <span className="k-lastwin">
@@ -566,6 +615,7 @@ export default function Kiosk() {
           }}
         />
       )}
+      {SHOW_TURNIR && overlay.k === 'turnir' && <TurnirOverlay onClose={closeOverlay} />}
       {overlay.k === 'pick-queue' && state && (
         <PlayerPicker
           players={joinPool}

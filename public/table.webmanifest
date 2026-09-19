@@ -1,0 +1,17 @@
+{
+  "name": "TT Cup · Стіл",
+  "short_name": "Стіл",
+  "description": "Кіоск клубу: черга, партії, рейтинг",
+  "start_url": "/table",
+  "scope": "/table",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#16110d",
+  "theme_color": "#16110d",
+  "icons": [
+    { "src": "/table-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/table-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/table-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/table-icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

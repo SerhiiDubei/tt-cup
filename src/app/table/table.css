@@ -887,3 +887,34 @@ button.k-slot-chip:active{transform:scale(.97)}
   .k-burst{display:none}
   .k-show-card{transition:none}
 }
+
+/* ---------- «Турнірна гра»: анонс + QR (D-055) ---------- */
+.k-ovl{position:fixed;inset:0;z-index:2400;background:rgba(13,15,13,.62);backdrop-filter:blur(5px);
+  display:grid;place-items:center;padding:clamp(12px,3vh,30px);animation:kFade .22s}
+.k-turnir{position:relative;background:var(--bg);border:3.5px solid var(--line);border-radius:30px;
+  box-shadow:var(--shadow-lg);padding:clamp(22px,3.4vh,38px) clamp(20px,3vw,44px);
+  max-width:min(560px,92vw);text-align:center;animation:kSheetIn .3s var(--ease)}
+.k-turnir-x{position:absolute;top:14px;right:14px;width:46px;height:46px;border-radius:50%;
+  border:3px solid var(--line);background:var(--pink);color:#fff;font-size:18px;font-weight:900;
+  display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow)}
+.k-turnir-x:active{transform:translate(2px,2px);box-shadow:none}
+.k-turnir-badge{display:inline-block;font-family:var(--font-display);font-weight:900;
+  font-size:clamp(11px,1.3vw,14px);letter-spacing:.06em;background:var(--line);color:var(--bg);
+  padding:7px 14px;border-radius:11px;transform:rotate(-1.5deg)}
+.k-turnir h2{font-family:var(--font-display);font-weight:900;text-transform:uppercase;
+  font-size:clamp(22px,3vw,34px);line-height:1.1;margin:14px 0 10px}
+.k-turnir-lead{font-size:clamp(14px,1.6vw,17px);line-height:1.5;color:var(--ink-soft);margin:0 auto 18px;max-width:42ch}
+.k-turnir-qr{display:inline-block;background:#fff8ec;border:3.5px solid var(--line);border-radius:22px;
+  box-shadow:var(--shadow);padding:12px;line-height:0}
+.k-turnir-qr img{width:clamp(180px,26vh,260px);height:auto;display:block}
+.k-turnir-cta{font-size:clamp(14px,1.7vw,18px);line-height:1.45;margin:16px 0 0}
+.k-turnir-cta b{font-family:var(--font-display);font-weight:900}
+
+/* ---------- заклик у порожній черзі (D-058): акцент + ротація фраз ---------- */
+.k-idlecall{display:flex;flex-direction:column;gap:6px;text-align:center;padding:0 8px;
+  animation:kIdleIn .45s var(--ease)}
+.k-idlecall b{font-family:var(--font-display);font-weight:900;text-transform:uppercase;
+  font-size:clamp(19px,2.5vw,30px);line-height:1.05;letter-spacing:-.01em;color:var(--ink)}
+.k-idlecall span{font-weight:700;font-size:clamp(13px,1.5vw,17px);line-height:1.35;color:var(--ink-soft)}
+@keyframes kIdleIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.k-idlecall{animation:none}}

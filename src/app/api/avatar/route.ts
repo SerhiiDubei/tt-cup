@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       headers: {
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://tt-cup-blush.vercel.app',
+        'HTTP-Referer': 'https://teniss.vercel.app',
         'X-Title': 'TT-CUP avatar',
       },
       body: JSON.stringify({
